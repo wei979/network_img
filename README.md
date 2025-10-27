@@ -2,7 +2,6 @@
 
 一個結合 **FastAPI + Scapy** 後端與 **React + Vite** 前端的網路封包分析平台，提供直觀的視覺化介面來分析 PCAP/PCAPNG 檔案，幫助網路工程師、測試人員和營運人員快速理解網路流量模式。
 
-![網路心智圖示例](https://via.placeholder.com/800x400/1a1a2e/ffffff?text=Network+Mind+Map+Visualization)
 
 ## ✨ 功能特色
 

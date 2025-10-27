@@ -1,0 +1,6857 @@
+{
+  "sourceFiles": [
+    "tmpio6v6bfz.pcapng"
+  ],
+  "generatedAt": "2025-10-23T09:14:15.044791+00:00",
+  "timelines": [
+    {
+      "id": "tcp-10.1.1.14-5434-210.71.227.211-443",
+      "protocol": "tcp",
+      "protocolType": "tcp-handshake",
+      "startEpochMs": 1760710355982,
+      "endEpochMs": 1760710355989,
+      "stages": [
+        {
+          "key": "syn",
+          "label": "SYN Sent",
+          "direction": "forward",
+          "durationMs": 7,
+          "packetRefs": [
+            4217
+          ]
+        },
+        {
+          "key": "syn-ack",
+          "label": "SYN-ACK Received",
+          "direction": "backward",
+          "durationMs": 1,
+          "packetRefs": [
+            4219
+          ]
+        },
+        {
+          "key": "ack",
+          "label": "ACK Confirmed",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4220
+          ]
+        }
+      ],
+      "metrics": {
+        "rttMs": 7,
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "tcp-10.1.1.14-1716-204.79.197.222-443",
+      "protocol": "tcp",
+      "protocolType": "tcp-handshake",
+      "startEpochMs": 1760710355998,
+      "endEpochMs": 1760710356006,
+      "stages": [
+        {
+          "key": "syn",
+          "label": "SYN Sent",
+          "direction": "forward",
+          "durationMs": 7,
+          "packetRefs": [
+            4228
+          ]
+        },
+        {
+          "key": "syn-ack",
+          "label": "SYN-ACK Received",
+          "direction": "backward",
+          "durationMs": 1,
+          "packetRefs": [
+            4231
+          ]
+        },
+        {
+          "key": "ack",
+          "label": "ACK Confirmed",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4232
+          ]
+        }
+      ],
+      "metrics": {
+        "rttMs": 7,
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-62296-151.106.248.1-7139",
+      "protocol": "udp",
+      "protocolType": "udp-transfer",
+      "startEpochMs": 1760710335415,
+      "endEpochMs": 1760710361695,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 26279,
+          "packetRefs": [
+            0
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 2979
+      }
+    },
+    {
+      "id": "udp-35.215.146.191-50008-10.1.1.14-56884",
+      "protocol": "udp",
+      "protocolType": "udp-transfer",
+      "startEpochMs": 1760710335449,
+      "endEpochMs": 1760710360779,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 25330,
+          "packetRefs": [
+            5
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 169
+      }
+    },
+    {
+      "id": "udp-151.106.248.1-7139-10.1.1.14-62296",
+      "protocol": "udp",
+      "protocolType": "udp-transfer",
+      "startEpochMs": 1760710335454,
+      "endEpochMs": 1760710361698,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 26243,
+          "packetRefs": [
+            6
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1164
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-53781-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710335591,
+      "endEpochMs": 1760710335591,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            29
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-64219-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710335592,
+      "endEpochMs": 1760710335592,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            30
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-54904-20.157.23.37-54000",
+      "protocol": "udp",
+      "protocolType": "udp-transfer",
+      "startEpochMs": 1760710335828,
+      "endEpochMs": 1760710361086,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 25257,
+          "packetRefs": [
+            78
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 36
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-56884-35.215.146.191-50008",
+      "protocol": "udp",
+      "protocolType": "udp-transfer",
+      "startEpochMs": 1760710335872,
+      "endEpochMs": 1760710360827,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 24955,
+          "packetRefs": [
+            88
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 474
+      }
+    },
+    {
+      "id": "udp-20.157.23.37-54000-10.1.1.14-54904",
+      "protocol": "udp",
+      "protocolType": "udp-transfer",
+      "startEpochMs": 1760710335979,
+      "endEpochMs": 1760710361080,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 25100,
+          "packetRefs": [
+            109
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 15
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-60102-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710336007,
+      "endEpochMs": 1760710336007,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            115
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-50159-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710336007,
+      "endEpochMs": 1760710336007,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            116
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-54513-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710336022,
+      "endEpochMs": 1760710336022,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            119
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-64325-192.168.119.200-161",
+      "protocol": "udp",
+      "protocolType": "udp-transfer",
+      "startEpochMs": 1760710336284,
+      "endEpochMs": 1760710356821,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 20536,
+          "packetRefs": [
+            186
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-64325-192.168.119.213-161",
+      "protocol": "udp",
+      "protocolType": "udp-transfer",
+      "startEpochMs": 1760710336284,
+      "endEpochMs": 1760710356821,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 20536,
+          "packetRefs": [
+            187
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-61436-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710336549,
+      "endEpochMs": 1760710336549,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            232
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-55982-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710336550,
+      "endEpochMs": 1760710336550,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            233
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-51430-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710336840,
+      "endEpochMs": 1760710336840,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            281
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-52929-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710336841,
+      "endEpochMs": 1760710336841,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            282
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-53743-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710337567,
+      "endEpochMs": 1760710337567,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            399
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-63976-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710337568,
+      "endEpochMs": 1760710337568,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            400
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-56620-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710337860,
+      "endEpochMs": 1760710337860,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            446
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-64897-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710337861,
+      "endEpochMs": 1760710337861,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            448
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-57358-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710338033,
+      "endEpochMs": 1760710338033,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            477
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-55422-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710338034,
+      "endEpochMs": 1760710338034,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            478
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-60515-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710338035,
+      "endEpochMs": 1760710338035,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            480
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-51208-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710338036,
+      "endEpochMs": 1760710338036,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            481
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-63689-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710338799,
+      "endEpochMs": 1760710338799,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            607
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-56216-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710338799,
+      "endEpochMs": 1760710338799,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            608
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-55473-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710338858,
+      "endEpochMs": 1760710338858,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            622
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-52030-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710339047,
+      "endEpochMs": 1760710339047,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            670
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-50952-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710339048,
+      "endEpochMs": 1760710339048,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            672
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-50187-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710339048,
+      "endEpochMs": 1760710339048,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            673
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-49966-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710339049,
+      "endEpochMs": 1760710339049,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            674
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-51287-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710339602,
+      "endEpochMs": 1760710339602,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            746
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-59460-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710339602,
+      "endEpochMs": 1760710339602,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            747
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-60947-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710339817,
+      "endEpochMs": 1760710339817,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            783
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-64213-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710339818,
+      "endEpochMs": 1760710339818,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            784
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-58926-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710340622,
+      "endEpochMs": 1760710340622,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            966
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-65199-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710340622,
+      "endEpochMs": 1760710340622,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            967
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-64114-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710341073,
+      "endEpochMs": 1760710341073,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1073
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-62371-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710341073,
+      "endEpochMs": 1760710341073,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1074
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-64130-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710341074,
+      "endEpochMs": 1760710341074,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1075
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-49664-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710341074,
+      "endEpochMs": 1760710341074,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1076
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-56873-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710341553,
+      "endEpochMs": 1760710341553,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1175
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-52076-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710341553,
+      "endEpochMs": 1760710341553,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1176
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-142.250.198.74-443-10.1.1.14-63879",
+      "protocol": "udp",
+      "protocolType": "udp-transfer",
+      "startEpochMs": 1760710341740,
+      "endEpochMs": 1760710351741,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 10001,
+          "packetRefs": [
+            1208
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-63879-142.250.198.74-443",
+      "protocol": "udp",
+      "protocolType": "udp-transfer",
+      "startEpochMs": 1760710341754,
+      "endEpochMs": 1760710351752,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 9997,
+          "packetRefs": [
+            1211
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-54021-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710341850,
+      "endEpochMs": 1760710341850,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1232
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-62104-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710341850,
+      "endEpochMs": 1760710341850,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1233
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-54252-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710342100,
+      "endEpochMs": 1760710342100,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1281
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-57453-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710342101,
+      "endEpochMs": 1760710342101,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1282
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-60634-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710342101,
+      "endEpochMs": 1760710342101,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1283
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-51407-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710342101,
+      "endEpochMs": 1760710342101,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1284
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-52902-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710342569,
+      "endEpochMs": 1760710342569,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1389
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-57101-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710342569,
+      "endEpochMs": 1760710342569,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1390
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-56723-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710342864,
+      "endEpochMs": 1760710342864,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1442
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-59911-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710342864,
+      "endEpochMs": 1760710345617,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 2752,
+          "packetRefs": [
+            1443
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-64556-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710343268,
+      "endEpochMs": 1760710350326,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 7057,
+          "packetRefs": [
+            1519
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 5
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-58812-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710343812,
+      "endEpochMs": 1760710343812,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1626
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-52656-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710343812,
+      "endEpochMs": 1760710343812,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1627
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-55440-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710344603,
+      "endEpochMs": 1760710344603,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1810
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-63656-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710344603,
+      "endEpochMs": 1760710344603,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1811
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-58237-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710344838,
+      "endEpochMs": 1760710344838,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1869
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-53093-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710344838,
+      "endEpochMs": 1760710344838,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1870
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-56890-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710345617,
+      "endEpochMs": 1760710345617,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            2050
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-58113-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710346083,
+      "endEpochMs": 1760710346083,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            2137
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-54286-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710346083,
+      "endEpochMs": 1760710346083,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            2138
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-50313-142.250.204.36-443",
+      "protocol": "udp",
+      "protocolType": "udp-transfer",
+      "startEpochMs": 1760710346177,
+      "endEpochMs": 1760710360250,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 14072,
+          "packetRefs": [
+            2154
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 6
+      }
+    },
+    {
+      "id": "udp-142.250.204.36-443-10.1.1.14-50313",
+      "protocol": "udp",
+      "protocolType": "udp-transfer",
+      "startEpochMs": 1760710346186,
+      "endEpochMs": 1760710360259,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 14073,
+          "packetRefs": [
+            2157
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 6
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-62622-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710346867,
+      "endEpochMs": 1760710346867,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            2279
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-53618-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710346867,
+      "endEpochMs": 1760710346867,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            2280
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-56875-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710347099,
+      "endEpochMs": 1760710347099,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            2323
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-63133-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710347100,
+      "endEpochMs": 1760710347100,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            2324
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-60048-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710347891,
+      "endEpochMs": 1760710347891,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            2461
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-52302-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710347891,
+      "endEpochMs": 1760710347891,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            2462
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-59720-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710349144,
+      "endEpochMs": 1760710352191,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 3047,
+          "packetRefs": [
+            2709
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 4
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-62228-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710349926,
+      "endEpochMs": 1760710352975,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 3048,
+          "packetRefs": [
+            2862
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 4
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-54699-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710354298,
+      "endEpochMs": 1760710355332,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1034,
+          "packetRefs": [
+            3646
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-62328-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355147,
+      "endEpochMs": 1760710355147,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            3793
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-64753-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355147,
+      "endEpochMs": 1760710355147,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            3794
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-57412",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355815,
+      "endEpochMs": 1760710355815,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4128
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-57167",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355826,
+      "endEpochMs": 1760710355891,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 65,
+          "packetRefs": [
+            4132
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-49665",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355876,
+      "endEpochMs": 1760710355898,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 21,
+          "packetRefs": [
+            4147
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-63003",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355878,
+      "endEpochMs": 1760710355878,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4148
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-51349",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355891,
+      "endEpochMs": 1760710355891,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4154
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-51530",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355893,
+      "endEpochMs": 1760710355893,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4155
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-54513",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355893,
+      "endEpochMs": 1760710355919,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 25,
+          "packetRefs": [
+            4156
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-51673",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355911,
+      "endEpochMs": 1760710355911,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4164
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-59679",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355911,
+      "endEpochMs": 1760710355911,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4165
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-64807",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355912,
+      "endEpochMs": 1760710355912,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4167
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-59744",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355912,
+      "endEpochMs": 1760710355912,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4168
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-56795",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355913,
+      "endEpochMs": 1760710355913,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4171
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-64469",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355914,
+      "endEpochMs": 1760710355914,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4172
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-58322",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355914,
+      "endEpochMs": 1760710355914,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4173
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-60102",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355917,
+      "endEpochMs": 1760710355917,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4174
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-50159",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355918,
+      "endEpochMs": 1760710355918,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4176
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-53743",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355930,
+      "endEpochMs": 1760710355930,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4181
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-63976",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355931,
+      "endEpochMs": 1760710355931,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4182
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-56620",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355934,
+      "endEpochMs": 1760710355934,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4184
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-64897",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355935,
+      "endEpochMs": 1760710355935,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4186
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-52030",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355935,
+      "endEpochMs": 1760710355935,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4187
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-50952",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355938,
+      "endEpochMs": 1760710355938,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4188
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-58609-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355939,
+      "endEpochMs": 1760710355939,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4189
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-60777-10.1.1.1-53",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355939,
+      "endEpochMs": 1760710355939,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4190
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-50187",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355950,
+      "endEpochMs": 1760710355950,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4193
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-49966",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355951,
+      "endEpochMs": 1760710355951,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4195
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-58926",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355952,
+      "endEpochMs": 1760710355952,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4196
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-65199",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355953,
+      "endEpochMs": 1760710355953,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4197
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-64556",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355954,
+      "endEpochMs": 1760710355975,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 20,
+          "packetRefs": [
+            4198
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-62104",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355954,
+      "endEpochMs": 1760710355954,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4199
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-63656",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355955,
+      "endEpochMs": 1760710355955,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4200
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-54021",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355957,
+      "endEpochMs": 1760710355957,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4201
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-53093",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355958,
+      "endEpochMs": 1760710355958,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4202
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-58237",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355958,
+      "endEpochMs": 1760710355958,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4203
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-58113",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355959,
+      "endEpochMs": 1760710355959,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4205
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-54286",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355970,
+      "endEpochMs": 1760710355970,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4208
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-59720",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355972,
+      "endEpochMs": 1760710355972,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4209
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-62228",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355980,
+      "endEpochMs": 1760710355980,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4212
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-54699",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355980,
+      "endEpochMs": 1760710355980,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4213
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-62328",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355981,
+      "endEpochMs": 1760710355981,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4214
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-64753",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355981,
+      "endEpochMs": 1760710355981,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4215
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-58609",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355996,
+      "endEpochMs": 1760710355996,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4224
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-60777",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710355997,
+      "endEpochMs": 1760710355997,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4227
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-55440",
+      "protocol": "dns",
+      "protocolType": "dns-query",
+      "startEpochMs": 1760710356043,
+      "endEpochMs": 1760710356043,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4281
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.22-5353-224.0.0.251-5353",
+      "protocol": "udp",
+      "protocolType": "udp-transfer",
+      "startEpochMs": 1760710359320,
+      "endEpochMs": 1760710360100,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 780,
+          "packetRefs": [
+            4762
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 6
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-60957-35.215.146.191-50008",
+      "protocol": "udp",
+      "protocolType": "udp-transfer",
+      "startEpochMs": 1760710360933,
+      "endEpochMs": 1760710360959,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 26,
+          "packetRefs": [
+            5143
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "udp-35.215.146.191-50008-10.1.1.14-60957",
+      "protocol": "udp",
+      "protocolType": "udp-transfer",
+      "startEpochMs": 1760710360959,
+      "endEpochMs": 1760710360959,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            5153
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-47456-239.255.255.250-1900",
+      "protocol": "udp",
+      "protocolType": "udp-transfer",
+      "startEpochMs": 1760710361251,
+      "endEpochMs": 1760710361272,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 20,
+          "packetRefs": [
+            5230
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 8
+      }
+    },
+    {
+      "id": "http-172.64.153.46-443-10.1.1.14-9492",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710335902,
+      "endEpochMs": 1760710335902,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 0,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-162.159.135.234-443-10.1.1.14-4472",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710335807,
+      "endEpochMs": 1760710337991,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 655
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 873
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 655
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 2183,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-4472-162.159.135.234-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710335852,
+      "endEpochMs": 1760710338047,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 658
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 877
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 658
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 2194,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-9387-52.123.160.123-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710342505,
+      "endEpochMs": 1760710342817,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 93
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 124
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 93
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 311,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-162.159.135.234-443-10.1.1.14-4472",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710338223,
+      "endEpochMs": 1760710342889,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1400
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1866
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1400
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 4666,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-4472-162.159.135.234-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710338223,
+      "endEpochMs": 1760710342890,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1400
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1866
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1400
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 4667,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-162.159.135.234-443-10.1.1.14-4472",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710342889,
+      "endEpochMs": 1760710342890,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 0,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-162.159.135.234-443-10.1.1.14-4472",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710342890,
+      "endEpochMs": 1760710342890,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 0,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-9387-52.123.160.123-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710343127,
+      "endEpochMs": 1760710343732,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 181
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 242
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 181
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 605,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-9062-162.159.137.234-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710344137,
+      "endEpochMs": 1760710344214,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 22
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 30
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 22
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 76,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-52.123.160.123-443-10.1.1.14-9387",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710345154,
+      "endEpochMs": 1760710345160,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 2
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 6,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-9387-52.123.160.123-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710344945,
+      "endEpochMs": 1760710345212,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 80
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 106
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 80
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 266,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-13881-169.150.222.207-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710337922,
+      "endEpochMs": 1760710348044,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 3036
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 4049
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 3036
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 10122,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-169.150.222.207-443-10.1.1.14-13881",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710338035,
+      "endEpochMs": 1760710348252,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 3065
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 4086
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 3065
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 10217,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-13037-172.64.147.231-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710348301,
+      "endEpochMs": 1760710348514,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 63
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 85
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 63
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 212,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-10296-52.123.160.121-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710348575,
+      "endEpochMs": 1760710348759,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 55
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 73
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 55
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 183,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-104.18.40.25-443-10.1.1.14-13880",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710348752,
+      "endEpochMs": 1760710348867,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 34
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 46
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 34
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 115,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-13880-104.18.40.25-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710348744,
+      "endEpochMs": 1760710348915,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 51
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 68
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 51
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 170,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-13037-172.64.147.231-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710348820,
+      "endEpochMs": 1760710349432,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 183
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 244
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 183
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 611,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-13881-169.150.222.207-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710348252,
+      "endEpochMs": 1760710350049,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 539
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 718
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 539
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 1797,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-172.64.147.231-443-10.1.1.14-13037",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710352020,
+      "endEpochMs": 1760710352324,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 91
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 121
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 91
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 304,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-13037-172.64.147.231-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710350640,
+      "endEpochMs": 1760710352380,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 521
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 695
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 521
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 1739,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-162.159.135.234-443-10.1.1.14-4472",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710342890,
+      "endEpochMs": 1760710353165,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 3082
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 4110
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 3082
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 10275,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-4472-162.159.135.234-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710342890,
+      "endEpochMs": 1760710353207,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 3095
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 4127
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 3095
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 10317,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-142.250.196.202-443-10.1.1.14-9614",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710338350,
+      "endEpochMs": 1760710353283,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 4479
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 5973
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 4479
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 14933,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-9614-142.250.196.202-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710338344,
+      "endEpochMs": 1760710353284,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 4481
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 5975
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 4481
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 14939,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-9614-142.250.196.202-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710353521,
+      "endEpochMs": 1760710353598,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 23
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 30
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 23
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 76,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-142.250.204.46-443-10.1.1.14-9570",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710339038,
+      "endEpochMs": 1760710353964,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 4477
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 5970
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 4477
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 14925,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-9570-142.250.204.46-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710339030,
+      "endEpochMs": 1760710353964,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 4480
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 5973
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 4480
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 14933,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-9570-142.250.204.46-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710354175,
+      "endEpochMs": 1760710354266,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 27
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 36
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 27
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 91,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-142.250.198.65-443-10.1.1.14-2825",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710339248,
+      "endEpochMs": 1760710354333,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 4525
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 6034
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 4525
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 15085,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-2825-142.250.198.65-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710337551,
+      "endEpochMs": 1760710354334,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 5034
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 6713
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 5034
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 16782,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-52.203.96.197-443-10.1.1.14-7776",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710354194,
+      "endEpochMs": 1760710355202,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 302
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 403
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 302
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 1007,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-7776-52.203.96.197-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710353985,
+      "endEpochMs": 1760710355202,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 365
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 486
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 365
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 1216,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-2825-142.250.198.65-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710354637,
+      "endEpochMs": 1760710355237,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 179
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 239
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 179
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 599,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-9614-142.250.196.202-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710354203,
+      "endEpochMs": 1760710355409,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 361
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 482
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 361
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 1205,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-4301-142.250.66.67-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710340747,
+      "endEpochMs": 1760710355792,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 4513
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 6018
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 4513
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 15045,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-142.250.66.67-443-10.1.1.14-4301",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710355792,
+      "endEpochMs": 1760710355795,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 3,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-4301-142.250.66.67-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710355795,
+      "endEpochMs": 1760710355798,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 2,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-142.250.196.202-443-10.1.1.14-9614",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710353521,
+      "endEpochMs": 1760710355800,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 683
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 911
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 683
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 2278,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-142.250.66.67-443-10.1.1.14-4301",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710355798,
+      "endEpochMs": 1760710355802,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 3,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-142.250.196.202-443-10.1.1.14-9614",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710355802,
+      "endEpochMs": 1760710355802,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 0,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-9614-142.250.196.202-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710355800,
+      "endEpochMs": 1760710355802,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 2,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-142.250.204.46-443-10.1.1.14-9570",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710354175,
+      "endEpochMs": 1760710355803,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 488
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 651
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 488
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 1628,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-9570-142.250.204.46-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710354871,
+      "endEpochMs": 1760710355803,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 279
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 373
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 279
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 932,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-142.250.198.65-443-10.1.1.14-2825",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710355705,
+      "endEpochMs": 1760710355804,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 29
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 39
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 29
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 98,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-2825-142.250.198.65-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710355705,
+      "endEpochMs": 1760710355804,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 29
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 39
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 29
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 98,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-142.250.198.65-443-10.1.1.14-2825",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710355804,
+      "endEpochMs": 1760710355806,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 1,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-4301-142.250.66.67-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710355802,
+      "endEpochMs": 1760710355811,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 2
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 3
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 2
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 9,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-142.250.196.202-443-10.1.1.14-9614",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710355807,
+      "endEpochMs": 1760710355811,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 4,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-5434-210.71.227.211-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710355982,
+      "endEpochMs": 1760710355989,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 2
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 3
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 2
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 7,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-210.71.227.211-443-10.1.1.14-5434",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710355989,
+      "endEpochMs": 1760710355997,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 2
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 3
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 2
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 7,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-1716-204.79.197.222-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710355998,
+      "endEpochMs": 1760710356006,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 2
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 3
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 2
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 7,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-5434-210.71.227.211-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710355990,
+      "endEpochMs": 1760710356008,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 5
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 7
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 5
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 17,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-5434-210.71.227.211-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356008,
+      "endEpochMs": 1760710356008,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 0,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-204.79.197.222-443-10.1.1.14-1716",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356006,
+      "endEpochMs": 1760710356013,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 2
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 3
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 2
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 7,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-204.79.197.222-443-10.1.1.14-1716",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356014,
+      "endEpochMs": 1760710356014,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 0,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-210.71.227.211-443-10.1.1.14-5434",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356002,
+      "endEpochMs": 1760710356015,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 3
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 4
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 3
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 12,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-210.71.227.211-443-10.1.1.14-5434",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356015,
+      "endEpochMs": 1760710356015,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 0,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-210.71.227.211-443-10.1.1.14-5434",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356015,
+      "endEpochMs": 1760710356015,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 0,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-210.71.227.211-443-10.1.1.14-5434",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356015,
+      "endEpochMs": 1760710356015,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 0,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-1716-204.79.197.222-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356007,
+      "endEpochMs": 1760710356016,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 2
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 3
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 2
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 9,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-210.71.227.211-443-10.1.1.14-5434",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356015,
+      "endEpochMs": 1760710356018,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 2,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-5434-210.71.227.211-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356008,
+      "endEpochMs": 1760710356018,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 2
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 3
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 2
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 9,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-204.79.197.222-443-10.1.1.14-1716",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356023,
+      "endEpochMs": 1760710356025,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 1,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-1716-204.79.197.222-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356028,
+      "endEpochMs": 1760710356029,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 0,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-1716-204.79.197.222-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356029,
+      "endEpochMs": 1760710356029,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 0,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-142.251.8.84-443-10.1.1.14-14090",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710341064,
+      "endEpochMs": 1760710356032,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 4490
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 5987
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 4490
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 14968,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-14090-142.251.8.84-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710341055,
+      "endEpochMs": 1760710356032,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 4493
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 5991
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 4493
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 14977,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-204.79.197.222-443-10.1.1.14-1716",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356035,
+      "endEpochMs": 1760710356035,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 0,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-204.79.197.222-443-10.1.1.14-1716",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356037,
+      "endEpochMs": 1760710356038,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 0,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-1716-204.79.197.222-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356036,
+      "endEpochMs": 1760710356038,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 2,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-204.79.197.222-443-10.1.1.14-1716",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356038,
+      "endEpochMs": 1760710356038,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 0,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-204.79.197.222-443-10.1.1.14-1716",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356038,
+      "endEpochMs": 1760710356042,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 3,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-210.71.227.211-443-10.1.1.14-5434",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356018,
+      "endEpochMs": 1760710356065,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 14
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 19
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 14
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 47,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-210.71.227.211-443-10.1.1.14-5434",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356092,
+      "endEpochMs": 1760710356095,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 3,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-5434-210.71.227.211-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356018,
+      "endEpochMs": 1760710356095,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 23
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 30
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 23
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 77,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-162.159.137.234-443-10.1.1.14-9062",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710344173,
+      "endEpochMs": 1760710357934,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 4128
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 5504
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 4128
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 13761,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-9062-162.159.137.234-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710357894,
+      "endEpochMs": 1760710357988,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 27
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 37
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 27
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 93,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-172.64.153.46-443-10.1.1.14-9492",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710335902,
+      "endEpochMs": 1760710358133,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 6669
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 8892
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 6669
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 22231,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-9492-172.64.153.46-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710335731,
+      "endEpochMs": 1760710358176,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 6733
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 8977
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 6733
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 22444,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-12129-20.157.117.47-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710359859,
+      "endEpochMs": 1760710359989,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 38
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 51
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 38
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 129,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-169.150.222.207-443-10.1.1.14-13881",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710350108,
+      "endEpochMs": 1760710360123,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 3004
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 4005
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 3004
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 10014,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-13881-169.150.222.207-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710360112,
+      "endEpochMs": 1760710360123,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 3
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 4
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 3
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 11,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-1716-204.79.197.222-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710356038,
+      "endEpochMs": 1760710360688,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1394
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1859
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1394
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 4649,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-5434-210.71.227.211-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710360687,
+      "endEpochMs": 1760710360695,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 2
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 2
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 2
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 7,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-210.71.227.211-443-10.1.1.14-5434",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710360695,
+      "endEpochMs": 1760710360695,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 0,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-204.79.197.222-443-10.1.1.14-1716",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710360696,
+      "endEpochMs": 1760710360696,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 1
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 0,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-142.250.198.74-443-10.1.1.14-7195",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710345979,
+      "endEpochMs": 1760710360845,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 4459
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 5946
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 4459
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 14865,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-7195-142.250.198.74-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710345972,
+      "endEpochMs": 1760710360845,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 4461
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 5949
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 4461
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 14872,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-162.159.135.234-443-10.1.1.14-4472",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710355162,
+      "endEpochMs": 1760710361296,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1840
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 2453
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1840
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 6134,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "http-10.1.1.14-4472-162.159.135.234-443",
+      "protocol": "https",
+      "protocolType": "https-request",
+      "startEpochMs": 1760710355205,
+      "endEpochMs": 1760710361337,
+      "stages": [
+        {
+          "key": "request",
+          "label": "HTTP Request",
+          "direction": "forward",
+          "durationMs": 1839
+        },
+        {
+          "key": "processing",
+          "label": "Processing",
+          "direction": "wait",
+          "durationMs": 2452
+        },
+        {
+          "key": "response",
+          "label": "200 OK",
+          "direction": "backward",
+          "durationMs": 1839
+        }
+      ],
+      "metrics": {
+        "responseTimeMs": 6132,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-13912-172.65.217.212-5223-1004",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710336231,
+      "endEpochMs": 1760710340780,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 2274
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 2274
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 4548,
+        "packetCount": 5
+      }
+    },
+    {
+      "id": "timeout-172.65.217.212-5223-10.1.1.14-13912-1026",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710336231,
+      "endEpochMs": 1760710340878,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 2323
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 2323
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 4647,
+        "packetCount": 16
+      }
+    },
+    {
+      "id": "timeout-10.1.1.22-60575-10.1.1.14-7680-1105",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710337208,
+      "endEpochMs": 1760710341208,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 2000
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 2000
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 4000,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-10.1.1.22-60574-10.1.1.14-7680-1110",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710337209,
+      "endEpochMs": 1760710341223,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 2007
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 2007
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 4014,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-6047-10.1.1.1-53-1138",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710335746,
+      "endEpochMs": 1760710341346,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 2800
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 2800
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 5600,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-6016-10.1.1.1-53-1139",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710335746,
+      "endEpochMs": 1760710341346,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 2800
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 2800
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 5600,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-162.159.135.234-443-10.1.1.14-4472-1447",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710338223,
+      "endEpochMs": 1760710342889,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 2333
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 2333
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 4666,
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-4472-162.159.135.234-443-1449",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710338223,
+      "endEpochMs": 1760710342890,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 2333
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 2333
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 4667,
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "timeout-10.1.1.1-53-10.1.1.14-9032-1525",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710339282,
+      "endEpochMs": 1760710343284,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 2001
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 2001
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 4002,
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-13881-169.150.222.207-443-2496",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710337922,
+      "endEpochMs": 1760710348044,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 5061
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 5061
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 10122,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-169.150.222.207-443-10.1.1.14-13881-2541",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710338035,
+      "endEpochMs": 1760710348252,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 5108
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 5108
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 10217,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-10.1.1.1-53-10.1.1.14-9826-2560",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710344329,
+      "endEpochMs": 1760710348331,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 2001
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 2001
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 4002,
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "timeout-10.1.1.1-53-10.1.1.14-12532-2623",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710344662,
+      "endEpochMs": 1760710348677,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 2007
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 2007
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 4015,
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "timeout-10.1.1.22-60575-10.1.1.14-7680-2721",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710341208,
+      "endEpochMs": 1760710349219,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 4005
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 4005
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 8010,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "timeout-10.1.1.22-60574-10.1.1.14-7680-2724",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710341223,
+      "endEpochMs": 1760710349234,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 4005
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 4005
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 8010,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "timeout-172.65.217.212-5223-10.1.1.14-13909-3105",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710336232,
+      "endEpochMs": 1760710351301,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 7534
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 7534
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 15069,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-13909-172.65.217.212-5223-3106",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710336232,
+      "endEpochMs": 1760710351301,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 7534
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 7534
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 15069,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-10.1.1.1-53-10.1.1.14-2952-3266",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710348091,
+      "endEpochMs": 1760710352098,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 2003
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 2003
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 4007,
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-6016-10.1.1.1-53-3322",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710341346,
+      "endEpochMs": 1760710352410,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 5531
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 5531
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 11063,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-6047-10.1.1.1-53-3323",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710341346,
+      "endEpochMs": 1760710352411,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 5532
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 5532
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 11064,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "timeout-162.159.135.234-443-10.1.1.14-4472-3445",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710342890,
+      "endEpochMs": 1760710353165,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 5137
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 5137
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 10275,
+        "packetCount": 9
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-4472-162.159.135.234-443-3453",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710342890,
+      "endEpochMs": 1760710353207,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 5158
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 5158
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 10317,
+        "packetCount": 5
+      }
+    },
+    {
+      "id": "timeout-142.250.196.202-443-10.1.1.14-9614-3467",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710338350,
+      "endEpochMs": 1760710353283,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 7466
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 7466
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 14933,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-9614-142.250.196.202-443-3468",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710338344,
+      "endEpochMs": 1760710353284,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 7469
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 7469
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 14939,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-142.250.204.46-443-10.1.1.14-9570-3584",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710339038,
+      "endEpochMs": 1760710353964,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 7462
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 7462
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 14925,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-9570-142.250.204.46-443-3585",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710339030,
+      "endEpochMs": 1760710353964,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 7466
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 7466
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 14933,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-142.250.198.65-443-10.1.1.14-2825-3655",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710339248,
+      "endEpochMs": 1760710354333,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 7542
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 7542
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 15085,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-2825-142.250.198.65-443-3656",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710337551,
+      "endEpochMs": 1760710354334,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 8391
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 8391
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 16782,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-10.1.1.1-53-10.1.1.14-7917-3865",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710351496,
+      "endEpochMs": 1760710355500,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 2001
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 2001
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 4003,
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-4301-142.250.66.67-443-3985",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710340747,
+      "endEpochMs": 1760710355792,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 7522
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 7522
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 15045,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-172.65.217.212-5223-10.1.1.14-13912-4169",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710340878,
+      "endEpochMs": 1760710355913,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 7517
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 7517
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 15034,
+        "packetCount": 17
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-13912-172.65.217.212-5223-4170",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710340780,
+      "endEpochMs": 1760710355913,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 7566
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 7566
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 15133,
+        "packetCount": 6
+      }
+    },
+    {
+      "id": "timeout-142.251.8.84-443-10.1.1.14-14090-4265",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710341064,
+      "endEpochMs": 1760710356032,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 7484
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 7484
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 14968,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-14090-142.251.8.84-443-4266",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710341055,
+      "endEpochMs": 1760710356032,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 7488
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 7488
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 14977,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-10.1.1.1-53-10.1.1.14-12532-4416",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710348677,
+      "endEpochMs": 1760710356669,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 3996
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 3996
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 7992,
+        "packetCount": 4
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-9062-162.159.137.234-443-4595",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710344214,
+      "endEpochMs": 1760710357894,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 6840
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 6840
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 13680,
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "timeout-162.159.137.234-443-10.1.1.14-9062-4605",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710344173,
+      "endEpochMs": 1760710357934,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 6880
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 6880
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 13761,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-172.64.153.46-443-10.1.1.14-9492-4629",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710335902,
+      "endEpochMs": 1760710358133,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 11115
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 11115
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 22231,
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-9492-172.64.153.46-443-4632",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710335731,
+      "endEpochMs": 1760710358176,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 11222
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 11222
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 22444,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-10.1.1.1-53-10.1.1.14-2952-4911",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710352098,
+      "endEpochMs": 1760710360090,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 3995
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 3995
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 7991,
+        "packetCount": 4
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-13881-169.150.222.207-443-4921",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710350049,
+      "endEpochMs": 1760710360112,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 5031
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 5031
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 10062,
+        "packetCount": 4
+      }
+    },
+    {
+      "id": "timeout-169.150.222.207-443-10.1.1.14-13881-4923",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710350108,
+      "endEpochMs": 1760710360123,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 5007
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 5007
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 10014,
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-5434-210.71.227.211-443-5058",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710356095,
+      "endEpochMs": 1760710360687,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 2296
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 2296
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 4592,
+        "packetCount": 10
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-1716-204.79.197.222-443-5059",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710356038,
+      "endEpochMs": 1760710360688,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 2324
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 2324
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 4649,
+        "packetCount": 11
+      }
+    },
+    {
+      "id": "timeout-210.71.227.211-443-10.1.1.14-5434-5061",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710356095,
+      "endEpochMs": 1760710360695,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 2299
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 2299
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 4599,
+        "packetCount": 16
+      }
+    },
+    {
+      "id": "timeout-204.79.197.222-443-10.1.1.14-1716-5065",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710356042,
+      "endEpochMs": 1760710360696,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 2326
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 2326
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 4653,
+        "packetCount": 14
+      }
+    },
+    {
+      "id": "timeout-142.250.198.74-443-10.1.1.14-7195-5117",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710345979,
+      "endEpochMs": 1760710360845,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 7432
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 7432
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 14865,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-7195-142.250.198.74-443-5118",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710345972,
+      "endEpochMs": 1760710360845,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 7436
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 7436
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 14872,
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "timeout-162.159.135.234-443-10.1.1.14-4472-5250",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710355162,
+      "endEpochMs": 1760710361296,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 3067
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 3067
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 6134,
+        "packetCount": 11
+      }
+    },
+    {
+      "id": "timeout-10.1.1.14-4472-162.159.135.234-443-5260",
+      "protocol": "tcp",
+      "protocolType": "timeout",
+      "startEpochMs": 1760710355205,
+      "endEpochMs": 1760710361337,
+      "stages": [
+        {
+          "key": "waiting",
+          "label": "等待回應",
+          "direction": "forward",
+          "durationMs": 3066
+        },
+        {
+          "key": "timeout",
+          "label": "連線超時",
+          "direction": "none",
+          "durationMs": 3066
+        }
+      ],
+      "metrics": {
+        "timeoutMs": 6132,
+        "packetCount": 7
+      }
+    }
+  ]
+}

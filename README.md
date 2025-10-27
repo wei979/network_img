@@ -303,15 +303,6 @@ CMD ["uvicorn", "analysis_server:app", "--host", "0.0.0.0", "--port", "8000"]
 - 使用 Prettier 格式化
 - 撰寫有意義的提交訊息
 
-## 📝 授權條款
-
-本專案採用 MIT 授權條款 - 詳見 [LICENSE](LICENSE) 檔案
-
-## 🆘 支援與回饋
-
-- 📧 Email: [your-email@example.com]
-- 🐛 問題回報: [GitHub Issues](https://github.com/your-repo/issues)
-- 💬 討論區: [GitHub Discussions](https://github.com/your-repo/discussions)
 
 ## 🙏 致謝
 
@@ -322,5 +313,3 @@ CMD ["uvicorn", "analysis_server:app", "--host", "0.0.0.0", "--port", "8000"]
 - [Tailwind CSS](https://tailwindcss.com/) - CSS 框架
 
 ---
-
-⭐ 如果這個專案對您有幫助，請給我們一個星星！

@@ -54,9 +54,180 @@ const STAGE_LABEL_MAP = {
 const translateStageLabel = (label) => STAGE_LABEL_MAP[label] ?? label
 
 const VIEWBOX_SIZE = 100
+const GRID_SIZE = 1000
+const GRID_SPACING = 60
+const GRID_CENTER = GRID_SIZE / 2
+const GRID_SCALE = VIEWBOX_SIZE / GRID_SIZE
+const GRID_SPACING_VIEW = GRID_SPACING * GRID_SCALE
+const VIEWBOX_CENTER = {
+  x: VIEWBOX_SIZE / 2,
+  y: VIEWBOX_SIZE / 2
+}
 
-// 視圖與碰撞輔助函式
+const BASE_SPREAD_MULTIPLIER = 5
+const SPREAD_DECAY = 0.85
+
+const NODE_OUTER_RADIUS = 2.2
+const NODE_INNER_RADIUS = 1.4
+const NODE_LABEL_OFFSET_TOP = 5
+const NODE_PROTOCOL_OFFSET = 6
+const CENTRAL_NODE_OUTER_RADIUS = NODE_OUTER_RADIUS * 1.7
+const CENTRAL_NODE_INNER_RADIUS = NODE_INNER_RADIUS * 1.6
+const CENTRAL_LABEL_OFFSET = NODE_LABEL_OFFSET_TOP + 4.2
+const GRID_BOUND_MARGIN = Math.max(GRID_SPACING * BASE_SPREAD_MULTIPLIER * 0.3, 80)
+const VIEWBOX_PADDING = NODE_OUTER_RADIUS * 3
+const MIN_NODE_DISTANCE = Math.max(
+  NODE_OUTER_RADIUS * 3,
+  GRID_SPACING_VIEW * BASE_SPREAD_MULTIPLIER * 0.75
+)
+
+// ���ϻP�I�����U�禡
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+
+const gridToView = (value) => value * GRID_SCALE
+
+const computeGridOffsets = (point) => ({
+  x: Math.round((point.x - GRID_CENTER) / GRID_SPACING),
+  y: Math.round((point.y - GRID_CENTER) / GRID_SPACING)
+})
+
+const applyGridSpread = (point) => {
+  const offsets = computeGridOffsets(point)
+  const layer = Math.max(Math.abs(offsets.x), Math.abs(offsets.y))
+  if (!layer) {
+    return { x: GRID_CENTER, y: GRID_CENTER }
+  }
+  const spreadMultiplier = BASE_SPREAD_MULTIPLIER / Math.pow(layer, SPREAD_DECAY)
+  return {
+    x: GRID_CENTER + offsets.x * GRID_SPACING * spreadMultiplier,
+    y: GRID_CENTER + offsets.y * GRID_SPACING * spreadMultiplier
+  }
+}
+
+const isWithinSpreadBounds = (point) => {
+  const spread = applyGridSpread(point)
+  return (
+    spread.x >= GRID_BOUND_MARGIN &&
+    spread.x <= GRID_SIZE - GRID_BOUND_MARGIN &&
+    spread.y >= GRID_BOUND_MARGIN &&
+    spread.y <= GRID_SIZE - GRID_BOUND_MARGIN
+  )
+}
+
+const generateGridPositions = (count) => {
+  const slots = []
+  if (count <= 0) {
+    return slots
+  }
+
+  const seen = new Set()
+  const maxLayer = Math.floor((GRID_CENTER - GRID_SPACING) / GRID_SPACING)
+
+  const addSlot = (x, y) => {
+    if (slots.length >= count) {
+      return
+    }
+    const slot = { x, y }
+    if (!isWithinSpreadBounds(slot)) {
+      return
+    }
+    const key = `${x},${y}`
+    if (seen.has(key)) {
+      return
+    }
+    seen.add(key)
+    slots.push({ ...slot, spread: applyGridSpread(slot) })
+  }
+
+  let layer = 1
+  while (slots.length < count && layer <= maxLayer) {
+    const offset = layer * GRID_SPACING
+
+    for (let dx = -layer; dx <= layer; dx++) {
+      addSlot(GRID_CENTER + dx * GRID_SPACING, GRID_CENTER - offset)
+      if (slots.length >= count) return slots
+    }
+
+    for (let dy = -layer + 1; dy <= layer; dy++) {
+      addSlot(GRID_CENTER + offset, GRID_CENTER + dy * GRID_SPACING)
+      if (slots.length >= count) return slots
+    }
+
+    for (let dx = layer - 1; dx >= -layer; dx--) {
+      addSlot(GRID_CENTER + dx * GRID_SPACING, GRID_CENTER + offset)
+      if (slots.length >= count) return slots
+    }
+
+    for (let dy = layer - 1; dy >= -layer + 1; dy--) {
+      addSlot(GRID_CENTER - offset, GRID_CENTER + dy * GRID_SPACING)
+      if (slots.length >= count) return slots
+    }
+
+    layer += 1
+  }
+
+  while (slots.length < count) {
+    const angle = (2 * Math.PI * slots.length) / Math.max(count, 1)
+    const radius = Math.min(
+      GRID_CENTER - GRID_SPACING,
+      GRID_SPACING * (Math.floor(slots.length / 8) + 1)
+    )
+    const x = GRID_CENTER + Math.cos(angle) * radius
+    const y = GRID_CENTER + Math.sin(angle) * radius
+    addSlot(
+      clamp(Math.round(x / GRID_SPACING) * GRID_SPACING, GRID_SPACING, GRID_SIZE - GRID_SPACING),
+      clamp(Math.round(y / GRID_SPACING) * GRID_SPACING, GRID_SPACING, GRID_SIZE - GRID_SPACING)
+    )
+    if (slots.length >= count) {
+      break
+    }
+  }
+
+  return slots
+}
+
+const lerpPoint = (a, b, t) => ({
+  x: a.x + (b.x - a.x) * t,
+  y: a.y + (b.y - a.y) * t
+})
+
+const distanceBetween = (a, b) => Math.hypot(b.x - a.x, b.y - a.y)
+
+const pointOnPolyline = (points, t) => {
+  if (!points.length) {
+    return { x: 0, y: 0 }
+  }
+  if (points.length === 1) {
+    return points[0]
+  }
+
+  const segmentLengths = []
+  let totalLength = 0
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const length = distanceBetween(points[i], points[i + 1])
+    segmentLengths.push(length)
+    totalLength += length
+  }
+
+  if (totalLength === 0) {
+    return points[points.length - 1]
+  }
+
+  let remaining = clamp(t, 0, 1) * totalLength
+
+  for (let i = 0; i < segmentLengths.length; i++) {
+    const segmentLength = segmentLengths[i]
+    if (remaining <= segmentLength) {
+      const segmentT = segmentLength === 0 ? 0 : remaining / segmentLength
+      return lerpPoint(points[i], points[i + 1], segmentT)
+    }
+    remaining -= segmentLength
+  }
+
+  return points[points.length - 1]
+}
+
 
 const parseTimelineId = (timeline) => {
   if (!timeline?.id) {
@@ -86,6 +257,9 @@ const buildNodeLayout = (timelines) => {
     }
 
     const addEndpoint = ({ ip, port }, protocol) => {
+      if (!ip) {
+        return
+      }
       const existing = endpoints.get(ip) || {
         id: ip,
         ip,
@@ -105,23 +279,33 @@ const buildNodeLayout = (timelines) => {
     addEndpoint(parsed.dst, timeline.protocol)
   })
 
-  const nodes = Array.from(endpoints.values())
-  const radius = nodes.length > 1 ? Math.min(45, 28 + nodes.length * 1.2) : 0
+  const nodes = Array.from(endpoints.values()).sort((a, b) =>
+    a.ip.localeCompare(b.ip, undefined, { numeric: true, sensitivity: 'base' })
+  )
+
+  const slots = generateGridPositions(nodes.length)
 
   return nodes.map((node, index) => {
-    const angle = (2 * Math.PI * index) / nodes.length
-    const x = 50 + radius * Math.cos(angle)
-    const y = 50 + radius * Math.sin(angle)
+    const baseSlot = slots[index] || { x: GRID_CENTER, y: GRID_CENTER }
+    const spreadPoint = baseSlot.spread || applyGridSpread(baseSlot)
+    const clampedSpread = {
+      x: clamp(spreadPoint.x, GRID_BOUND_MARGIN, GRID_SIZE - GRID_BOUND_MARGIN),
+      y: clamp(spreadPoint.y, GRID_BOUND_MARGIN, GRID_SIZE - GRID_BOUND_MARGIN)
+    }
+    const x = gridToView(clampedSpread.x)
+    const y = gridToView(clampedSpread.y)
     return {
       id: node.id,
       label: node.ip,
       ports: Array.from(node.ports),
       protocols: Array.from(node.protocols),
       x,
-      y
+      y,
+      gridPosition: baseSlot
     }
   })
 }
+
 
 const buildConnections = (timelines) => {
   return timelines
@@ -216,8 +400,8 @@ export default function MindMap() {
       setNodePositions(prev => ({
         ...prev,
         [draggingNodeId]: {
-          x: clamp(world.x, 4, VIEWBOX_SIZE - 4),
-          y: clamp(world.y, 4, VIEWBOX_SIZE - 4)
+          x: clamp(world.x, VIEWBOX_PADDING, VIEWBOX_SIZE - VIEWBOX_PADDING),
+          y: clamp(world.y, VIEWBOX_PADDING, VIEWBOX_SIZE - VIEWBOX_PADDING)
         }
       }))
       return
@@ -240,7 +424,7 @@ export default function MindMap() {
 
   const resolveCollisions = useCallback((positions) => {
     const ids = Object.keys(positions)
-    const minDist = 8
+    const minDist = MIN_NODE_DISTANCE
     const iterations = 4
     for (let it = 0; it < iterations; it++) {
       for (let i = 0; i < ids.length; i++) {
@@ -254,10 +438,10 @@ export default function MindMap() {
             const push = (minDist - dist) / 2
             const nx = dx / dist
             const ny = dy / dist
-            a.x = clamp(a.x - nx * push, 4, VIEWBOX_SIZE - 4)
-            a.y = clamp(a.y - ny * push, 4, VIEWBOX_SIZE - 4)
-            b.x = clamp(b.x + nx * push, 4, VIEWBOX_SIZE - 4)
-            b.y = clamp(b.y + ny * push, 4, VIEWBOX_SIZE - 4)
+            a.x = clamp(a.x - nx * push, VIEWBOX_PADDING, VIEWBOX_SIZE - VIEWBOX_PADDING)
+            a.y = clamp(a.y - ny * push, VIEWBOX_PADDING, VIEWBOX_SIZE - VIEWBOX_PADDING)
+            b.x = clamp(b.x + nx * push, VIEWBOX_PADDING, VIEWBOX_SIZE - VIEWBOX_PADDING)
+            b.y = clamp(b.y + ny * push, VIEWBOX_PADDING, VIEWBOX_SIZE - VIEWBOX_PADDING)
           }
         }
       }
@@ -427,7 +611,7 @@ export default function MindMap() {
 
   const connections = useMemo(() => buildConnections(timelines), [timelines])
 
-  const centralNode = nodesComputed.length === 1 ? nodesComputed[0] : null
+  const centralNode = VIEWBOX_CENTER
 
   return (
     <div className="bg-slate-950 text-slate-100">
@@ -573,27 +757,34 @@ export default function MindMap() {
                     const color = renderState?.protocolColor || protocolColor(connection.protocol, protocolType)
                     const visualEffects = renderState?.visualEffects || {}
 
-                    // 計算動畫圓點位置
+                    // ���吻動畫圓路徑
                     const dotProgress = renderState?.dotPosition ?? renderState?.stageProgress ?? 0
-                    const dotX = fromNode.x + (toNode.x - fromNode.x) * dotProgress
-                    const dotY = fromNode.y + (toNode.y - fromNode.y) * dotProgress
                     const stageLabel = translateStageLabel(renderState?.currentStage?.label) || '??'
+                    const fromPoint = { x: fromNode.x, y: fromNode.y }
+                    const toPoint = { x: toNode.x, y: toNode.y }
+                    const centerPoint = VIEWBOX_CENTER
+                    const polylinePoints = [fromPoint, centerPoint, toPoint]
+                    const dotPoint = pointOnPolyline(polylinePoints, dotProgress)
+                    const labelPoint = pointOnPolyline(polylinePoints, clamp(dotProgress + 0.1, 0, 1))
+                    const midpoint = pointOnPolyline(polylinePoints, 0.45)
+                    const completionPoint = pointOnPolyline(polylinePoints, 0.6)
+                    const pathD = `M ${fromPoint.x} ${fromPoint.y} L ${centerPoint.x} ${centerPoint.y} L ${toPoint.x} ${toPoint.y}`
 
-                    // 視覺效果樣式
                     const connectionStyle = renderState?.connectionStyle || 'solid'
-                    const strokeDasharray = connectionStyle === 'dashed' ? '2,2' :
-                                          connectionStyle === 'dotted' ? '1,1' : 'none'
+                    const strokeDasharray = connectionStyle === 'dashed'
+                      ? '2 2'
+                      : connectionStyle === 'dotted'
+                        ? '1 1'
+                        : null
                     const opacity = visualEffects.opacity ?? 1.0
                     const isBlinking = visualEffects.blinking
                     const isPulsing = visualEffects.pulsing
                     const isCompleted = renderState?.isCompleted
 
-                    // 漸進式資訊揭露: 判斷是否要顯示標籤
                     const isHovered = hoveredConnectionId === connection.id
                     const isSelected = selectedConnectionId === connection.id
                     const shouldShowLabel = isHovered || isSelected
 
-                    // 當有其他連線被 hover 時，降低此連線的透明度（焦點模式下不需要變暗）
                     const isDimmed = !isFocusMode && hoveredConnectionId && !isHovered && !isSelected
                     const finalOpacity = isDimmed ? opacity * 0.15 : opacity
 
@@ -613,22 +804,21 @@ export default function MindMap() {
                         )}
                         style={{ cursor: 'pointer' }}
                       >
-                        <line
-                          x1={fromNode.x}
-                          y1={fromNode.y}
-                          x2={toNode.x}
-                          y2={toNode.y}
+                        <path
+                          d={pathD}
                           stroke={color}
                           strokeWidth={isSelected ? 2.4 : isHovered ? 2.0 : isCompleted ? 1.8 : 1.2}
                           strokeLinecap="round"
+                          strokeLinejoin="round"
                           strokeOpacity={finalOpacity * 0.35}
-                          strokeDasharray={strokeDasharray}
+                          strokeDasharray={strokeDasharray || undefined}
+                          fill="none"
                         />
 
                         {/* 動畫圓點 */}
                         <circle
-                          cx={dotX}
-                          cy={dotY}
+                          cx={dotPoint.x}
+                          cy={dotPoint.y}
                           r={isSelected ? 2.8 : isPulsing ? 2.2 : 1.6}
                           fill={color}
                           filter="url(#nodeGlow)"
@@ -652,36 +842,36 @@ export default function MindMap() {
                           )}
                         </circle>
 
-                        {/* 跟隨小球移動的文字標籤 - 總是顯示 */}
+                        {/* 跟隨小球移動的文字標籤 */}
                         <text
-                          x={dotX}
-                          y={dotY - 3.5}
+                          x={labelPoint.x}
+                          y={labelPoint.y - 3.5}
                           textAnchor="middle"
-                          className="text-[2.2px] fill-slate-100 font-semibold"
+                          className="text-[1.8px] fill-slate-100 font-semibold"
                           style={{ pointerEvents: 'none' }}
                           opacity={finalOpacity}
                         >
                           {(protocolType || connection.protocol).toUpperCase()}
                         </text>
                         <text
-                          x={dotX}
-                          y={dotY - 1.8}
+                          x={labelPoint.x}
+                          y={labelPoint.y - 1.8}
                           textAnchor="middle"
-                          className="text-[1.8px] fill-cyan-300"
+                          className="text-[1.4px] fill-cyan-300"
                           style={{ pointerEvents: 'none' }}
                           opacity={finalOpacity * 0.9}
                         >
                           {stageLabel}
                         </text>
 
-                        {/* 協議和階段標籤 - 僅在 hover 或選中時顯示 */}
+                        {/* 協議和階段標籤 */}
                         {shouldShowLabel && (
                           <>
                             <text
-                              x={(fromNode.x + toNode.x) / 2}
-                              y={(fromNode.y + toNode.y) / 2 - 2}
+                              x={midpoint.x}
+                              y={midpoint.y - 2}
                               textAnchor="middle"
-                              className="text-[2.8px] fill-slate-200 font-semibold"
+                              className="text-[1.9px] fill-slate-200 font-semibold"
                               style={{ pointerEvents: 'none' }}
                             >
                               {(protocolType || connection.protocol).toUpperCase()} · {stageLabel}
@@ -689,10 +879,10 @@ export default function MindMap() {
 
                             {/* 完成百分比 */}
                             <text
-                              x={(fromNode.x + toNode.x) / 2}
-                              y={(fromNode.y + toNode.y) / 2 + 2}
+                              x={completionPoint.x}
+                              y={completionPoint.y + 2}
                               textAnchor="middle"
-                              className={`text-[2.2px] ${isCompleted ? 'fill-green-400' : 'fill-slate-500'}`}
+                              className={`text-[1.6px] ${isCompleted ? 'fill-green-400' : 'fill-slate-500'}`}
                               style={{ pointerEvents: 'none' }}
                             >
                               {Math.round((renderState?.timelineProgress || 0) * 100)}% {isCompleted ? '✓' : '完成'}
@@ -705,30 +895,42 @@ export default function MindMap() {
 
                   {nodesComputed.map((node) => (
                     <g key={node.id} onMouseDown={(e) => { e.stopPropagation(); setDraggingNodeId(node.id) }} style={{ cursor: 'grab' }}>
-                      <circle cx={node.x} cy={node.y} r={3.5} fill="#0f172a" stroke="#1f2937" strokeWidth={0.6} />
-                      <circle cx={node.x} cy={node.y} r={2.6} fill="#1f2937" stroke="#38bdf8" strokeWidth={0.5} filter="url(#nodeGlow)" />
+                      <circle cx={node.x} cy={node.y} r={NODE_OUTER_RADIUS} fill="#0f172a" stroke="#1f2937" strokeWidth={0.45} />
+                      <circle cx={node.x} cy={node.y} r={NODE_INNER_RADIUS} fill="#1f2937" stroke="#38bdf8" strokeWidth={0.45} filter="url(#nodeGlow)" />
                       <text
                         x={node.x}
-                        y={node.y - 5}
+                        y={node.y - NODE_LABEL_OFFSET_TOP}
                         textAnchor="middle"
-                        className="text-[2.5px] font-semibold fill-slate-100"
+                        className="text-[1.9px] font-semibold fill-slate-100"
                       >
                         {node.label}
                       </text>
-                      <text
-                        x={node.x}
-                        y={node.y + 6}
-                        textAnchor="middle"
-                        className="text-[2px] fill-cyan-300 uppercase tracking-wider"
-                      >
-                        {node.protocols.join(' · ')}
-                      </text>
+                      {node.protocols.length > 0 && (
+                        <text
+                          x={node.x}
+                          y={node.y + NODE_PROTOCOL_OFFSET}
+                          textAnchor="middle"
+                          className="text-[1.5px] fill-cyan-300 uppercase tracking-wide"
+                        >
+                          {node.protocols.join(' · ')}
+                        </text>
+                      )}
                     </g>
                   ))}
 
                   {centralNode && (
                     <g>
-                      <circle cx={centralNode.x} cy={centralNode.y} r={10} fill="#0f172a" stroke="#1f2937" strokeWidth={0.4} />
+                      <circle cx={centralNode.x} cy={centralNode.y} r={CENTRAL_NODE_OUTER_RADIUS} fill="#020617" stroke="#1f2937" strokeWidth={0.55} />
+                      <circle cx={centralNode.x} cy={centralNode.y} r={CENTRAL_NODE_INNER_RADIUS} fill="#1f2937" stroke="#38bdf8" strokeWidth={0.55} filter="url(#nodeGlow)" />
+                      <text
+                        x={centralNode.x}
+                        y={centralNode.y + CENTRAL_LABEL_OFFSET}
+                        textAnchor="middle"
+                        className="text-[2px] font-semibold fill-cyan-200"
+                        style={{ pointerEvents: 'none' }}
+                      >
+                        網路中心
+                      </text>
                     </g>
                   )}
 

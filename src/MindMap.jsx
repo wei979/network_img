@@ -762,6 +762,7 @@ const buildConnections = (timelines) => {
       id: `${timeline.id}-${index}`, // 添加索引確保唯一性
       originalId: timeline.id, // 保留原始 ID 供其他用途
       protocol: timeline.protocol,
+      protocolType: timeline.protocolType, // 保留協議類型供動畫使用
       stages: timeline.stages,
       metrics: timeline.metrics,
       src: parsed.src.ip,
@@ -809,9 +810,9 @@ export default function MindMap() {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
   const controllersRef = useRef(new Map())
+  const [renderStates, setRenderStates] = useState({})
   const rafRef = useRef(null)
   const lastTickRef = useRef(performance.now())
-  const [renderStates, setRenderStates] = useState({})
   const fileInputRef = useRef(null)
 
   // 視圖與節點拖曳狀態
@@ -852,6 +853,15 @@ export default function MindMap() {
   const [particleSpeed, setParticleSpeed] = useState(1.0)
   const [isParticleAnimationPlaying, setIsParticleAnimationPlaying] = useState(true)
   const [particleTimeInfo, setParticleTimeInfo] = useState({ current: '0.00', total: '0.00', progress: 0 })
+
+  // 全局時間軸狀態（統一控制所有動畫）
+  const globalTimeRef = useRef(0) // 當前全局時間（毫秒）- 使用 ref 避免觸發重新渲染
+  const [globalDuration, setGlobalDuration] = useState(0) // 全局總時長（毫秒）
+  const globalStartTimestamp = useRef(0) // 最早的封包時間戳（秒）
+  const globalEndTimestamp = useRef(0) // 最晚的封包時間戳（秒）
+  const [isGlobalPlaying, setIsGlobalPlaying] = useState(true) // 全局播放狀態
+  const [globalSpeed, setGlobalSpeed] = useState(1.0) // 全局播放速度
+  const [globalTimeDisplay, setGlobalTimeDisplay] = useState(0) // 用於 UI 顯示的全局時間（降低更新頻率）
 
   // 動畫控制狀態
   const [isPaused, setIsPaused] = useState(false)
@@ -1272,10 +1282,56 @@ export default function MindMap() {
     loadTimelines()
   }, [loadTimelines])
 
+  // 計算全局時間範圍（從所有 timelines 中提取最早和最晚的時間戳）
   useEffect(() => {
     if (!timelines.length) {
-      controllersRef.current.clear()
-      setRenderStates({})
+      globalStartTimestamp.current = 0
+      globalEndTimestamp.current = 0
+      setGlobalDuration(0)
+      return
+    }
+
+    let minTime = Infinity
+    let maxTime = -Infinity
+
+    timelines.forEach(timeline => {
+      if (timeline.stages && Array.isArray(timeline.stages)) {
+        timeline.stages.forEach(stage => {
+          if (stage.startTime !== undefined) {
+            minTime = Math.min(minTime, stage.startTime)
+          }
+          if (stage.endTime !== undefined) {
+            maxTime = Math.max(maxTime, stage.endTime)
+          }
+        })
+      }
+    })
+
+    // 如果沒有有效的時間範圍，設置默認值
+    if (minTime === Infinity || maxTime === -Infinity) {
+      globalStartTimestamp.current = 0
+      globalEndTimestamp.current = 10
+      setGlobalDuration(10000) // 10 秒默認
+    } else {
+      globalStartTimestamp.current = minTime
+      globalEndTimestamp.current = maxTime
+      const duration = (maxTime - minTime) * 1000 // 轉換為毫秒
+      setGlobalDuration(duration > 0 ? duration : 1000)
+    }
+
+    // 重置全局時間到起點
+    globalTimeRef.current = 0
+    setGlobalTimeDisplay(0)
+
+    console.log('[MindMap] Global timeline range:', {
+      startTime: globalStartTimestamp.current,
+      endTime: globalEndTimestamp.current,
+      duration: (globalEndTimestamp.current - globalStartTimestamp.current) + 's'
+    })
+  }, [timelines])
+
+  useEffect(() => {
+    if (!timelines.length) {
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current)
         rafRef.current = null
@@ -1283,53 +1339,96 @@ export default function MindMap() {
       return
     }
 
-    const controllers = new Map()
-    timelines.forEach((timeline, index) => {
-      const controller = new ProtocolAnimationController(timeline)
-      controller.reset()
-      // 使用與 buildConnections 相同的唯一 ID 格式
-      controllers.set(`${timeline.id}-${index}`, controller)
-    })
-
-    controllersRef.current = controllers
     lastTickRef.current = performance.now()
 
     const tick = (timestamp) => {
       const delta = timestamp - lastTickRef.current
       lastTickRef.current = timestamp
 
-      const nextStates = {}
-      controllersRef.current.forEach((controller, id) => {
-        // 只有在未暫停時才推進動畫
-        if (!isPaused) {
-          controller.advance(delta)
+      // 更新全局時間（統一時間軸）- 使用 ref 避免觸發重新渲染
+      if (isGlobalPlaying && !isPaused && globalDuration > 0) {
+        globalTimeRef.current += delta * globalSpeed
+        // 循環播放
+        while (globalTimeRef.current >= globalDuration) {
+          globalTimeRef.current -= globalDuration
         }
-        nextStates[id] = controller.getRenderableState()
-      })
-      setRenderStates(nextStates)
+        while (globalTimeRef.current < 0) {
+          globalTimeRef.current += globalDuration
+        }
 
-      // 更新粒子系統（使用 ref 來訪問最新的 selectedConnectionId）
-      if (particleSystemRef.current && selectedConnectionIdRef.current) {
-        particleSystemRef.current.update(delta)
-        // 更新時間資訊以觸發 UI 重新渲染
+        // 每 10 幀更新一次 UI 顯示（降低更新頻率）
+        if (Math.random() < 0.1) {
+          setGlobalTimeDisplay(globalTimeRef.current)
+        }
+      }
+
+      // 更新粒子系統（使用全局時間同步）
+      if (particleSystemRef.current && selectedConnectionIdRef.current && globalDuration > 0) {
+        // 使用全局時間來更新粒子系統（同步模式）
+        // 傳遞全局時間和全局時長，讓粒子系統根據進度計算本地時間
+        particleSystemRef.current.setGlobalTime(
+          globalTimeRef.current,
+          globalDuration
+        )
+
+        // 更新時間資訊以觸發 UI 重新渲染（降低頻率）
         const timeInfo = particleSystemRef.current.getTimeInfo()
+        const globalProgress = globalDuration > 0 ? globalTimeRef.current / globalDuration : 0
 
-        // 每 60 幀打印一次調試信息（約每秒一次）
-        if (Math.random() < 0.016) {
-          console.log('[MindMap] Particle animation:', {
-            delta,
-            currentTime: timeInfo.current,
-            isPlaying: timeInfo.isPlaying,
-            progress: (timeInfo.progress * 100).toFixed(1) + '%',
-            selectedConnectionId: selectedConnectionIdRef.current
+        // 降低 UI 更新頻率
+        if (Math.random() < 0.1) {
+          setParticleTimeInfo({
+            current: (globalTimeRef.current / 1000).toFixed(2),
+            total: (globalDuration / 1000).toFixed(2),
+            progress: globalProgress
+          })
+        }
+      }
+
+      // 更新遠景動畫 controllers（循環播放）
+      if (!isPaused && timelines.length > 0) {
+        // 診斷日誌
+        if (Math.random() < 0.01) {
+          console.log('[MindMap Animation] Loop running:', {
+            isPaused,
+            timelinesCount: timelines.length,
+            controllersCount: controllersRef.current.size
           })
         }
 
-        setParticleTimeInfo({
-          current: timeInfo.current,
-          total: timeInfo.total,
-          progress: timeInfo.progress
+        // 確保所有連線都有 controller
+        timelines.forEach(timeline => {
+          if (!controllersRef.current.has(timeline.id)) {
+            console.log('[MindMap Animation] Creating controller for:', timeline.id, timeline)
+            const controller = new ProtocolAnimationController(timeline)
+            controller.reset()
+            controllersRef.current.set(timeline.id, controller)
+          }
         })
+
+        // 更新所有 controllers（循環模式）
+        const newRenderStates = {}
+        controllersRef.current.forEach((controller, id) => {
+          // 推進動畫
+          controller.advance(delta)
+
+          // 檢查是否完成，如果完成則重置（循環播放）
+          if (controller.isCompleted) {
+            controller.reset()
+          }
+
+          // 獲取渲染狀態
+          newRenderStates[id] = controller.getRenderableState()
+        })
+
+        // 診斷：檢查渲染狀態
+        if (Math.random() < 0.01 && Object.keys(newRenderStates).length > 0) {
+          const firstKey = Object.keys(newRenderStates)[0]
+          console.log('[MindMap Animation] Sample renderState:', firstKey, newRenderStates[firstKey])
+        }
+
+        // 暫時改為每幀都更新，以便調試（之後可改回 0.2）
+        setRenderStates(newRenderStates)
       }
 
       rafRef.current = requestAnimationFrame(tick)
@@ -1346,7 +1445,7 @@ export default function MindMap() {
         rafRef.current = null
       }
     }
-  }, [timelines, isPaused])
+  }, [timelines, isPaused, isGlobalPlaying, globalSpeed, globalDuration])
 
   const handleFileUpload = async (event) => {
     const file = event.target.files?.[0]
@@ -1448,11 +1547,22 @@ export default function MindMap() {
         {
           loop: true,
           speed: particleSpeed,
-          showLabels: true
+          showLabels: true,
+          connectionId: connectionPackets?.connection_id || selectedConnectionId
         }
       )
 
       console.log('[MindMap] Particle system created, duration:', particleSystemRef.current.duration)
+
+      // 更新全局時間範圍以包含這個連線的封包
+      const particleDuration = particleSystemRef.current.duration // 毫秒
+      if (particleDuration > globalDuration) {
+        console.log('[MindMap] Expanding global duration from', globalDuration, 'to', particleDuration)
+        setGlobalDuration(particleDuration)
+        // 同時更新全局時間戳範圍（使用封包的時間範圍）
+        globalStartTimestamp.current = particleSystemRef.current.startTimestamp
+        globalEndTimestamp.current = particleSystemRef.current.endTimestamp
+      }
 
       // 設置播放狀態
       if (isParticleAnimationPlaying) {
@@ -1476,37 +1586,39 @@ export default function MindMap() {
   }, [connectionPackets, particleSpeed, isParticleAnimationPlaying])
 
   // 時間軸控制函數
+  // 全局時間軸控制（統一控制所有動畫）
   const handlePlayPause = useCallback(() => {
-    if (particleSystemRef.current) {
-      particleSystemRef.current.togglePlayPause()
-      setIsParticleAnimationPlaying(particleSystemRef.current.isPlaying)
-    }
+    setIsGlobalPlaying(prev => !prev)
   }, [])
 
   const handleSpeedChange = useCallback((newSpeed) => {
-    setParticleSpeed(newSpeed)
-    if (particleSystemRef.current) {
-      particleSystemRef.current.setSpeed(newSpeed)
-    }
+    setGlobalSpeed(newSpeed)
   }, [])
 
   const handleSeek = useCallback((progress) => {
-    if (particleSystemRef.current) {
-      particleSystemRef.current.seekToProgress(progress)
+    if (globalDuration > 0) {
+      globalTimeRef.current = progress * globalDuration
+      setGlobalTimeDisplay(globalTimeRef.current)
     }
-  }, [])
+  }, [globalDuration])
 
   const handleStepForward = useCallback(() => {
-    if (particleSystemRef.current) {
-      particleSystemRef.current.stepForward()
+    // 跳到下一個封包或階段（暫時簡化為跳轉 1 秒）
+    if (globalDuration > 0) {
+      const newTime = globalTimeRef.current + 1000 // 前進 1 秒
+      globalTimeRef.current = newTime >= globalDuration ? 0 : newTime
+      setGlobalTimeDisplay(globalTimeRef.current)
     }
-  }, [])
+  }, [globalDuration])
 
   const handleStepBackward = useCallback(() => {
-    if (particleSystemRef.current) {
-      particleSystemRef.current.stepBackward()
+    // 跳到上一個封包或階段（暫時簡化為後退 1 秒）
+    if (globalDuration > 0) {
+      const newTime = globalTimeRef.current - 1000 // 後退 1 秒
+      globalTimeRef.current = newTime < 0 ? globalDuration - 1000 : newTime
+      setGlobalTimeDisplay(globalTimeRef.current)
     }
-  }, [])
+  }, [globalDuration])
 
   // 計算動態畫布尺寸
   useEffect(() => {
@@ -1899,12 +2011,13 @@ export default function MindMap() {
                       return null
                     }
 
-                    const renderState = renderStates[connection.id]
+                    // 從 controller 獲取豐富的動畫狀態
+                    const renderState = renderStates[connection.originalId] // 使用 originalId 匹配 timeline.id
                     const protocolType = renderState?.protocolType || connection.protocolType
                     const color = renderState?.protocolColor || protocolColor(connection.protocol, protocolType)
                     const visualEffects = renderState?.visualEffects || {}
 
-                    // ���吻動畫圓路徑
+                    // 圓點動畫沿路徑
                     const dotProgress = renderState?.dotPosition ?? renderState?.stageProgress ?? 0
                     const stageLabel = translateStageLabel(renderState?.currentStage?.label) || '??'
                     const fromPoint = { x: fromNode.x, y: fromNode.y }
@@ -2035,87 +2148,89 @@ export default function MindMap() {
                           fill="none"
                         />
 
-                        {/* 動畫圓點 */}
-                        <circle
-                          cx={dotPoint.x}
-                          cy={dotPoint.y}
-                          r={isSelected ? 2.8 : isPulsing ? 2.2 : 1.6}
-                          fill={color}
-                          filter="url(#nodeGlow)"
-                          opacity={isBlinking ? 0.5 : finalOpacity}
-                        >
-                          {isPulsing && (
-                            <animate
-                              attributeName="r"
-                              values="1.6;2.4;1.6"
-                              dur="1s"
-                              repeatCount="indefinite"
-                            />
-                          )}
-                          {isBlinking && (
-                            <animate
-                              attributeName="opacity"
-                              values="0.3;1;0.3"
-                              dur="0.8s"
-                              repeatCount="indefinite"
-                            />
-                          )}
-                        </circle>
-
-                        {/* 跟隨小球移動的文字標籤 */}
-                        <text
-                          x={labelPoint.x}
-                          y={labelPoint.y - 3.5}
-                          textAnchor="middle"
-                          className="text-[1.8px] fill-slate-100 font-semibold"
-                          style={{ pointerEvents: 'none' }}
-                          opacity={finalOpacity}
-                        >
-                          {(protocolType || connection.protocol).toUpperCase()}
-                        </text>
-                        <text
-                          x={labelPoint.x}
-                          y={labelPoint.y - 1.8}
-                          textAnchor="middle"
-                          className="text-[1.4px] fill-cyan-300"
-                          style={{ pointerEvents: 'none' }}
-                          opacity={finalOpacity * 0.9}
-                        >
-                          {stageLabel}
-                        </text>
-
-                        {/* 協議和階段標籤 */}
-                        {shouldShowLabel && (
+                        {/* 遠景動畫元素 - 只在沒有粒子系統時顯示 */}
+                        {!(isSelected && particleSystemRef.current) && (
                           <>
-                            <text
-                              x={midpoint.x}
-                              y={midpoint.y - 2}
-                              textAnchor="middle"
-                              className="text-[1.9px] fill-slate-200 font-semibold"
-                              style={{ pointerEvents: 'none' }}
+                            {/* 動畫圓點 */}
+                            <circle
+                              cx={dotPoint.x}
+                              cy={dotPoint.y}
+                              r={isSelected ? 2.8 : isPulsing ? 2.2 : 1.6}
+                              fill={color}
+                              filter="url(#nodeGlow)"
+                              opacity={isBlinking ? 0.5 : finalOpacity}
                             >
-                              {(protocolType || connection.protocol).toUpperCase()} · {stageLabel}
+                              {isPulsing && (
+                                <animate
+                                  attributeName="r"
+                                  values="1.6;2.4;1.6"
+                                  dur="1s"
+                                  repeatCount="indefinite"
+                                />
+                              )}
+                              {isBlinking && (
+                                <animate
+                                  attributeName="opacity"
+                                  values="0.3;1;0.3"
+                                  dur="0.8s"
+                                  repeatCount="indefinite"
+                                />
+                              )}
+                            </circle>
+
+                            {/* 跟隨小球移動的文字標籤 */}
+                            <text
+                              x={labelPoint.x}
+                              y={labelPoint.y - 3.5}
+                              textAnchor="middle"
+                              className="text-[1.8px] fill-slate-100 font-semibold"
+                              style={{ pointerEvents: 'none' }}
+                              opacity={finalOpacity}
+                            >
+                              {(protocolType || connection.protocol).toUpperCase()}
+                            </text>
+                            <text
+                              x={labelPoint.x}
+                              y={labelPoint.y - 1.8}
+                              textAnchor="middle"
+                              className="text-[1.4px] fill-cyan-300"
+                              style={{ pointerEvents: 'none' }}
+                              opacity={finalOpacity * 0.9}
+                            >
+                              {stageLabel}
                             </text>
 
-                            {/* 完成百分比 */}
-                            <text
-                              x={completionPoint.x}
-                              y={completionPoint.y + 2}
-                              textAnchor="middle"
-                              className={`text-[1.6px] ${isCompleted ? 'fill-green-400' : 'fill-slate-500'}`}
-                              style={{ pointerEvents: 'none' }}
-                            >
-                              {Math.round((renderState?.timelineProgress || 0) * 100)}% {isCompleted ? '✓' : '完成'}
-                            </text>
+                            {/* 協議和階段標籤 */}
+                            {shouldShowLabel && (
+                              <>
+                                <text
+                                  x={midpoint.x}
+                                  y={midpoint.y - 2}
+                                  textAnchor="middle"
+                                  className="text-[1.9px] fill-slate-200 font-semibold"
+                                  style={{ pointerEvents: 'none' }}
+                                >
+                                  {(protocolType || connection.protocol).toUpperCase()} · {stageLabel}
+                                </text>
+
+                                {/* 完成百分比 */}
+                                <text
+                                  x={completionPoint.x}
+                                  y={completionPoint.y + 2}
+                                  textAnchor="middle"
+                                  className={`text-[1.6px] ${isCompleted ? 'fill-green-400' : 'fill-slate-500'}`}
+                                  style={{ pointerEvents: 'none' }}
+                                >
+                                  {Math.round((renderState?.timelineProgress || 0) * 100)}% {isCompleted ? '✓' : '完成'}
+                                </text>
+                              </>
+                            )}
                           </>
                         )}
 
                         {/* 封包粒子動畫 */}
                         {isSelected && particleSystemRef.current && (() => {
                           const particles = particleSystemRef.current.getActiveParticles()
-                          if (particles.length > 0) {
-                            console.log('[MindMap] Rendering', particles.length, 'particles for connection', connection.id)
-                          }
                           return particles.map(particle => {
                             // 計算粒子在連線上的位置
                             const particleX = adjustedFromPoint.x + (adjustedToPoint.x - adjustedFromPoint.x) * particle.position
@@ -2264,7 +2379,7 @@ export default function MindMap() {
                 {hoveredConnectionId && !selectedConnectionId && (() => {
                   const hoveredConn = connections.find(c => c.id === hoveredConnectionId)
                   if (!hoveredConn) return null
-                  const renderState = renderStates[hoveredConnectionId]
+                  const renderState = renderStates[hoveredConn.originalId] // 使用 originalId 匹配 timeline.id
                   const protocolType = renderState?.protocolType || hoveredConn.protocolType
                   const stageLabel = translateStageLabel(renderState?.currentStage?.label) || '??'
                   const progress = Math.round((renderState?.timelineProgress || 0) * 100)
@@ -2296,7 +2411,7 @@ export default function MindMap() {
 
             <div className="mt-4 space-y-3 max-h-[450px] overflow-y-auto pr-2">
               {connections.map((connection) => {
-                const renderState = renderStates[connection.id]
+                const renderState = renderStates[connection.originalId] // 使用 originalId 匹配 timeline.id
                 const protocolType = renderState?.protocolType || connection.protocolType
                 const stageLabel = translateStageLabel(renderState?.currentStage?.label) || '??'
                 const stageProgress = Math.round((renderState?.timelineProgress || 0) * 100)
@@ -2355,8 +2470,8 @@ export default function MindMap() {
                       <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
                         <div
                           className={`h-full transition-all duration-300 ${
-                            isCompleted 
-                              ? 'bg-gradient-to-r from-green-400 to-emerald-500' 
+                            isCompleted
+                              ? 'bg-gradient-to-r from-green-400 to-emerald-500'
                               : 'bg-gradient-to-r from-cyan-400 to-blue-500'
                           }`}
                           style={{ width: `${stageProgress}%` }}
@@ -2400,21 +2515,15 @@ export default function MindMap() {
       {/* 時間軸控制面板 */}
       {(() => {
         const shouldShowControls = selectedConnectionId && particleSystemRef.current && connectionPackets
-        console.log('[MindMap] TimelineControls check:', {
-          selectedConnectionId,
-          hasParticleSystem: !!particleSystemRef.current,
-          hasPackets: !!connectionPackets,
-          shouldShow: shouldShowControls
-        })
         return shouldShowControls
       })() && (
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-2xl px-4">
           <TimelineControls
-            isPlaying={isParticleAnimationPlaying}
-            speed={particleSpeed}
-            currentTime={particleTimeInfo.current}
-            totalTime={particleTimeInfo.total}
-            progress={particleTimeInfo.progress}
+            isPlaying={isGlobalPlaying}
+            speed={globalSpeed}
+            currentTime={(globalTimeDisplay / 1000).toFixed(2)}
+            totalTime={(globalDuration / 1000).toFixed(2)}
+            progress={globalDuration > 0 ? globalTimeDisplay / globalDuration : 0}
             packetCount={connectionPackets?.packets?.length || connectionPackets?.total_packets || 0}
             onPlayPause={handlePlayPause}
             onSpeedChange={handleSpeedChange}

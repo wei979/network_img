@@ -16,6 +16,7 @@ export class PacketParticleSystem {
       loop: true, // 循環播放
       speed: 1.0, // 播放速度倍率
       showLabels: true, // 顯示詳細標記
+      connectionId: null, // 連線 ID (用於判斷封包方向)
       ...options
     }
 
@@ -25,8 +26,45 @@ export class PacketParticleSystem {
     this.duration = 0 // 總時長
     this.lastUpdateTime = performance.now()
 
+    // 解析連線 ID 以取得連線的起點和終點
+    this._parseConnectionEndpoints()
+
     // 初始化時間軸
     this._initializeTimeline()
+  }
+
+  /**
+   * 解析連線 ID 來取得連線的起點和終點
+   * 連線 ID 格式：protocol-srcIp-srcPort-dstIp-dstPort
+   */
+  _parseConnectionEndpoints() {
+    if (!this.options.connectionId) {
+      this.connectionSource = null
+      this.connectionDest = null
+      return
+    }
+
+    const parts = this.options.connectionId.split('-')
+    if (parts.length >= 5) {
+      // 格式：protocol-srcIp-srcPort-dstIp-dstPort
+      const protocol = parts[0]
+      const srcIp = parts[1]
+      const srcPort = parts[2]
+      const dstIp = parts[3]
+      const dstPort = parts[4]
+
+      this.connectionSource = `${srcIp}:${srcPort}`
+      this.connectionDest = `${dstIp}:${dstPort}`
+
+      console.log('[PacketParticleSystem] Connection endpoints:', {
+        connectionId: this.options.connectionId,
+        source: this.connectionSource,
+        dest: this.connectionDest
+      })
+    } else {
+      this.connectionSource = null
+      this.connectionDest = null
+    }
   }
 
   /**
@@ -52,16 +90,38 @@ export class PacketParticleSystem {
       this.duration = 1000 // 1 秒
     }
 
-    // 為每個封包計算歸一化時間 (0-1)
-    this.packets.forEach(packet => {
+    // 為每個封包計算歸一化時間 (0-1) 和動態傳輸時間
+    this.packets.forEach((packet, index) => {
       packet._normalizedTime = this.duration > 0
         ? (packet.timestamp - this.startTimestamp) / (this.endTimestamp - this.startTimestamp)
         : 0
+
+      // 計算到下一個封包的時間間隔（秒）
+      const nextPacket = this.packets[index + 1]
+      const timeToNext = nextPacket
+        ? nextPacket.timestamp - packet.timestamp
+        : 0.5 // 最後一個封包使用預設值
+
+      // 使用間隔的 50% 作為傳輸時間，並限制在合理範圍內
+      // 最小 100ms，最大 1000ms
+      const travelTime = Math.max(0.1, Math.min(timeToNext * 0.5, 1.0))
+      packet._travelTime = travelTime // 儲存每個封包的傳輸時間（秒）
     })
+
+    // 調試日誌
+    if (this.packets.length > 0) {
+      const travelTimes = this.packets.map(p => (p._travelTime * 1000).toFixed(0))
+      console.log('[PacketParticleSystem] Dynamic travel times (ms):', {
+        min: Math.min(...travelTimes),
+        max: Math.max(...travelTimes),
+        avg: (travelTimes.reduce((a, b) => a + parseInt(b), 0) / travelTimes.length).toFixed(0),
+        samples: travelTimes.slice(0, 10) // 顯示前 10 個
+      })
+    }
   }
 
   /**
-   * 更新動畫幀
+   * 更新動畫幀（自主模式 - 內部時間管理）
    */
   update(deltaTime = null) {
     if (!this.isPlaying) {
@@ -91,6 +151,40 @@ export class PacketParticleSystem {
   }
 
   /**
+   * 設置外部全局時間（同步模式 - 外部時間管理）
+   * @param {number} globalTime - 當前全局時間（毫秒）
+   * @param {number} globalDuration - 全局總時長（毫秒）
+   */
+  setGlobalTime(globalTime, globalDuration) {
+    // 簡化版本：直接使用全局進度來計算本地時間
+    // 不再嘗試映射絕對時間戳，因為全局時間和封包時間可能不在同一時間範圍
+
+    const globalProgress = globalDuration > 0 ? globalTime / globalDuration : 0
+
+    // 直接將全局進度映射到本連線的時間
+    this.currentTime = globalProgress * this.duration
+
+    // 調試日誌
+    if (Math.random() < 0.05) {
+      console.log('[PacketParticleSystem] setGlobalTime:', {
+        globalTime: (globalTime / 1000).toFixed(2) + 's',
+        globalDuration: (globalDuration / 1000).toFixed(2) + 's',
+        globalProgress: (globalProgress * 100).toFixed(1) + '%',
+        currentTime: (this.currentTime / 1000).toFixed(2) + 's',
+        duration: (this.duration / 1000).toFixed(2) + 's',
+        localProgress: ((this.currentTime / this.duration) * 100).toFixed(1) + '%'
+      })
+    }
+  }
+
+  /**
+   * 獲取當前時間對應的絕對時間戳（秒）
+   */
+  getCurrentTimestamp() {
+    return this.startTimestamp + (this.currentTime / 1000)
+  }
+
+  /**
    * 獲取當前應顯示的粒子
    * 返回每個粒子的位置、大小、顏色等資訊
    */
@@ -102,25 +196,86 @@ export class PacketParticleSystem {
 
     const progress = this.currentTime / this.duration
     const particles = []
+    const totalDurationSeconds = this.duration / 1000
 
-    // 簡化版本：顯示所有封包，根據進度計算位置
+    // 調試日誌
+    if (Math.random() < 0.05) {
+      console.log('[PacketParticleSystem] getActiveParticles:', {
+        currentTime: (this.currentTime / 1000).toFixed(2) + 's',
+        duration: (this.duration / 1000).toFixed(2) + 's',
+        progress: (progress * 100).toFixed(1) + '%',
+        packetCount: this.packets.length
+      })
+    }
+
+    // 只顯示當前時間範圍內的封包
     this.packets.forEach((packet, index) => {
       const packetProgress = packet._normalizedTime
 
-      // 計算粒子位置（循環播放）
-      let particlePosition = packetProgress
+      // 使用封包的動態傳輸時間（基於到下一個封包的間隔）
+      const packetTravelTime = packet._travelTime || 0.5 // 秒
+      const displayDuration = totalDurationSeconds > 0
+        ? packetTravelTime / totalDurationSeconds
+        : 0.05
 
-      // 簡化邏輯：如果當前進度已過封包時間點，粒子向前移動一段距離
-      if (progress > packetProgress) {
-        const offset = (progress - packetProgress) * 0.2 // 粒子會稍微向前移動
-        particlePosition = packetProgress + offset
-        // 如果超過 1.0，循環回到起點
-        if (particlePosition > 1.0) {
-          particlePosition = particlePosition - 1.0
-        }
+      // 判斷封包方向
+      let isForward = true // 預設為前向
+      if (this.connectionSource && packet.fiveTuple) {
+        const packetSource = `${packet.fiveTuple.srcIp}:${packet.fiveTuple.srcPort}`
+        isForward = (packetSource === this.connectionSource)
       }
 
-      const shouldShow = true // 簡化版本：始終顯示所有粒子
+      // 計算粒子是否應該顯示
+      let shouldShow = false
+      let particlePosition = packetProgress
+
+      if (this.options.loop) {
+        // 循環模式：粒子在到達時間點後開始移動，移動一段距離後消失
+        if (progress >= packetProgress && progress < packetProgress + displayDuration) {
+          shouldShow = true
+          // 粒子從起點移動到終點（完整路徑）
+          const travelProgress = (progress - packetProgress) / displayDuration
+
+          if (isForward) {
+            // 前向：從 0 移動到 1
+            particlePosition = travelProgress
+          } else {
+            // 反向：從 1 移動到 0
+            particlePosition = 1.0 - travelProgress
+          }
+        } else if (progress < packetProgress && progress + 1.0 >= packetProgress + displayDuration) {
+          // 循環播放：如果當前進度在下一輪，且粒子應該顯示
+          shouldShow = true
+          const adjustedProgress = progress + 1.0
+          const travelProgress = (adjustedProgress - packetProgress) / displayDuration
+
+          if (isForward) {
+            particlePosition = travelProgress
+          } else {
+            particlePosition = 1.0 - travelProgress
+          }
+
+          // 處理循環邊界
+          if (particlePosition > 1.0) {
+            particlePosition = particlePosition - 1.0
+          }
+          if (particlePosition < 0) {
+            particlePosition = particlePosition + 1.0
+          }
+        }
+      } else {
+        // 非循環模式：只在封包時間點附近顯示
+        if (progress >= packetProgress && progress < packetProgress + displayDuration) {
+          shouldShow = true
+          const travelProgress = (progress - packetProgress) / displayDuration
+
+          if (isForward) {
+            particlePosition = travelProgress
+          } else {
+            particlePosition = 1.0 - travelProgress
+          }
+        }
+      }
 
       if (shouldShow) {
         // 計算粒子大小（基於封包長度）

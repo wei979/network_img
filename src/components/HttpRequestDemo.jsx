@@ -14,17 +14,18 @@ const HttpRequestDemo = () => {
   const lastTickRef = useRef(performance.now())
 
   useEffect(() => {
+    const hooks = { onComplete: () => setIsPlaying(false) };
     const controller = protocolType === 'https-request'
       ? ProtocolAnimationController.createHttpsRequest(
           `demo-${protocolType}-192.168.1.100-80-192.168.1.200-443`,
-          statusCode
+          statusCode,
+          hooks
         )
       : ProtocolAnimationController.createHttpRequest(
           `demo-${protocolType}-192.168.1.100-80-192.168.1.200-443`,
-          statusCode
+          statusCode,
+          hooks
         );
-    
-    controller.setOptions({ onComplete: () => setIsPlaying(false) });
 
     controllerRef.current = controller
     controller.reset()

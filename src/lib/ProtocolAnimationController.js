@@ -321,11 +321,12 @@ export class ProtocolAnimationController {
     return new ProtocolAnimationController(timeline, hooks)
   }
 
-  static createTimeout(connectionId, hooks = {}) {
+  static createTimeout(connectionId, options = {}, hooks = {}) {
     const timeline = {
       id: connectionId,
       protocolType: 'timeout',
-      protocol: 'tcp'
+      protocol: 'tcp',
+      options: options
     }
     return new ProtocolAnimationController(timeline, hooks)
   }

@@ -118,7 +118,7 @@ const TcpTeardownDemo = () => {
               <circle cx="85" cy="20" r="4" fill="#1e293b" stroke="#f43f5e" strokeWidth="0.7" />
               <text x="85" y="30" textAnchor="middle" className="text-[3px] fill-slate-200 font-semibold">伺服器</text>
             </g>
-            
+
             {/* Connection Line */}
             <path d="M 19 20 H 81" stroke={renderState?.protocolColor || '#f43f5e'} strokeWidth="0.5" strokeOpacity="0.6" strokeDasharray={renderState?.connectionStyle === 'dashed' ? '1,1' : 'none'} />
 
@@ -158,11 +158,11 @@ const TcpTeardownDemo = () => {
           onSpeedChange={setPlaybackSpeed}
           isCompleted={renderState?.isCompleted || false}
         />
-        
+
         {currentStage && (
           <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
             <h3 className="text-md font-semibold text-slate-200 mb-4 flex items-center gap-2">
-              <Info className="w-5 h-5 text-cyan-400" />
+              <Info className="w-6 h-6 text-cyan-400" />
               <span>當前階段資訊</span>
             </h3>
             <dl className="space-y-3 text-sm text-slate-400">
@@ -174,14 +174,14 @@ const TcpTeardownDemo = () => {
                 <dt>方向</dt>
                 <dd className="text-slate-200 font-medium flex items-center gap-2">
                   <span>{currentStage.direction.split('->')[0]}</span>
-                  <ChevronsRight className="w-4 h-4 text-slate-500" />
+                  <ChevronsRight className="w-5 h-5 text-slate-500" />
                   <span>{currentStage.direction.split('->')[1]}</span>
                 </dd>
               </div>
               <div className="flex justify-between">
                 <dt>持續時間</dt>
                 <dd className="text-slate-200 font-medium flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-slate-500" />
+                  <Clock className="w-5 h-5 text-slate-500" />
                   <span>{currentStage.duration}ms</span>
                 </dd>
               </div>

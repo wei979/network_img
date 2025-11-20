@@ -383,6 +383,15 @@ export function getProtocolState(protocolType, options = {}) {
     lastStage.label = `Pong! (${options.rttMs}ms)`
   }
 
+  // Timeout duration 自定義
+  if (protocolType === 'timeout' && options.timeout) {
+    const waitingStage = customizedState.stages.find(s => s.step === 'Waiting');
+    if (waitingStage) {
+      waitingStage.duration = options.timeout;
+      customizedState.totalDuration = customizedState.stages.reduce((sum, stage) => sum + stage.duration, 0);
+    }
+  }
+
   return customizedState
 }
 

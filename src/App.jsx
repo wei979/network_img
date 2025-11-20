@@ -40,113 +40,104 @@ export default function App() {
       <nav className="bg-slate-900 border-b border-slate-800 px-6 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <h1 className="text-xl font-semibold text-slate-100">網路協議視覺化工具</h1>
-          
-          <div className="flex items-center gap-2">
+
+          <div className="flex flex-wrap items-center gap-2 gap-y-2">
             <button
               onClick={() => setCurrentView('mindmap')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                currentView === 'mindmap'
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${currentView === 'mindmap'
                   ? 'bg-blue-600 text-white'
                   : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-              }`}
+                }`}
             >
-              <Network className="w-4 h-4" />
+              <Network className="w-6 h-6" />
               主應用
             </button>
-            
+
             <button
               onClick={() => setCurrentView('tcp-handshake')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                currentView === 'tcp-handshake'
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${currentView === 'tcp-handshake'
                   ? 'bg-green-600 text-white'
                   : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-              }`}
+                }`}
             >
-              <TestTube className="w-4 h-4" />
+              <TestTube className="w-6 h-6" />
               TCP 握手測試
             </button>
-            
+
             <button
               onClick={() => setCurrentView('tcp-teardown')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                currentView === 'tcp-teardown'
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${currentView === 'tcp-teardown'
                   ? 'bg-blue-600 text-white'
                   : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-              }`}
+                }`}
             >
-              <WifiOff className="w-4 h-4" />
+              <WifiOff className="w-6 h-6" />
               TCP 揮手測試
             </button>
-            
+
             <button
               onClick={() => setCurrentView('http-request')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                currentView === 'http-request'
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${currentView === 'http-request'
                   ? 'bg-purple-600 text-white'
                   : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-              }`}
+                }`}
             >
-              <Globe className="w-4 h-4" />
+              <Globe className="w-6 h-6" />
               HTTP 請求測試
             </button>
-            
+
             <button
               onClick={() => setCurrentView('timeout')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                currentView === 'timeout'
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${currentView === 'timeout'
                   ? 'bg-orange-600 text-white'
                   : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-              }`}
+                }`}
             >
-              <Clock className="w-4 h-4" />
+              <Clock className="w-6 h-6" />
               連線超時測試
             </button>
-            
+
             <button
               onClick={() => setCurrentView('dns-query')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                currentView === 'dns-query'
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${currentView === 'dns-query'
                   ? 'bg-cyan-600 text-white'
                   : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-              }`}
+                }`}
             >
-              <Search className="w-4 h-4" />
+              <Search className="w-6 h-6" />
               DNS 查詢測試
             </button>
-            
+
             <button
               onClick={() => setCurrentView('udp-transfer')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                currentView === 'udp-transfer'
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${currentView === 'udp-transfer'
                   ? 'bg-yellow-600 text-white'
                   : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-              }`}
+                }`}
             >
-              <Zap className="w-4 h-4" />
+              <Zap className="w-6 h-6" />
               UDP 傳輸測試
             </button>
-            
+
             <button
               onClick={() => setCurrentView('protocol-filter')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                currentView === 'protocol-filter'
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${currentView === 'protocol-filter'
                   ? 'bg-indigo-600 text-white'
                   : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-              }`}
+                }`}
             >
-              <Filter className="w-4 h-4" />
+              <Filter className="w-6 h-6" />
               協議過濾器測試
             </button>
-            
+
             <button
               onClick={() => setCurrentView('anomaly-detection')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                currentView === 'anomaly-detection'
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${currentView === 'anomaly-detection'
                   ? 'bg-red-600 text-white'
                   : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-              }`}
+                }`}
             >
-              <AlertTriangle className="w-4 h-4" />
+              <AlertTriangle className="w-6 h-6" />
               異常檢測測試
             </button>
             <button

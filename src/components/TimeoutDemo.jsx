@@ -16,7 +16,7 @@ const TimeoutDemo = () => {
   useEffect(() => {
     const controller = ProtocolAnimationController.createTimeout(
       `demo-timeout-${protocolType}-192.168.1.100-80-192.168.1.200-443`,
-      timeoutDuration,
+      { timeout: timeoutDuration },
       { onComplete: () => setIsPlaying(false) }
     )
 

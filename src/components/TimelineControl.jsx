@@ -130,14 +130,14 @@ const TimelineControl = ({
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-y-4">
         <div className="flex items-center gap-2">
           <button
             onClick={handleResetClick}
             className="flex items-center justify-center w-10 h-10 bg-slate-700 hover:bg-slate-600/80 text-slate-300 rounded-lg transition-colors"
             title="重設"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-6 h-6" />
           </button>
 
           <button
@@ -146,7 +146,7 @@ const TimelineControl = ({
             title="後退 10%"
             disabled={effectiveProgress <= 0}
           >
-            <SkipBack className="w-4 h-4" />
+            <SkipBack className="w-6 h-6" />
           </button>
 
           <button
@@ -162,11 +162,11 @@ const TimelineControl = ({
             title={isPlaying ? '暫停' : '播放'}
           >
             {isCompleted && progress >= 1 ? (
-              <RotateCcw className="w-5 h-5" onClick={handleResetClick}/>
+              <RotateCcw className="w-8 h-8" onClick={handleResetClick}/>
             ) : isPlaying ? (
-              <Pause className="w-5 h-5" />
+              <Pause className="w-8 h-8" />
             ) : (
-              <Play className="w-5 h-5" />
+              <Play className="w-8 h-8" />
             )}
           </button>
 
@@ -176,7 +176,7 @@ const TimelineControl = ({
             title="前進 10%"
             disabled={effectiveProgress >= 1}
           >
-            <SkipForward className="w-4 h-4" />
+            <SkipForward className="w-6 h-6" />
           </button>
         </div>
 

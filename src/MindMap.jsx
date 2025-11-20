@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Activity,
   AlertTriangle,
@@ -18,6 +18,9 @@ import {
 } from 'lucide-react'
 import { ProtocolAnimationController } from './lib/ProtocolAnimationController'
 import { getProtocolColor } from './lib/ProtocolStates'
+import PacketParticleSystem from './lib/PacketParticleSystem'
+import PacketViewer from './components/PacketViewer'
+import TimelineControls from './components/TimelineControls'
 
 const API_TIMELINES_URL = '/api/timelines'
 const STATIC_TIMELINES_URL = '/data/protocol_timeline_sample.json'
@@ -53,35 +56,114 @@ const STAGE_LABEL_MAP = {
 
 const translateStageLabel = (label) => STAGE_LABEL_MAP[label] ?? label
 
-const VIEWBOX_SIZE = 100
-const GRID_SIZE = 1000
-const GRID_SPACING = 60
-const GRID_CENTER = GRID_SIZE / 2
-const GRID_SCALE = VIEWBOX_SIZE / GRID_SIZE
-const GRID_SPACING_VIEW = GRID_SPACING * GRID_SCALE
-const VIEWBOX_CENTER = {
+// 動態畫布尺寸計算（依據節點數量與複雜度）
+const calculateCanvasSize = (nodeCount, connectionCount) => {
+  // 基礎尺寸：每個節點需要的最小空間
+  const baseNodeSpace = 150 // 每個節點佔據的基礎空間
+  const connectionFactor = Math.sqrt(connectionCount / Math.max(nodeCount, 1)) // 連線密度影響因子
+
+  // 計算最小所需面積
+  const minArea = nodeCount * baseNodeSpace * (1 + connectionFactor * 0.5)
+
+  // 轉換為正方形邊長（保持比例）
+  const minSize = Math.sqrt(minArea)
+
+  // 設定最小值與最大值（避免過小或過大）
+  const size = Math.max(500, Math.min(3000, minSize))
+
+  // HiDPI 支援：返回邏輯尺寸
+  return Math.ceil(size)
+}
+
+// 初始靜態值（會在組件中動態計算）
+let VIEWBOX_SIZE = 100
+let GRID_SIZE = 1000
+let GRID_SPACING = 60
+let GRID_CENTER = GRID_SIZE / 2
+let GRID_SCALE = VIEWBOX_SIZE / GRID_SIZE
+let GRID_SPACING_VIEW = GRID_SPACING * GRID_SCALE
+let VIEWBOX_CENTER = {
   x: VIEWBOX_SIZE / 2,
   y: VIEWBOX_SIZE / 2
 }
 
-const BASE_SPREAD_MULTIPLIER = 5
-const SPREAD_DECAY = 0.85
+const BASE_SPREAD_MULTIPLIER = 25
+const SPREAD_DECAY = 0.9
 
-const NODE_OUTER_RADIUS = 2.2
-const NODE_INNER_RADIUS = 1.4
-const NODE_LABEL_OFFSET_TOP = 5
-const NODE_PROTOCOL_OFFSET = 6
-const CENTRAL_NODE_OUTER_RADIUS = NODE_OUTER_RADIUS * 1.7
-const CENTRAL_NODE_INNER_RADIUS = NODE_INNER_RADIUS * 1.6
-const CENTRAL_LABEL_OFFSET = NODE_LABEL_OFFSET_TOP + 4.2
-const GRID_BOUND_MARGIN = Math.max(GRID_SPACING * BASE_SPREAD_MULTIPLIER * 0.3, 80)
-const VIEWBOX_PADDING = NODE_OUTER_RADIUS * 3
+const NODE_OUTER_RADIUS = 2
+const NODE_INNER_RADIUS = 1.2
+const NODE_LABEL_OFFSET_TOP = 5.4
+const NODE_PROTOCOL_OFFSET = 6.2
+const CENTRAL_NODE_OUTER_RADIUS = NODE_OUTER_RADIUS * 2.5  // 增大中心節點（1.7 -> 2.5）
+const CENTRAL_NODE_INNER_RADIUS = NODE_INNER_RADIUS * 2.2  // 增大中心節點（1.6 -> 2.2）
+const CENTRAL_LABEL_OFFSET = NODE_LABEL_OFFSET_TOP + 6.0   // 調整標籤偏移
+const GRID_BOUND_MARGIN = Math.max(GRID_SPACING * BASE_SPREAD_MULTIPLIER * 0.08, 40)
+const VIEWBOX_PADDING = NODE_OUTER_RADIUS * 3.2
 const MIN_NODE_DISTANCE = Math.max(
-  NODE_OUTER_RADIUS * 3,
-  GRID_SPACING_VIEW * BASE_SPREAD_MULTIPLIER * 0.75
+  NODE_OUTER_RADIUS * 3.6,
+  GRID_SPACING_VIEW * BASE_SPREAD_MULTIPLIER * 0.5
 )
 
-// ���ϻP�I�����U�禡
+const CONNECTION_BUNDLE_SPACING = 4
+const CONNECTION_ENDPOINT_OFFSET = 0.32
+
+// 力導向圖參數（依據用戶需求設定）
+const FORCE_PARAMS = {
+  // 基礎參數（會根據節點數量動態調整）
+  baseRepulsion: 1000,       // 節點間斥力基礎值（800-1200）
+  baseLinkDistance: 200,     // 連線長度基礎值（150-250）
+  baseGravity: 0.05,         // 中心引力基礎值（降低以保持節點分散）
+
+  // 動態調整係數
+  repulsionScale: 1.0,       // 隨節點數量調整斥力
+  linkDistanceScale: 1.0,    // 隨節點數量調整連線長度
+  gravityScale: 1.0,         // 隨節點數量調整重力
+
+  // 碰撞檢測
+  collisionRadius: 2.5,      // 碰撞半徑（基於節點大小）
+  collisionStrength: 0.8,    // 碰撞力度
+
+  // 速度與阻尼
+  damping: 0.85,             // 阻尼係數（0-1，越小越快停止）
+  maxVelocity: 0.5,          // 最大速度限制
+  minVelocity: 0.001,        // 最小速度閾值（低於此值視為靜止）
+
+  // 迭代控制
+  initialIterations: 100,    // 初始化時的迭代次數
+  stabilityThreshold: 0.01   // 穩定性閾值
+}
+
+// 動態計算力導向圖參數（綁定畫布對角線與節點數）
+const calculateDynamicForceParams = (nodeCount, canvasSize) => {
+  // 計算畫布對角線長度
+  const diagonal = Math.sqrt(2) * canvasSize
+
+  // 節點數量因子
+  const countFactor = Math.sqrt(nodeCount / 10) // 以10個節點為基準
+
+  // 畫布尺寸因子（相對於基準 1000）
+  const sizeFactor = canvasSize / 1000
+
+  return {
+    // 斥力與畫布尺寸成正比
+    repulsion: FORCE_PARAMS.baseRepulsion * sizeFactor * (1 + countFactor * 0.3),
+
+    // 連線長度約為對角線的 1/5 到 1/3
+    linkDistance: (diagonal / 6) * (1 + countFactor * 0.15),
+
+    // 重力隨畫布增大而減小（避免過度聚中心）
+    gravity: FORCE_PARAMS.baseGravity / sizeFactor * (1 - countFactor * 0.1),
+
+    // 碰撞半徑隨畫布增大
+    collisionRadius: FORCE_PARAMS.collisionRadius * sizeFactor * Math.max(1, countFactor * 0.5),
+
+    // 保存畫布資訊供邊界力使用
+    canvasSize,
+    diagonal
+  }
+}
+
+// 工具函數與數學運算
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
 
 const gridToView = (value) => value * GRID_SCALE
@@ -128,15 +210,17 @@ const generateGridPositions = (count) => {
       return
     }
     const slot = { x, y }
-    if (!isWithinSpreadBounds(slot)) {
-      return
-    }
     const key = `${x},${y}`
     if (seen.has(key)) {
       return
     }
     seen.add(key)
-    slots.push({ ...slot, spread: applyGridSpread(slot) })
+    const spreadPoint = applyGridSpread(slot)
+    const clampedSpread = {
+      x: clamp(spreadPoint.x, GRID_BOUND_MARGIN, GRID_SIZE - GRID_BOUND_MARGIN),
+      y: clamp(spreadPoint.y, GRID_BOUND_MARGIN, GRID_SIZE - GRID_BOUND_MARGIN)
+    }
+    slots.push({ ...slot, spread: clampedSpread })
   }
 
   let layer = 1
@@ -229,6 +313,263 @@ const pointOnPolyline = (points, t) => {
 }
 
 
+// 力導向圖核心計算函數
+const calculateForces = (nodes, connections, params) => {
+  const forces = new Map()
+
+  // 提取畫布尺寸（避免重複宣告）
+  const canvasSize = params.canvasSize || 1000
+  const centerX = canvasSize / 2
+  const centerY = canvasSize / 2
+
+  // 初始化所有節點的力為零向量
+  nodes.forEach(node => {
+    forces.set(node.id, { x: 0, y: 0 })
+  })
+
+  // 1. 計算節點間斥力（Repulsion Force）
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const nodeA = nodes[i]
+      const nodeB = nodes[j]
+
+      // 跳過座標無效的節點
+      if (!isFinite(nodeA.x) || !isFinite(nodeA.y) || !isFinite(nodeB.x) || !isFinite(nodeB.y)) {
+        continue
+      }
+
+      const dx = nodeB.x - nodeA.x
+      const dy = nodeB.y - nodeA.y
+      const dist = Math.hypot(dx, dy)
+      // 防止除以零，如果距離太小或為 NaN，跳過
+      if (!isFinite(dist) || dist < 0.1) {
+        continue
+      }
+
+      // 庫侖斥力：F = k / r²
+      const repulsionForce = params.repulsion / (dist * dist)
+      const fx = (dx / dist) * repulsionForce
+      const fy = (dy / dist) * repulsionForce
+
+      const forceA = forces.get(nodeA.id)
+      const forceB = forces.get(nodeB.id)
+
+      forceA.x -= fx
+      forceA.y -= fy
+      forceB.x += fx
+      forceB.y += fy
+    }
+  }
+
+  // 2. 計算連線引力（Attraction Force）
+  const nodeMap = new Map(nodes.map(n => [n.id, n]))
+
+  connections.forEach(conn => {
+    const nodeA = nodeMap.get(conn.src)
+    const nodeB = nodeMap.get(conn.dst)
+
+    if (!nodeA || !nodeB) return
+
+    // 跳過座標無效的節點
+    if (!isFinite(nodeA.x) || !isFinite(nodeA.y) || !isFinite(nodeB.x) || !isFinite(nodeB.y)) {
+      return
+    }
+
+    const dx = nodeB.x - nodeA.x
+    const dy = nodeB.y - nodeA.y
+    const dist = Math.hypot(dx, dy)
+    if (!isFinite(dist) || dist < 0.1) {
+      return
+    }
+
+    // 胡克引力：F = k * (r - r0)
+    const displacement = dist - params.linkDistance
+    const attractionForce = displacement * 0.1 // 彈簧常數
+    const fx = (dx / dist) * attractionForce
+    const fy = (dy / dist) * attractionForce
+
+    const forceA = forces.get(nodeA.id)
+    const forceB = forces.get(nodeB.id)
+
+    forceA.x += fx
+    forceA.y += fy
+    forceB.x -= fx
+    forceB.y -= fy
+  })
+
+  // 3. 計算重力（Gravity Force）- 將節點拉向畫面中心
+  // 使用動態畫布尺寸的中心，而非固定的 VIEWBOX_SIZE
+  nodes.forEach(node => {
+    // 跳過中心節點（已固定位置）
+    if (node.isCenter) return
+
+    // 跳過座標無效的節點
+    if (!isFinite(node.x) || !isFinite(node.y)) {
+      return
+    }
+
+    const dx = centerX - node.x
+    const dy = centerY - node.y
+    const dist = Math.hypot(dx, dy)
+    if (!isFinite(dist) || dist < 0.1) {
+      return
+    }
+
+    const gravityForce = params.gravity * dist
+    const fx = (dx / dist) * gravityForce
+    const fy = (dy / dist) * gravityForce
+
+    const force = forces.get(node.id)
+    force.x += fx
+    force.y += fy
+  })
+
+  // 4. 計算碰撞力（Collision Force）
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const nodeA = nodes[i]
+      const nodeB = nodes[j]
+
+      const dx = nodeB.x - nodeA.x
+      const dy = nodeB.y - nodeA.y
+      const dist = Math.hypot(dx, dy) || 0.1
+      const minDist = params.collisionRadius * 2
+
+      if (dist < minDist) {
+        const overlap = minDist - dist
+        const collisionForce = overlap * FORCE_PARAMS.collisionStrength
+        const fx = (dx / dist) * collisionForce
+        const fy = (dy / dist) * collisionForce
+
+        const forceA = forces.get(nodeA.id)
+        const forceB = forces.get(nodeB.id)
+
+        forceA.x -= fx
+        forceA.y -= fy
+        forceB.x += fx
+        forceB.y += fy
+      }
+    }
+  }
+
+  // 5. 計算矩形邊界回彈力（Boundary Repulsion Force）
+  // 防止節點黏在角落或邊緣
+  const padding = params.collisionRadius * 3 // 邊界緩衝區
+  const boundaryStrength = params.repulsion * 0.5 // 邊界力強度
+
+  nodes.forEach(node => {
+    const force = forces.get(node.id)
+
+    // 左邊界
+    if (node.x < padding) {
+      const dist = Math.max(node.x, 1)
+      const pushForce = boundaryStrength / (dist * dist)
+      force.x += pushForce
+    }
+
+    // 右邊界
+    if (node.x > canvasSize - padding) {
+      const dist = Math.max(canvasSize - node.x, 1)
+      const pushForce = boundaryStrength / (dist * dist)
+      force.x -= pushForce
+    }
+
+    // 上邊界
+    if (node.y < padding) {
+      const dist = Math.max(node.y, 1)
+      const pushForce = boundaryStrength / (dist * dist)
+      force.y += pushForce
+    }
+
+    // 下邊界
+    if (node.y > canvasSize - padding) {
+      const dist = Math.max(canvasSize - node.y, 1)
+      const pushForce = boundaryStrength / (dist * dist)
+      force.y -= pushForce
+    }
+
+    // 角落額外推力（防止節點堆積在四角）
+    const cornerRadius = padding * 2
+    const corners = [
+      { x: 0, y: 0 },                              // 左上
+      { x: canvasSize, y: 0 },                     // 右上
+      { x: 0, y: canvasSize },                     // 左下
+      { x: canvasSize, y: canvasSize }             // 右下
+    ]
+
+    corners.forEach(corner => {
+      const dx = node.x - corner.x
+      const dy = node.y - corner.y
+      const dist = Math.hypot(dx, dy)
+
+      if (dist < cornerRadius && dist > 0.1) {
+        const pushForce = (boundaryStrength * 2) / (dist * dist)
+        force.x += (dx / dist) * pushForce
+        force.y += (dy / dist) * pushForce
+      }
+    })
+  })
+
+  return forces
+}
+
+// 應用力並更新節點位置
+const applyForces = (nodes, forces, velocities, params) => {
+  const updatedNodes = []
+  const canvasSize = params.canvasSize || 1000
+  const padding = params.collisionRadius * 2
+
+  nodes.forEach(node => {
+    // 中心節點保持固定（如果 isCenter 為 true）
+    if (node.isCenter) {
+      updatedNodes.push({ ...node })
+      return
+    }
+
+    const force = forces.get(node.id) || { x: 0, y: 0 }
+    const velocity = velocities.get(node.id) || { x: 0, y: 0 }
+
+    // 更新速度：v = v + F (假設質量為1)
+    velocity.x = (velocity.x + force.x) * params.damping
+    velocity.y = (velocity.y + force.y) * params.damping
+
+    // 限制最大速度（根據畫布大小調整）
+    const maxVel = params.maxVelocity * (canvasSize / 1000)
+    const speed = Math.hypot(velocity.x, velocity.y)
+    if (speed > maxVel) {
+      velocity.x = (velocity.x / speed) * maxVel
+      velocity.y = (velocity.y / speed) * maxVel
+    }
+
+    // 更新位置（添加 NaN 防護）
+    let newX = node.x + velocity.x
+    let newY = node.y + velocity.y
+
+    // 防止 NaN 傳播：如果座標無效，重置為畫布中心
+    if (!isFinite(newX) || !isFinite(newY)) {
+      newX = canvasSize / 2
+      newY = canvasSize / 2
+      // 同時重置速度
+      velocity.x = 0
+      velocity.y = 0
+    }
+
+    // 邊界限制（使用動態畫布尺寸）
+    newX = clamp(newX, padding, canvasSize - padding)
+    newY = clamp(newY, padding, canvasSize - padding)
+
+    velocities.set(node.id, velocity)
+
+    updatedNodes.push({
+      ...node,
+      x: newX,
+      y: newY
+    })
+  })
+
+  return updatedNodes
+}
+
 const parseTimelineId = (timeline) => {
   if (!timeline?.id) {
     return null
@@ -247,8 +588,10 @@ const parseTimelineId = (timeline) => {
   }
 }
 
-const buildNodeLayout = (timelines) => {
+// 使用力導向圖算法初始化節點布局（協議分艙極座標播種）
+const buildNodeLayout = (timelines, canvasSize = 1000) => {
   const endpoints = new Map()
+  const connectionCounts = new Map()
 
   timelines.forEach((timeline) => {
     const parsed = parseTimelineId(timeline)
@@ -273,57 +616,178 @@ const buildNodeLayout = (timelines) => {
         existing.protocols.add(protocol.toUpperCase())
       }
       endpoints.set(ip, existing)
+
+      // 計算連線數
+      connectionCounts.set(ip, (connectionCounts.get(ip) || 0) + 1)
     }
 
     addEndpoint(parsed.src, timeline.protocol)
     addEndpoint(parsed.dst, timeline.protocol)
   })
 
-  const nodes = Array.from(endpoints.values()).sort((a, b) =>
-    a.ip.localeCompare(b.ip, undefined, { numeric: true, sensitivity: 'base' })
-  )
+  const nodes = Array.from(endpoints.values())
 
-  const slots = generateGridPositions(nodes.length)
+  if (nodes.length === 0) {
+    return []
+  }
 
-  return nodes.map((node, index) => {
-    const baseSlot = slots[index] || { x: GRID_CENTER, y: GRID_CENTER }
-    const spreadPoint = baseSlot.spread || applyGridSpread(baseSlot)
-    const clampedSpread = {
-      x: clamp(spreadPoint.x, GRID_BOUND_MARGIN, GRID_SIZE - GRID_BOUND_MARGIN),
-      y: clamp(spreadPoint.y, GRID_BOUND_MARGIN, GRID_SIZE - GRID_BOUND_MARGIN)
-    }
-    const x = gridToView(clampedSpread.x)
-    const y = gridToView(clampedSpread.y)
-    return {
-      id: node.id,
-      label: node.ip,
-      ports: Array.from(node.ports),
-      protocols: Array.from(node.protocols),
-      x,
-      y,
-      gridPosition: baseSlot
+  // 找出連線數最多的節點作為中心
+  let centerNode = nodes[0]
+  let maxConnections = 0
+  nodes.forEach(node => {
+    const count = connectionCounts.get(node.ip) || 0
+    if (count > maxConnections) {
+      maxConnections = count
+      centerNode = node
     }
   })
+
+  // 協議分艙（Protocol Clustering）
+  const protocolGroups = {}
+  nodes.forEach(node => {
+    const primaryProtocol = Array.from(node.protocols)[0] || 'OTHER'
+    if (!protocolGroups[primaryProtocol]) {
+      protocolGroups[primaryProtocol] = []
+    }
+    protocolGroups[primaryProtocol].push(node)
+  })
+
+  const protocols = Object.keys(protocolGroups)
+  const protocolCount = protocols.length
+
+  // 極座標播種（Polar Coordinate Seeding）
+  const centerX = canvasSize / 2
+  const centerY = canvasSize / 2
+  const baseRadius = canvasSize * 0.4 // 基礎半徑為畫布的 40%（增加分散度）
+
+  const initialNodes = []
+  let globalIndex = 0
+
+  protocols.forEach((protocol, protocolIndex) => {
+    const protocolNodes = protocolGroups[protocol]
+    const protocolAngleStart = (2 * Math.PI * protocolIndex) / protocolCount
+    const protocolAngleRange = (2 * Math.PI) / protocolCount
+    const nodesInProtocol = protocolNodes.length
+
+    protocolNodes.forEach((node, nodeIndex) => {
+      const isCenter = node.id === centerNode?.id
+
+      let x, y
+
+      if (isCenter) {
+        // 中心節點固定在畫面正中央
+        x = centerX
+        y = centerY
+      } else {
+        // 在協議分艙內使用極座標分布
+        const angleOffset = protocolAngleStart + (protocolAngleRange * nodeIndex) / Math.max(nodesInProtocol, 1)
+        // 增加半徑變化範圍，形成多層環狀分布（50%-150%）
+        const radiusVariation = 0.5 + Math.random() * 1.0
+        const radius = baseRadius * radiusVariation
+
+        x = centerX + Math.cos(angleOffset) * radius
+        y = centerY + Math.sin(angleOffset) * radius
+
+        // 確保在邊界內（使用動態畫布尺寸）
+        const padding = 50
+        x = clamp(x, padding, canvasSize - padding)
+        y = clamp(y, padding, canvasSize - padding)
+      }
+
+      initialNodes.push({
+        id: node.id,
+        label: node.ip,
+        ports: Array.from(node.ports),
+        protocols: Array.from(node.protocols),
+        x,
+        y,
+        isCenter,
+        connectionCount: connectionCounts.get(node.ip) || 0,
+        primaryProtocol: Array.from(node.protocols)[0] || 'OTHER'
+      })
+
+      globalIndex++
+    })
+  })
+
+  // 建立連線資訊供力導向圖使用
+  const connections = []
+  timelines.forEach((timeline) => {
+    const parsed = parseTimelineId(timeline)
+    if (parsed && parsed.src?.ip && parsed.dst?.ip) {
+      connections.push({
+        src: parsed.src.ip,
+        dst: parsed.dst.ip
+      })
+    }
+  })
+
+  // 動態計算力導向圖參數（綁定畫布尺寸）
+  const forceParams = calculateDynamicForceParams(nodes.length, canvasSize)
+  const params = {
+    ...FORCE_PARAMS,
+    ...forceParams
+  }
+
+  // 執行初始力導向圖迭代以穩定布局
+  let currentNodes = initialNodes
+  const velocities = new Map()
+
+  // 初始化速度為零
+  currentNodes.forEach(node => {
+    velocities.set(node.id, { x: 0, y: 0 })
+  })
+
+  // 執行固定次數的迭代
+  for (let iter = 0; iter < params.initialIterations; iter++) {
+    const forces = calculateForces(currentNodes, connections, params)
+    currentNodes = applyForces(currentNodes, forces, velocities, params)
+  }
+
+  return currentNodes
 }
 
 
 const buildConnections = (timelines) => {
-  return timelines
-    .map((timeline) => {
-      const parsed = parseTimelineId(timeline)
-      if (!parsed) {
-        return null
-      }
-      return {
-        id: timeline.id,
-        protocol: timeline.protocol,
-        stages: timeline.stages,
-        metrics: timeline.metrics,
-        src: parsed.src.ip,
-        dst: parsed.dst.ip
-      }
+  const connections = []
+  const groups = new Map()
+
+  timelines.forEach((timeline, index) => {
+    const parsed = parseTimelineId(timeline)
+    if (!parsed) {
+      return
+    }
+
+    const connection = {
+      id: `${timeline.id}-${index}`, // 添加索引確保唯一性
+      originalId: timeline.id, // 保留原始 ID 供其他用途
+      protocol: timeline.protocol,
+      stages: timeline.stages,
+      metrics: timeline.metrics,
+      src: parsed.src.ip,
+      dst: parsed.dst.ip,
+      bundleIndex: 0,
+      bundleSize: 1
+    }
+
+    const key = `${parsed.src.ip}->${parsed.dst.ip}`
+    if (!groups.has(key)) {
+      groups.set(key, [])
+    }
+    groups.get(key).push(connection)
+    connections.push(connection)
+  })
+
+  groups.forEach((list) => {
+    const centerIndex = (list.length - 1) / 2
+    list.forEach((connection, index) => {
+      connection.bundleIndex = index
+      connection.bundleSize = list.length
+      connection.bundleOffset = index - centerIndex
     })
-    .filter(Boolean)
+  })
+
+  return connections
 }
 
 const protocolColor = (protocol, protocolType) => {
@@ -358,14 +822,51 @@ export default function MindMap() {
   const [nodePositions, setNodePositions] = useState({})
   const [draggingNodeId, setDraggingNodeId] = useState(null)
 
+  // 地圖式交互狀態
+  const [inertiaVelocity, setInertiaVelocity] = useState({ vx: 0, vy: 0 })
+  const lastPanMoveRef = useRef({ x: 0, y: 0, time: 0 })
+  const inertiaAnimationRef = useRef(null)
+  const [touchState, setTouchState] = useState({
+    active: false,
+    initialDistance: 0,
+    initialScale: 1,
+    center: { x: 0, y: 0 }
+  })
+
   // 互動狀態: 漸進式資訊揭露
   const [hoveredConnectionId, setHoveredConnectionId] = useState(null)
   const [selectedConnectionId, setSelectedConnectionId] = useState(null)
+  const selectedConnectionIdRef = useRef(null) // 用於動畫循環訪問最新值
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
+  const [connectionPackets, setConnectionPackets] = useState(null)
+  const [loadingPackets, setLoadingPackets] = useState(false)
+
+  // 同步 selectedConnectionId 到 ref，讓動畫循環能訪問最新值
+  useEffect(() => {
+    selectedConnectionIdRef.current = selectedConnectionId
+    console.log('[MindMap] selectedConnectionId changed:', selectedConnectionId)
+  }, [selectedConnectionId])
+
+  // 粒子系統狀態
+  const particleSystemRef = useRef(null)
+  const [particleSpeed, setParticleSpeed] = useState(1.0)
+  const [isParticleAnimationPlaying, setIsParticleAnimationPlaying] = useState(true)
+  const [particleTimeInfo, setParticleTimeInfo] = useState({ current: '0.00', total: '0.00', progress: 0 })
 
   // 動畫控制狀態
   const [isPaused, setIsPaused] = useState(false)
   const [isFocusMode, setIsFocusMode] = useState(false)
+
+  // 力導向圖狀態
+  const velocitiesRef = useRef(new Map())
+  const forceSimulationRef = useRef(null)
+  const [isLayoutStable, setIsLayoutStable] = useState(false)
+
+  // 動態畫布尺寸
+  const [canvasSize, setCanvasSize] = useState(1000)
+
+  // Fit-to-View 狀態
+  const [needsFitToView, setNeedsFitToView] = useState(false)
 
   const toWorldCoords = useCallback((clientX, clientY) => {
     const rect = svgRef.current?.getBoundingClientRect()
@@ -380,18 +881,56 @@ export default function MindMap() {
 
   const handleWheelZoom = useCallback((e) => {
     e.preventDefault()
+
+    // 停止慣性動畫
+    if (inertiaAnimationRef.current) {
+      cancelAnimationFrame(inertiaAnimationRef.current)
+      inertiaAnimationRef.current = null
+      setInertiaVelocity({ vx: 0, vy: 0 })
+    }
+
+    const rect = svgRef.current?.getBoundingClientRect()
+    if (!rect) return
+
+    // 計算滑鼠在 SVG 中的位置
+    const mouseX = (e.clientX - rect.left) / rect.width * canvasSize
+    const mouseY = (e.clientY - rect.top) / rect.height * canvasSize
+
     const direction = e.deltaY > 0 ? -1 : 1
     const factor = 1 + direction * 0.1
-    setViewTransform(prev => ({
-      ...prev,
-      scale: clamp(prev.scale * factor, 0.5, 3)
-    }))
-  }, [])
+
+    setViewTransform(prev => {
+      const newScale = clamp(prev.scale * factor, 0.2, 5)
+
+      // 計算縮放前後滑鼠在世界座標中的位置
+      const worldXBefore = (mouseX - prev.tx) / prev.scale
+      const worldYBefore = (mouseY - prev.ty) / prev.scale
+
+      // 計算新的平移量，使得滑鼠位置保持不變
+      const newTx = mouseX - worldXBefore * newScale
+      const newTy = mouseY - worldYBefore * newScale
+
+      return {
+        scale: newScale,
+        tx: newTx,
+        ty: newTy
+      }
+    })
+  }, [canvasSize])
 
   const handleMouseDown = useCallback((e) => {
     if (e.button !== 0) return
+
+    // 停止慣性動畫
+    if (inertiaAnimationRef.current) {
+      cancelAnimationFrame(inertiaAnimationRef.current)
+      inertiaAnimationRef.current = null
+    }
+
     setIsPanning(true)
+    setInertiaVelocity({ vx: 0, vy: 0 })
     panStartRef.current = { x: e.clientX, y: e.clientY }
+    lastPanMoveRef.current = { x: e.clientX, y: e.clientY, time: performance.now() }
   }, [])
 
   const handleMouseMove = useCallback((e) => {
@@ -400,53 +939,289 @@ export default function MindMap() {
       setNodePositions(prev => ({
         ...prev,
         [draggingNodeId]: {
-          x: clamp(world.x, VIEWBOX_PADDING, VIEWBOX_SIZE - VIEWBOX_PADDING),
-          y: clamp(world.y, VIEWBOX_PADDING, VIEWBOX_SIZE - VIEWBOX_PADDING)
+          x: clamp(world.x, VIEWBOX_PADDING, canvasSize - VIEWBOX_PADDING),
+          y: clamp(world.y, VIEWBOX_PADDING, canvasSize - VIEWBOX_PADDING)
         }
       }))
       return
     }
     if (!isPanning) return
+
     const rect = svgRef.current?.getBoundingClientRect()
     if (!rect) return
+
+    const currentTime = performance.now()
     const dx = e.clientX - panStartRef.current.x
     const dy = e.clientY - panStartRef.current.y
+
+    // 計算速度（用於慣性效果）
+    const dt = currentTime - lastPanMoveRef.current.time
+    if (dt > 0) {
+      const vx = (e.clientX - lastPanMoveRef.current.x) / dt
+      const vy = (e.clientY - lastPanMoveRef.current.y) / dt
+      setInertiaVelocity({ vx, vy })
+    }
+
+    lastPanMoveRef.current = { x: e.clientX, y: e.clientY, time: currentTime }
     panStartRef.current = { x: e.clientX, y: e.clientY }
-    const deltaX = dx / rect.width * VIEWBOX_SIZE
-    const deltaY = dy / rect.height * VIEWBOX_SIZE
+
+    const deltaX = dx / rect.width * canvasSize
+    const deltaY = dy / rect.height * canvasSize
     setViewTransform(prev => ({ ...prev, tx: prev.tx + deltaX, ty: prev.ty + deltaY }))
-  }, [isPanning, draggingNodeId, toWorldCoords])
+  }, [isPanning, draggingNodeId, toWorldCoords, canvasSize])
 
   const handleMouseUp = useCallback(() => {
+    if (isPanning && !draggingNodeId) {
+      // 啟動慣性動畫
+      const startInertia = () => {
+        const FRICTION = 0.95 // 摩擦係數
+        const MIN_VELOCITY = 0.001 // 最小速度閾值
+
+        const animate = () => {
+          setInertiaVelocity(prev => {
+            const newVx = prev.vx * FRICTION
+            const newVy = prev.vy * FRICTION
+
+            // 速度太小時停止動畫
+            if (Math.abs(newVx) < MIN_VELOCITY && Math.abs(newVy) < MIN_VELOCITY) {
+              inertiaAnimationRef.current = null
+              return { vx: 0, vy: 0 }
+            }
+
+            // 更新視圖位置
+            setViewTransform(current => {
+              const rect = svgRef.current?.getBoundingClientRect()
+              if (!rect) return current
+
+              const deltaX = (newVx * 16) / rect.width * canvasSize
+              const deltaY = (newVy * 16) / rect.height * canvasSize
+
+              return {
+                ...current,
+                tx: current.tx + deltaX,
+                ty: current.ty + deltaY
+              }
+            })
+
+            inertiaAnimationRef.current = requestAnimationFrame(animate)
+            return { vx: newVx, vy: newVy }
+          })
+        }
+
+        inertiaAnimationRef.current = requestAnimationFrame(animate)
+      }
+
+      startInertia()
+    }
+
     setIsPanning(false)
     setDraggingNodeId(null)
-  }, [])
+  }, [isPanning, draggingNodeId, canvasSize])
 
-  const resolveCollisions = useCallback((positions) => {
-    const ids = Object.keys(positions)
-    const minDist = MIN_NODE_DISTANCE
-    const iterations = 4
-    for (let it = 0; it < iterations; it++) {
-      for (let i = 0; i < ids.length; i++) {
-        for (let j = i + 1; j < ids.length; j++) {
-          const a = positions[ids[i]]
-          const b = positions[ids[j]]
-          const dx = b.x - a.x
-          const dy = b.y - a.y
-          const dist = Math.hypot(dx, dy)
-          if (dist > 0 && dist < minDist) {
-            const push = (minDist - dist) / 2
-            const nx = dx / dist
-            const ny = dy / dist
-            a.x = clamp(a.x - nx * push, VIEWBOX_PADDING, VIEWBOX_SIZE - VIEWBOX_PADDING)
-            a.y = clamp(a.y - ny * push, VIEWBOX_PADDING, VIEWBOX_SIZE - VIEWBOX_PADDING)
-            b.x = clamp(b.x + nx * push, VIEWBOX_PADDING, VIEWBOX_SIZE - VIEWBOX_PADDING)
-            b.y = clamp(b.y + ny * push, VIEWBOX_PADDING, VIEWBOX_SIZE - VIEWBOX_PADDING)
-          }
-        }
+  // 觸控手勢處理
+  const handleTouchStart = useCallback((e) => {
+    if (e.touches.length === 2) {
+      // 雙指觸控：縮放
+      e.preventDefault()
+
+      // 停止慣性動畫
+      if (inertiaAnimationRef.current) {
+        cancelAnimationFrame(inertiaAnimationRef.current)
+        inertiaAnimationRef.current = null
+        setInertiaVelocity({ vx: 0, vy: 0 })
       }
+
+      const touch1 = e.touches[0]
+      const touch2 = e.touches[1]
+
+      const distance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      )
+
+      const centerX = (touch1.clientX + touch2.clientX) / 2
+      const centerY = (touch1.clientY + touch2.clientY) / 2
+
+      setTouchState({
+        active: true,
+        initialDistance: distance,
+        initialScale: viewTransform.scale,
+        center: { x: centerX, y: centerY }
+      })
+    } else if (e.touches.length === 1) {
+      // 單指觸控：平移
+      const touch = e.touches[0]
+      panStartRef.current = { x: touch.clientX, y: touch.clientY }
+      lastPanMoveRef.current = { x: touch.clientX, y: touch.clientY, time: performance.now() }
+      setIsPanning(true)
     }
-    return positions
+  }, [viewTransform.scale])
+
+  const handleTouchMove = useCallback((e) => {
+    if (e.touches.length === 2 && touchState.active) {
+      // 雙指縮放
+      e.preventDefault()
+
+      const touch1 = e.touches[0]
+      const touch2 = e.touches[1]
+
+      const currentDistance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      )
+
+      const scale = (currentDistance / touchState.initialDistance) * touchState.initialScale
+      const newScale = clamp(scale, 0.2, 5)
+
+      const rect = svgRef.current?.getBoundingClientRect()
+      if (!rect) return
+
+      // 計算觸控中心在 SVG 中的位置
+      const centerX = (touch1.clientX + touch2.clientX) / 2
+      const centerY = (touch1.clientY + touch2.clientY) / 2
+      const svgX = (centerX - rect.left) / rect.width * canvasSize
+      const svgY = (centerY - rect.top) / rect.height * canvasSize
+
+      setViewTransform(prev => {
+        const worldX = (svgX - prev.tx) / prev.scale
+        const worldY = (svgY - prev.ty) / prev.scale
+
+        const newTx = svgX - worldX * newScale
+        const newTy = svgY - worldY * newScale
+
+        return {
+          scale: newScale,
+          tx: newTx,
+          ty: newTy
+        }
+      })
+    } else if (e.touches.length === 1 && isPanning) {
+      // 單指平移
+      const touch = e.touches[0]
+      const rect = svgRef.current?.getBoundingClientRect()
+      if (!rect) return
+
+      const currentTime = performance.now()
+      const dx = touch.clientX - panStartRef.current.x
+      const dy = touch.clientY - panStartRef.current.y
+
+      // 計算速度
+      const dt = currentTime - lastPanMoveRef.current.time
+      if (dt > 0) {
+        const vx = (touch.clientX - lastPanMoveRef.current.x) / dt
+        const vy = (touch.clientY - lastPanMoveRef.current.y) / dt
+        setInertiaVelocity({ vx, vy })
+      }
+
+      lastPanMoveRef.current = { x: touch.clientX, y: touch.clientY, time: currentTime }
+      panStartRef.current = { x: touch.clientX, y: touch.clientY }
+
+      const deltaX = dx / rect.width * canvasSize
+      const deltaY = dy / rect.height * canvasSize
+      setViewTransform(prev => ({ ...prev, tx: prev.tx + deltaX, ty: prev.ty + deltaY }))
+    }
+  }, [touchState, isPanning, canvasSize])
+
+  const handleTouchEnd = useCallback((e) => {
+    if (e.touches.length === 0) {
+      // 所有觸控點都釋放
+      if (isPanning) {
+        // 啟動慣性動畫（與滑鼠相同）
+        const FRICTION = 0.95
+        const MIN_VELOCITY = 0.001
+
+        const animate = () => {
+          setInertiaVelocity(prev => {
+            const newVx = prev.vx * FRICTION
+            const newVy = prev.vy * FRICTION
+
+            if (Math.abs(newVx) < MIN_VELOCITY && Math.abs(newVy) < MIN_VELOCITY) {
+              inertiaAnimationRef.current = null
+              return { vx: 0, vy: 0 }
+            }
+
+            setViewTransform(current => {
+              const rect = svgRef.current?.getBoundingClientRect()
+              if (!rect) return current
+
+              const deltaX = (newVx * 16) / rect.width * canvasSize
+              const deltaY = (newVy * 16) / rect.height * canvasSize
+
+              return {
+                ...current,
+                tx: current.tx + deltaX,
+                ty: current.ty + deltaY
+              }
+            })
+
+            inertiaAnimationRef.current = requestAnimationFrame(animate)
+            return { vx: newVx, vy: newVy }
+          })
+        }
+
+        inertiaAnimationRef.current = requestAnimationFrame(animate)
+      }
+
+      setIsPanning(false)
+      setTouchState({
+        active: false,
+        initialDistance: 0,
+        initialScale: 1,
+        center: { x: 0, y: 0 }
+      })
+    } else if (e.touches.length < 2) {
+      // 從雙指變為單指
+      setTouchState({
+        active: false,
+        initialDistance: 0,
+        initialScale: 1,
+        center: { x: 0, y: 0 }
+      })
+    }
+  }, [isPanning, canvasSize])
+
+  // Fit-to-View：自動縮放與置中
+  const fitToView = useCallback((nodes) => {
+    if (!nodes || nodes.length === 0) return
+
+    // 計算所有節點的邊界框
+    let minX = Infinity, minY = Infinity
+    let maxX = -Infinity, maxY = -Infinity
+
+    nodes.forEach(node => {
+      minX = Math.min(minX, node.x)
+      minY = Math.min(minY, node.y)
+      maxX = Math.max(maxX, node.x)
+      maxY = Math.max(maxY, node.y)
+    })
+
+    // 計算邊界框尺寸
+    const width = maxX - minX
+    const height = maxY - minY
+    const centerX = (minX + maxX) / 2
+    const centerY = (minY + maxY) / 2
+
+    // 計算視窗尺寸（假設 SVG 容器佔滿可用空間）
+    const containerWidth = svgRef.current?.clientWidth || 800
+    const containerHeight = svgRef.current?.clientHeight || 600
+
+    // 計算縮放比例（保留 10% 邊距）
+    const scaleX = (containerWidth * 0.9) / width
+    const scaleY = (containerHeight * 0.9) / height
+    const scale = Math.min(scaleX, scaleY, 3) // 限制最大縮放為 3
+
+    // 計算平移量（將中心點移到視窗中心）
+    const viewCenterX = canvasSize / 2
+    const viewCenterY = canvasSize / 2
+    const tx = viewCenterX - centerX
+    const ty = viewCenterY - centerY
+
+    setViewTransform({ scale, tx, ty })
+  }, [canvasSize])
+
+  // 重置視圖
+  const resetView = useCallback(() => {
+    setViewTransform({ scale: 1, tx: 0, ty: 0 })
   }, [])
 
   const loadTimelines = useCallback(async () => {
@@ -509,10 +1284,11 @@ export default function MindMap() {
     }
 
     const controllers = new Map()
-    timelines.forEach((timeline) => {
+    timelines.forEach((timeline, index) => {
       const controller = new ProtocolAnimationController(timeline)
       controller.reset()
-      controllers.set(timeline.id, controller)
+      // 使用與 buildConnections 相同的唯一 ID 格式
+      controllers.set(`${timeline.id}-${index}`, controller)
     })
 
     controllersRef.current = controllers
@@ -531,6 +1307,30 @@ export default function MindMap() {
         nextStates[id] = controller.getRenderableState()
       })
       setRenderStates(nextStates)
+
+      // 更新粒子系統（使用 ref 來訪問最新的 selectedConnectionId）
+      if (particleSystemRef.current && selectedConnectionIdRef.current) {
+        particleSystemRef.current.update(delta)
+        // 更新時間資訊以觸發 UI 重新渲染
+        const timeInfo = particleSystemRef.current.getTimeInfo()
+
+        // 每 60 幀打印一次調試信息（約每秒一次）
+        if (Math.random() < 0.016) {
+          console.log('[MindMap] Particle animation:', {
+            delta,
+            currentTime: timeInfo.current,
+            isPlaying: timeInfo.isPlaying,
+            progress: (timeInfo.progress * 100).toFixed(1) + '%',
+            selectedConnectionId: selectedConnectionIdRef.current
+          })
+        }
+
+        setParticleTimeInfo({
+          current: timeInfo.current,
+          total: timeInfo.total,
+          progress: timeInfo.progress
+        })
+      }
 
       rafRef.current = requestAnimationFrame(tick)
     }
@@ -593,16 +1393,261 @@ export default function MindMap() {
     }
   }
 
-  const nodes = useMemo(() => buildNodeLayout(timelines), [timelines])
-// 以 baseNodes 初始化位置並使用 nodePositions 覆蓋
-  const baseNodes = useMemo(() => buildNodeLayout(timelines), [timelines])
-  useEffect(() => {
-    const initial = {}
-    baseNodes.forEach(n => { initial[n.id] = { x: n.x, y: n.y } })
-    setNodePositions(resolveCollisions({ ...initial }))
-  }, [baseNodes, resolveCollisions])
+  // 獲取連線的封包詳細資訊
+  const fetchConnectionPackets = async (connectionId) => {
+    if (!connectionId) {
+      setConnectionPackets(null)
+      return
+    }
 
-  const nodesComputed = useMemo(() => baseNodes.map(n => ({ ...n, ...(nodePositions[n.id] || {}) })), [baseNodes, nodePositions])
+    setLoadingPackets(true)
+    try {
+      const response = await fetch(`/api/packets/${encodeURIComponent(connectionId)}`)
+      if (!response.ok) {
+        throw new Error(`無法取得封包資訊 (${response.status})`)
+      }
+      const data = await response.json()
+      console.log('[MindMap] Fetched connection packets:', {
+        connectionId,
+        dataType: typeof data,
+        isArray: Array.isArray(data),
+        hasPacketsField: 'packets' in data,
+        packetsCount: data?.packets?.length || 0,
+        totalPackets: data?.total_packets
+      })
+      // 保存完整的資料物件（PacketViewer 需要 connection_id 等資訊）
+      setConnectionPackets(data)
+    } catch (err) {
+      console.error('獲取封包資訊失敗:', err)
+      setError(err?.message || '無法載入封包資訊')
+      setConnectionPackets(null)
+    } finally {
+      setLoadingPackets(false)
+    }
+  }
+
+  // 管理粒子系統的生命週期
+  useEffect(() => {
+    // 提取封包陣列（後端返回的格式是 { packets: [...] }）
+    const packets = connectionPackets?.packets || []
+    console.log('[MindMap] Particle system useEffect triggered. packets:', packets.length)
+
+    // 清理舊的粒子系統
+    if (particleSystemRef.current) {
+      console.log('[MindMap] Destroying old particle system')
+      particleSystemRef.current.destroy()
+      particleSystemRef.current = null
+    }
+
+    // 如果有封包資料，創建新的粒子系統
+    if (packets.length > 0) {
+      console.log('[MindMap] Creating particle system with', packets.length, 'packets')
+      particleSystemRef.current = new PacketParticleSystem(
+        packets,
+        null, // connectionPath 稍後從 connections 中獲取
+        {
+          loop: true,
+          speed: particleSpeed,
+          showLabels: true
+        }
+      )
+
+      console.log('[MindMap] Particle system created, duration:', particleSystemRef.current.duration)
+
+      // 設置播放狀態
+      if (isParticleAnimationPlaying) {
+        particleSystemRef.current.play()
+        console.log('[MindMap] Particle system playing')
+      } else {
+        particleSystemRef.current.pause()
+        console.log('[MindMap] Particle system paused')
+      }
+    } else {
+      console.log('[MindMap] No connection packets, particle system not created')
+    }
+
+    // 清理函數
+    return () => {
+      if (particleSystemRef.current) {
+        particleSystemRef.current.destroy()
+        particleSystemRef.current = null
+      }
+    }
+  }, [connectionPackets, particleSpeed, isParticleAnimationPlaying])
+
+  // 時間軸控制函數
+  const handlePlayPause = useCallback(() => {
+    if (particleSystemRef.current) {
+      particleSystemRef.current.togglePlayPause()
+      setIsParticleAnimationPlaying(particleSystemRef.current.isPlaying)
+    }
+  }, [])
+
+  const handleSpeedChange = useCallback((newSpeed) => {
+    setParticleSpeed(newSpeed)
+    if (particleSystemRef.current) {
+      particleSystemRef.current.setSpeed(newSpeed)
+    }
+  }, [])
+
+  const handleSeek = useCallback((progress) => {
+    if (particleSystemRef.current) {
+      particleSystemRef.current.seekToProgress(progress)
+    }
+  }, [])
+
+  const handleStepForward = useCallback(() => {
+    if (particleSystemRef.current) {
+      particleSystemRef.current.stepForward()
+    }
+  }, [])
+
+  const handleStepBackward = useCallback(() => {
+    if (particleSystemRef.current) {
+      particleSystemRef.current.stepBackward()
+    }
+  }, [])
+
+  // 計算動態畫布尺寸
+  useEffect(() => {
+    if (timelines.length === 0) return
+
+    const nodeCount = new Set(
+      timelines.flatMap(t => {
+        const parsed = parseTimelineId(t)
+        return parsed ? [parsed.src.ip, parsed.dst.ip] : []
+      })
+    ).size
+
+    const connectionCount = timelines.length
+    const newCanvasSize = calculateCanvasSize(nodeCount, connectionCount)
+
+    setCanvasSize(newCanvasSize)
+  }, [timelines])
+
+  // 初始化節點布局（使用力導向圖）
+  const baseNodes = useMemo(() => buildNodeLayout(timelines, canvasSize), [timelines, canvasSize])
+
+  // 力導向圖持續模擬
+  useEffect(() => {
+    if (!baseNodes.length) {
+      setNodePositions({})
+      setIsLayoutStable(false)
+      return
+    }
+
+    // 初始化節點位置
+    const initialPositions = {}
+    baseNodes.forEach(node => {
+      initialPositions[node.id] = { x: node.x, y: node.y, isCenter: node.isCenter }
+    })
+    setNodePositions(initialPositions)
+
+    // 初始化速度
+    velocitiesRef.current.clear()
+    baseNodes.forEach(node => {
+      velocitiesRef.current.set(node.id, { x: 0, y: 0 })
+    })
+
+    // 建立連線資訊
+    const connections = []
+    timelines.forEach((timeline) => {
+      const parsed = parseTimelineId(timeline)
+      if (parsed && parsed.src?.ip && parsed.dst?.ip) {
+        connections.push({
+          src: parsed.src.ip,
+          dst: parsed.dst.ip
+        })
+      }
+    })
+
+    // 動態計算力導向圖參數
+    const forceParams = calculateDynamicForceParams(baseNodes.length)
+    const params = {
+      ...FORCE_PARAMS,
+      ...forceParams
+    }
+
+    let animationFrameId = null
+    let iterationCount = 0
+    let lastStableCheck = 0
+
+    // 力導向圖模擬循環
+    const simulate = () => {
+      // 如果拖曳中或已暫停，跳過模擬
+      if (draggingNodeId) {
+        animationFrameId = requestAnimationFrame(simulate)
+        return
+      }
+
+      // 從 state 獲取當前節點位置
+      setNodePositions(currentPositions => {
+        const currentNodes = baseNodes.map(node => ({
+          ...node,
+          x: currentPositions[node.id]?.x ?? node.x,
+          y: currentPositions[node.id]?.y ?? node.y
+        }))
+
+        // 計算力並更新位置
+        const forces = calculateForces(currentNodes, connections, params)
+        const updatedNodes = applyForces(currentNodes, forces, velocitiesRef.current, params)
+
+        // 轉換為位置字典
+        const newPositions = {}
+        updatedNodes.forEach(node => {
+          newPositions[node.id] = { x: node.x, y: node.y, isCenter: node.isCenter }
+        })
+
+        // 每隔一段時間檢查穩定性
+        iterationCount++
+        if (iterationCount - lastStableCheck > 30) {
+          lastStableCheck = iterationCount
+
+          // 計算總動能判斷是否穩定
+          let totalKineticEnergy = 0
+          velocitiesRef.current.forEach(vel => {
+            totalKineticEnergy += vel.x * vel.x + vel.y * vel.y
+          })
+
+          if (totalKineticEnergy < params.stabilityThreshold) {
+            if (!isLayoutStable) {
+              setIsLayoutStable(true)
+              setNeedsFitToView(true) // 觸發 Fit-to-View
+            }
+            // 穩定後繼續運行一小段時間，然後停止
+            if (iterationCount > params.initialIterations + 50) {
+              return currentPositions // 保持當前位置，不再更新
+            }
+          } else {
+            setIsLayoutStable(false)
+          }
+        }
+
+        return newPositions
+      })
+
+      animationFrameId = requestAnimationFrame(simulate)
+    }
+
+    // 啟動模擬
+    animationFrameId = requestAnimationFrame(simulate)
+
+    // 清理函數
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId)
+      }
+    }
+  }, [baseNodes, timelines, draggingNodeId])
+
+  const nodesComputed = useMemo(() => baseNodes.map(n => {
+    const pos = nodePositions[n.id]
+    // 如果 nodePositions 中的座標無效，使用 baseNodes 的原始座標
+    if (pos && isFinite(pos.x) && isFinite(pos.y)) {
+      return { ...n, ...pos }
+    }
+    return n
+  }), [baseNodes, nodePositions])
   const nodeMap = useMemo(() => {
     const map = new Map()
     nodesComputed.forEach((node) => map.set(node.id, node))
@@ -611,7 +1656,51 @@ export default function MindMap() {
 
   const connections = useMemo(() => buildConnections(timelines), [timelines])
 
-  const centralNode = VIEWBOX_CENTER
+  // 計算每個節點的連線角度分散索引
+  const connectionAngles = useMemo(() => {
+    const nodeConnections = new Map() // 節點 -> 該節點的所有連線
+
+    connections.forEach(conn => {
+      // 記錄從 src 出發的連線
+      if (!nodeConnections.has(conn.src)) {
+        nodeConnections.set(conn.src, [])
+      }
+      nodeConnections.get(conn.src).push({ ...conn, direction: 'out' })
+
+      // 記錄到 dst 的連線
+      if (!nodeConnections.has(conn.dst)) {
+        nodeConnections.set(conn.dst, [])
+      }
+      nodeConnections.get(conn.dst).push({ ...conn, direction: 'in' })
+    })
+
+    // 為每條連線計算角度索引
+    const angleMap = new Map()
+    nodeConnections.forEach((conns, nodeId) => {
+      const outConns = conns.filter(c => c.direction === 'out')
+      outConns.forEach((conn, index) => {
+        angleMap.set(conn.id, {
+          index,
+          total: outConns.length,
+          direction: 'out'
+        })
+      })
+    })
+
+    return angleMap
+  }, [connections])
+
+  // 執行 Fit-to-View
+  useEffect(() => {
+    if (needsFitToView && nodesComputed.length > 0) {
+      // 延遲執行，確保節點位置已更新
+      const timer = setTimeout(() => {
+        fitToView(nodesComputed)
+        setNeedsFitToView(false)
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [needsFitToView, nodesComputed, fitToView])
 
   return (
     <div className="bg-slate-950 text-slate-100">
@@ -718,15 +1807,68 @@ export default function MindMap() {
               </div>
             ) : (
               <div className="relative">
+                {/* 地圖式控制 UI：縮放顯示與控制按鈕 */}
+                <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-2">
+                  {/* 縮放顯示 */}
+                  <div className="bg-slate-800/90 backdrop-blur-sm border border-slate-600/50 rounded-lg px-3 py-2 shadow-lg">
+                    <div className="flex items-center gap-2 text-xs text-slate-300">
+                      <span className="font-mono font-semibold text-cyan-300">
+                        {Math.round(viewTransform.scale * 100)}%
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 縮放控制按鈕 */}
+                  <div className="bg-slate-800/90 backdrop-blur-sm border border-slate-600/50 rounded-lg shadow-lg overflow-hidden">
+                    <button
+                      onClick={() => {
+                        setViewTransform(prev => ({
+                          ...prev,
+                          scale: clamp(prev.scale * 1.2, 0.2, 5)
+                        }))
+                      }}
+                      className="w-full px-3 py-2 text-slate-300 hover:bg-slate-700/50 transition-colors border-b border-slate-600/30"
+                      title="放大 (Zoom In)"
+                    >
+                      <span className="text-lg font-bold">+</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setViewTransform(prev => ({
+                          ...prev,
+                          scale: clamp(prev.scale / 1.2, 0.2, 5)
+                        }))
+                      }}
+                      className="w-full px-3 py-2 text-slate-300 hover:bg-slate-700/50 transition-colors"
+                      title="縮小 (Zoom Out)"
+                    >
+                      <span className="text-lg font-bold">−</span>
+                    </button>
+                  </div>
+
+                  {/* Reset View 按鈕 */}
+                  <button
+                    onClick={resetView}
+                    className="bg-slate-800/90 backdrop-blur-sm border border-slate-600/50 rounded-lg px-3 py-2 shadow-lg hover:bg-slate-700/70 transition-colors"
+                    title="重置視圖 (Reset View)"
+                  >
+                    <RefreshCcw className="w-4 h-4 text-slate-300" />
+                  </button>
+                </div>
+
                 <svg
                   ref={svgRef}
-                  viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}
+                  viewBox={`0 0 ${canvasSize} ${canvasSize}`}
                   className="w-full h-[480px] text-slate-400"
                   onWheel={handleWheelZoom}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
                   onMouseUp={handleMouseUp}
                   onMouseLeave={handleMouseUp}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                  style={{ touchAction: 'none' }}
                 >
                   <defs>
                     <filter id="nodeGlow" filterUnits="userSpaceOnUse">
@@ -747,6 +1889,11 @@ export default function MindMap() {
                       return null
                     }
 
+                    // 跳過座標無效的連線（防止 NaN 渲染錯誤）
+                    if (!isFinite(fromNode.x) || !isFinite(fromNode.y) || !isFinite(toNode.x) || !isFinite(toNode.y)) {
+                      return null
+                    }
+
                     // 焦點模式: 只顯示選中的連線
                     if (isFocusMode && selectedConnectionId && connection.id !== selectedConnectionId) {
                       return null
@@ -762,13 +1909,79 @@ export default function MindMap() {
                     const stageLabel = translateStageLabel(renderState?.currentStage?.label) || '??'
                     const fromPoint = { x: fromNode.x, y: fromNode.y }
                     const toPoint = { x: toNode.x, y: toNode.y }
-                    const centerPoint = VIEWBOX_CENTER
-                    const polylinePoints = [fromPoint, centerPoint, toPoint]
-                    const dotPoint = pointOnPolyline(polylinePoints, dotProgress)
-                    const labelPoint = pointOnPolyline(polylinePoints, clamp(dotProgress + 0.1, 0, 1))
-                    const midpoint = pointOnPolyline(polylinePoints, 0.45)
-                    const completionPoint = pointOnPolyline(polylinePoints, 0.6)
-                    const pathD = `M ${fromPoint.x} ${fromPoint.y} L ${centerPoint.x} ${centerPoint.y} L ${toPoint.x} ${toPoint.y}`
+
+                    // 檢測是否連接到中心節點
+                    const fromIsCenter = fromNode.isCenter
+                    const toIsCenter = toNode.isCenter
+                    const hasCenter = fromIsCenter || toIsCenter
+
+                    // 計算連線的基礎向量和角度
+                    const dx = toPoint.x - fromPoint.x
+                    const dy = toPoint.y - fromPoint.y
+                    const baseAngle = Math.atan2(dy, dx)
+                    const distance = Math.hypot(dx, dy)
+
+                    // 角度分散：為從同一節點出發的連線添加偏移
+                    let angleOffset = 0
+                    const angleInfo = connectionAngles.get(connection.id)
+
+                    if (angleInfo && angleInfo.total > 1 && hasCenter) {
+                      // 只對連接到中心節點的連線應用角度分散
+                      const spreadRange = Math.PI / 18 // ±10度範圍
+                      const centerOffset = (angleInfo.index - (angleInfo.total - 1) / 2)
+                      angleOffset = centerOffset * spreadRange / Math.max(angleInfo.total / 2, 1)
+                    } else if (connection.bundleSize > 1) {
+                      // 對同一路徑的束狀連線應用較小的偏移
+                      const maxAngleOffset = Math.PI / 72 // ±2.5度
+                      angleOffset = connection.bundleOffset * maxAngleOffset / Math.max(connection.bundleSize / 2, 1)
+                    }
+
+                    // 計算調整後的起點和終點（從節點圓周出發）
+                    const fromRadius = fromIsCenter ? CENTRAL_NODE_OUTER_RADIUS : NODE_OUTER_RADIUS
+                    const toRadius = toIsCenter ? CENTRAL_NODE_OUTER_RADIUS : NODE_OUTER_RADIUS
+
+                    const adjustedAngle = baseAngle + angleOffset
+                    const adjustedFromPoint = {
+                      x: fromPoint.x + Math.cos(adjustedAngle) * fromRadius * 1.2,
+                      y: fromPoint.y + Math.sin(adjustedAngle) * fromRadius * 1.2
+                    }
+                    const adjustedToPoint = {
+                      x: toPoint.x - Math.cos(adjustedAngle) * toRadius * 1.2,
+                      y: toPoint.y - Math.sin(adjustedAngle) * toRadius * 1.2
+                    }
+
+                    // 放射狀布局：使用調整後的點
+                    const dotX = adjustedFromPoint.x + (adjustedToPoint.x - adjustedFromPoint.x) * dotProgress
+                    const dotY = adjustedFromPoint.y + (adjustedToPoint.y - adjustedFromPoint.y) * dotProgress
+                    const dotPoint = { x: dotX, y: dotY }
+
+                    // 智能標籤定位：遠離中心節點
+                    let labelProgress
+                    if (hasCenter) {
+                      // 如果連接到中心節點，將標籤放在遠離中心的位置
+                      if (fromIsCenter) {
+                        // 從中心出發：標籤在 40%-60% 之間（靠近目標端）
+                        labelProgress = clamp(0.4 + dotProgress * 0.2, 0.4, 0.6)
+                      } else {
+                        // 到中心：標籤在 40%-60% 之間（靠近起點端）
+                        labelProgress = clamp(0.4 + dotProgress * 0.2, 0.4, 0.6)
+                      }
+                    } else {
+                      // 非中心連線：跟隨動畫點並稍微偏移
+                      labelProgress = clamp(dotProgress + 0.1, 0, 1)
+                    }
+
+                    const labelPoint = {
+                      x: adjustedFromPoint.x + (adjustedToPoint.x - adjustedFromPoint.x) * labelProgress,
+                      y: adjustedFromPoint.y + (adjustedToPoint.y - adjustedFromPoint.y) * labelProgress
+                    }
+
+                    const midpoint = {
+                      x: (adjustedFromPoint.x + adjustedToPoint.x) / 2,
+                      y: (adjustedFromPoint.y + adjustedToPoint.y) / 2
+                    }
+                    const completionPoint = midpoint
+                    const pathD = `M ${adjustedFromPoint.x} ${adjustedFromPoint.y} L ${adjustedToPoint.x} ${adjustedToPoint.y}`
 
                     const connectionStyle = renderState?.connectionStyle || 'solid'
                     const strokeDasharray = connectionStyle === 'dashed'
@@ -785,6 +1998,10 @@ export default function MindMap() {
                     const isSelected = selectedConnectionId === connection.id
                     const shouldShowLabel = isHovered || isSelected
 
+                    // 聚焦模式：當選中連線時，只顯示該連線，隱藏其他連線
+                    const shouldHide = selectedConnectionId && !isSelected
+                    if (shouldHide) return null
+
                     const isDimmed = !isFocusMode && hoveredConnectionId && !isHovered && !isSelected
                     const finalOpacity = isDimmed ? opacity * 0.15 : opacity
 
@@ -799,15 +2016,18 @@ export default function MindMap() {
                           }
                         }}
                         onMouseLeave={() => setHoveredConnectionId(null)}
-                        onClick={() => setSelectedConnectionId(
-                          selectedConnectionId === connection.id ? null : connection.id
-                        )}
+                        onClick={() => {
+                          const newConnectionId = selectedConnectionId === connection.id ? null : connection.id
+                          setSelectedConnectionId(newConnectionId)
+                          // 使用 originalId 來獲取封包資訊（API 期望的是沒有索引後綴的 ID）
+                          fetchConnectionPackets(newConnectionId ? connection.originalId : null)
+                        }}
                         style={{ cursor: 'pointer' }}
                       >
                         <path
                           d={pathD}
                           stroke={color}
-                          strokeWidth={isSelected ? 2.4 : isHovered ? 2.0 : isCompleted ? 1.8 : 1.2}
+                          strokeWidth={isSelected ? 1.8 : isHovered ? 1.5 : isCompleted ? 1.2 : 0.8}
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeOpacity={finalOpacity * 0.35}
@@ -889,50 +2109,153 @@ export default function MindMap() {
                             </text>
                           </>
                         )}
+
+                        {/* 封包粒子動畫 */}
+                        {isSelected && particleSystemRef.current && (() => {
+                          const particles = particleSystemRef.current.getActiveParticles()
+                          if (particles.length > 0) {
+                            console.log('[MindMap] Rendering', particles.length, 'particles for connection', connection.id)
+                          }
+                          return particles.map(particle => {
+                            // 計算粒子在連線上的位置
+                            const particleX = adjustedFromPoint.x + (adjustedToPoint.x - adjustedFromPoint.x) * particle.position
+                            const particleY = adjustedFromPoint.y + (adjustedToPoint.y - adjustedFromPoint.y) * particle.position
+
+                            return (
+                              <g key={particle.id}>
+                                {/* 粒子圓點 */}
+                                <circle
+                                  cx={particleX}
+                                  cy={particleY}
+                                  r={particle.size * 0.4}
+                                  fill={particle.color}
+                                  opacity={0.9}
+                                  filter={particle.glowColor ? "url(#nodeGlow)" : undefined}
+                                >
+                                  {/* 錯誤封包閃爍動畫 */}
+                                  {particle.isError && (
+                                    <animate
+                                      attributeName="opacity"
+                                      values="0.3;1;0.3"
+                                      dur="0.6s"
+                                      repeatCount="indefinite"
+                                    />
+                                  )}
+                                </circle>
+
+                                {/* 粒子外圈光暈（錯誤封包） */}
+                                {particle.isError && (
+                                  <circle
+                                    cx={particleX}
+                                    cy={particleY}
+                                    r={particle.size * 0.7}
+                                    fill="none"
+                                    stroke={particle.color}
+                                    strokeWidth="0.3"
+                                    opacity="0.5"
+                                  >
+                                    <animate
+                                      attributeName="r"
+                                      values={`${particle.size * 0.5};${particle.size * 1.2};${particle.size * 0.5}`}
+                                      dur="1s"
+                                      repeatCount="indefinite"
+                                    />
+                                    <animate
+                                      attributeName="opacity"
+                                      values="0.7;0.2;0.7"
+                                      dur="1s"
+                                      repeatCount="indefinite"
+                                    />
+                                  </circle>
+                                )}
+
+                                {/* 封包標籤 */}
+                                {particle.label && (
+                                  <text
+                                    x={particleX}
+                                    y={particleY - particle.size * 0.8}
+                                    textAnchor="middle"
+                                    className="text-[1.2px] fill-white font-mono"
+                                    style={{ pointerEvents: 'none' }}
+                                    opacity={0.9}
+                                  >
+                                    {particle.label}
+                                  </text>
+                                )}
+
+                                {/* 錯誤警告標記 */}
+                                {particle.isError && (
+                                  <text
+                                    x={particleX + particle.size * 0.8}
+                                    y={particleY - particle.size * 0.5}
+                                    textAnchor="middle"
+                                    className="text-[1.5px]"
+                                    style={{ pointerEvents: 'none' }}
+                                  >
+                                    ⚠
+                                  </text>
+                                )}
+                              </g>
+                            )
+                          })
+                        })()}
                       </g>
                     )
                   })}
 
-                  {nodesComputed.map((node) => (
-                    <g key={node.id} onMouseDown={(e) => { e.stopPropagation(); setDraggingNodeId(node.id) }} style={{ cursor: 'grab' }}>
-                      <circle cx={node.x} cy={node.y} r={NODE_OUTER_RADIUS} fill="#0f172a" stroke="#1f2937" strokeWidth={0.45} />
-                      <circle cx={node.x} cy={node.y} r={NODE_INNER_RADIUS} fill="#1f2937" stroke="#38bdf8" strokeWidth={0.45} filter="url(#nodeGlow)" />
-                      <text
-                        x={node.x}
-                        y={node.y - NODE_LABEL_OFFSET_TOP}
-                        textAnchor="middle"
-                        className="text-[1.9px] font-semibold fill-slate-100"
-                      >
-                        {node.label}
-                      </text>
-                      {node.protocols.length > 0 && (
+                  {nodesComputed.map((node) => {
+                    // 跳過座標無效的節點（防止 NaN 渲染錯誤）
+                    if (!isFinite(node.x) || !isFinite(node.y)) {
+                      return null
+                    }
+
+                    // 根據是否為中心節點使用不同的視覺樣式
+                    const outerRadius = node.isCenter ? CENTRAL_NODE_OUTER_RADIUS : NODE_OUTER_RADIUS
+                    const innerRadius = node.isCenter ? CENTRAL_NODE_INNER_RADIUS : NODE_INNER_RADIUS
+                    const labelOffsetY = node.isCenter ? CENTRAL_LABEL_OFFSET : -NODE_LABEL_OFFSET_TOP
+                    const labelClass = node.isCenter
+                      ? "text-[2.2px] font-bold fill-cyan-200"
+                      : "text-[1.9px] font-semibold fill-slate-100"
+                    const outerFill = node.isCenter ? "#020617" : "#0f172a"
+                    const strokeWidth = node.isCenter ? 0.55 : 0.45
+
+                    return (
+                      <g key={node.id} onMouseDown={(e) => { e.stopPropagation(); setDraggingNodeId(node.id) }} style={{ cursor: node.isCenter ? 'default' : 'grab' }}>
+                        <circle cx={node.x} cy={node.y} r={outerRadius} fill={outerFill} stroke="#1f2937" strokeWidth={strokeWidth} />
+                        <circle cx={node.x} cy={node.y} r={innerRadius} fill="#1f2937" stroke="#38bdf8" strokeWidth={strokeWidth} filter="url(#nodeGlow)" />
                         <text
                           x={node.x}
-                          y={node.y + NODE_PROTOCOL_OFFSET}
+                          y={node.y + labelOffsetY}
                           textAnchor="middle"
-                          className="text-[1.5px] fill-cyan-300 uppercase tracking-wide"
+                          className={labelClass}
+                          style={{ pointerEvents: 'none' }}
                         >
-                          {node.protocols.join(' · ')}
+                          {node.label}
                         </text>
-                      )}
-                    </g>
-                  ))}
-
-                  {centralNode && (
-                    <g>
-                      <circle cx={centralNode.x} cy={centralNode.y} r={CENTRAL_NODE_OUTER_RADIUS} fill="#020617" stroke="#1f2937" strokeWidth={0.55} />
-                      <circle cx={centralNode.x} cy={centralNode.y} r={CENTRAL_NODE_INNER_RADIUS} fill="#1f2937" stroke="#38bdf8" strokeWidth={0.55} filter="url(#nodeGlow)" />
-                      <text
-                        x={centralNode.x}
-                        y={centralNode.y + CENTRAL_LABEL_OFFSET}
-                        textAnchor="middle"
-                        className="text-[2px] font-semibold fill-cyan-200"
-                        style={{ pointerEvents: 'none' }}
-                      >
-                        網路中心
-                      </text>
-                    </g>
-                  )}
+                        {node.isCenter && (
+                          <text
+                            x={node.x}
+                            y={node.y + labelOffsetY + 2.5}
+                            textAnchor="middle"
+                            className="text-[1.5px] fill-amber-400 font-semibold"
+                            style={{ pointerEvents: 'none' }}
+                          >
+                            網路中心
+                          </text>
+                        )}
+                        {!node.isCenter && node.protocols.length > 0 && (
+                          <text
+                            x={node.x}
+                            y={node.y + NODE_PROTOCOL_OFFSET}
+                            textAnchor="middle"
+                            className="text-[1.5px] fill-cyan-300 uppercase tracking-wide"
+                          >
+                            {node.protocols.join(' · ')}
+                          </text>
+                        )}
+                      </g>
+                    )
+                  })}
 
                   </g>
                 </svg>
@@ -1061,6 +2384,46 @@ export default function MindMap() {
           </aside>
         </div>
       </main>
+
+      {/* 封包檢視器浮動面板 */}
+      {connectionPackets && (
+        <PacketViewer
+          connectionData={connectionPackets}
+          onClose={() => {
+            setConnectionPackets(null)
+            setSelectedConnectionId(null)
+          }}
+          loading={loadingPackets}
+        />
+      )}
+
+      {/* 時間軸控制面板 */}
+      {(() => {
+        const shouldShowControls = selectedConnectionId && particleSystemRef.current && connectionPackets
+        console.log('[MindMap] TimelineControls check:', {
+          selectedConnectionId,
+          hasParticleSystem: !!particleSystemRef.current,
+          hasPackets: !!connectionPackets,
+          shouldShow: shouldShowControls
+        })
+        return shouldShowControls
+      })() && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-2xl px-4">
+          <TimelineControls
+            isPlaying={isParticleAnimationPlaying}
+            speed={particleSpeed}
+            currentTime={particleTimeInfo.current}
+            totalTime={particleTimeInfo.total}
+            progress={particleTimeInfo.progress}
+            packetCount={connectionPackets?.packets?.length || connectionPackets?.total_packets || 0}
+            onPlayPause={handlePlayPause}
+            onSpeedChange={handleSpeedChange}
+            onSeek={handleSeek}
+            onStepForward={handleStepForward}
+            onStepBackward={handleStepBackward}
+          />
+        </div>
+      )}
 
       <input
         ref={fileInputRef}

@@ -180,6 +180,8 @@ class NetworkAnalyzer:
                 'timelines': timelines
             }
             self.analysis_results['protocol_timelines'] = payload
+            self.analysis_results['connection_packets'] = {}
+            self.protocol_timelines = timelines  # Set as attribute for easy access
             return payload
 
         tcp_handshakes = self._extract_tcp_handshakes()
@@ -198,6 +200,11 @@ class NetworkAnalyzer:
             'timelines': timelines
         }
         self.analysis_results['protocol_timelines'] = payload
+        self.protocol_timelines = timelines  # Set as attribute for easy access
+
+        # Build detailed packet information for each connection
+        self._build_connection_packets(timelines)
+
         return payload
 
     def _extract_tcp_handshakes(self):
@@ -425,7 +432,7 @@ class NetworkAnalyzer:
                 # 如果超過 3 秒沒有封包，視為可能的超時
                 if time_gap > 3.0:
                     timeline = {
-                        'id': f"timeout-{ip.src}-{tcp.sport}-{ip.dst}-{tcp.dport}-{index}",
+                        'id': f"timeout-{ip.src}-{tcp.sport}-{ip.dst}-{tcp.dport}-{conn['start_packet']}-{index}",
                         'protocol': 'tcp',
                         'protocolType': 'timeout',
                         'startEpochMs': int(conn['last_time'] * 1000),
@@ -771,6 +778,322 @@ class NetworkAnalyzer:
 
         return "\n".join(report)
 
+    def _extract_packet_details(self, packet_index):
+        """Extract detailed information from a single packet.
+
+        Args:
+            packet_index: Index of the packet in self.packets
+
+        Returns:
+            dict: Packet details including 5-tuple, headers, and payload
+        """
+        if packet_index >= len(self.packets):
+            return None
+
+        packet = self.packets[packet_index]
+        timestamp = float(packet.time)
+
+        # Initialize packet details
+        details = {
+            'index': packet_index,
+            'timestamp': timestamp,
+            'length': len(packet),
+            'fiveTuple': {},
+            'headers': {},
+            'payload': {
+                'length': 0,
+                'preview': ''
+            },
+            'streamId': None,  # TCP stream identifier
+            'errorType': None,  # Error classification (ZeroWindow, RST, etc.)
+            'http': None,  # HTTP information (if applicable)
+        }
+
+        # Extract IP layer information
+        if packet.haslayer(IP):
+            ip = packet[IP]
+            details['fiveTuple']['srcIp'] = ip.src
+            details['fiveTuple']['dstIp'] = ip.dst
+            details['headers']['ip'] = {
+                'version': ip.version,
+                'ttl': ip.ttl,
+                'protocol': ip.proto
+            }
+
+            # Extract TCP information
+            if packet.haslayer(TCP):
+                tcp = packet[TCP]
+                details['fiveTuple']['srcPort'] = tcp.sport
+                details['fiveTuple']['dstPort'] = tcp.dport
+                details['fiveTuple']['protocol'] = 'TCP'
+
+                # Generate TCP stream ID (hash of 5-tuple, bidirectional)
+                src_ip, dst_ip = ip.src, ip.dst
+                src_port, dst_port = tcp.sport, tcp.dport
+                # Sort to make it bidirectional
+                if (src_ip, src_port) > (dst_ip, dst_port):
+                    src_ip, dst_ip = dst_ip, src_ip
+                    src_port, dst_port = dst_port, src_port
+                details['streamId'] = f"tcp-{src_ip}:{src_port}-{dst_ip}:{dst_port}"
+
+                # Parse TCP flags
+                flags = []
+                if tcp.flags.S: flags.append('SYN')
+                if tcp.flags.A: flags.append('ACK')
+                if tcp.flags.F: flags.append('FIN')
+                if tcp.flags.R: flags.append('RST')
+                if tcp.flags.P: flags.append('PSH')
+                if tcp.flags.U: flags.append('URG')
+
+                # Detect error conditions
+                error_indicators = []
+                if tcp.flags.R:
+                    error_indicators.append('RST')
+                if tcp.window == 0 and tcp.flags.A:
+                    error_indicators.append('ZeroWindow')
+                # Note: Retransmission detection requires seq tracking across packets
+                # which we'll implement in a future enhancement
+
+                if error_indicators:
+                    details['errorType'] = '|'.join(error_indicators)
+
+                details['headers']['tcp'] = {
+                    'flags': '|'.join(flags) if flags else 'NONE',
+                    'seq': tcp.seq,
+                    'ack': tcp.ack,
+                    'window': tcp.window,
+                    'dataOffset': tcp.dataofs,
+                    'options': str(tcp.options) if tcp.options else None
+                }
+
+                # Extract payload
+                if hasattr(tcp, 'payload') and tcp.payload:
+                    payload_bytes = bytes(tcp.payload)
+                    details['payload']['length'] = len(payload_bytes)
+                    # Preview first 100 bytes
+                    preview_bytes = payload_bytes[:100]
+                    details['payload']['preview'] = preview_bytes.hex()
+                    # Try to get ASCII representation
+                    try:
+                        details['payload']['ascii'] = ''.join(
+                            chr(b) if 32 <= b < 127 else '.' for b in preview_bytes
+                        )
+                    except:
+                        details['payload']['ascii'] = ''
+
+                    # Try to parse HTTP headers
+                    try:
+                        payload_str = payload_bytes.decode('utf-8', errors='ignore')
+                        # Check if this looks like HTTP
+                        if payload_str.startswith('HTTP/') or \
+                           any(payload_str.startswith(m) for m in ['GET ', 'POST ', 'PUT ', 'DELETE ', 'HEAD ', 'OPTIONS ', 'PATCH ']):
+                            lines = payload_str.split('\r\n')
+                            if lines:
+                                first_line = lines[0]
+                                http_info = {}
+
+                                # Parse request line (e.g., "GET /path HTTP/1.1")
+                                if not first_line.startswith('HTTP/'):
+                                    parts = first_line.split(' ', 2)
+                                    if len(parts) >= 2:
+                                        http_info['method'] = parts[0]
+                                        http_info['path'] = parts[1]
+                                        http_info['version'] = parts[2] if len(parts) > 2 else 'HTTP/1.1'
+                                        http_info['type'] = 'request'
+                                # Parse response line (e.g., "HTTP/1.1 200 OK")
+                                else:
+                                    parts = first_line.split(' ', 2)
+                                    if len(parts) >= 2:
+                                        http_info['version'] = parts[0]
+                                        http_info['status'] = int(parts[1])
+                                        http_info['statusText'] = parts[2] if len(parts) > 2 else ''
+                                        http_info['type'] = 'response'
+
+                                # Parse headers (first few)
+                                headers = {}
+                                for line in lines[1:10]:  # Parse up to 10 headers
+                                    if ':' in line:
+                                        key, value = line.split(':', 1)
+                                        headers[key.strip().lower()] = value.strip()
+
+                                if headers:
+                                    http_info['headers'] = headers
+
+                                if http_info:
+                                    details['http'] = http_info
+                    except:
+                        pass  # Not HTTP or parsing failed
+
+            # Extract UDP information
+            elif packet.haslayer(UDP):
+                udp = packet[UDP]
+                details['fiveTuple']['srcPort'] = udp.sport
+                details['fiveTuple']['dstPort'] = udp.dport
+                details['fiveTuple']['protocol'] = 'UDP'
+
+                # Generate UDP stream ID (hash of 5-tuple, bidirectional)
+                src_ip, dst_ip = ip.src, ip.dst
+                src_port, dst_port = udp.sport, udp.dport
+                # Sort to make it bidirectional
+                if (src_ip, src_port) > (dst_ip, dst_port):
+                    src_ip, dst_ip = dst_ip, src_ip
+                    src_port, dst_port = dst_port, src_port
+                details['streamId'] = f"udp-{src_ip}:{src_port}-{dst_ip}:{dst_port}"
+
+                details['headers']['udp'] = {
+                    'length': udp.len,
+                    'checksum': udp.chksum
+                }
+
+                # Extract payload
+                if hasattr(udp, 'payload') and udp.payload:
+                    payload_bytes = bytes(udp.payload)
+                    details['payload']['length'] = len(payload_bytes)
+                    preview_bytes = payload_bytes[:100]
+                    details['payload']['preview'] = preview_bytes.hex()
+                    try:
+                        details['payload']['ascii'] = ''.join(
+                            chr(b) if 32 <= b < 127 else '.' for b in preview_bytes
+                        )
+                    except:
+                        details['payload']['ascii'] = ''
+
+            # Extract ICMP information
+            elif packet.haslayer(ICMP):
+                icmp = packet[ICMP]
+                details['fiveTuple']['protocol'] = 'ICMP'
+                details['fiveTuple']['srcPort'] = 0
+                details['fiveTuple']['dstPort'] = 0
+
+                details['headers']['icmp'] = {
+                    'type': icmp.type,
+                    'code': icmp.code,
+                    'checksum': icmp.chksum
+                }
+
+        return details
+
+    def _find_packets_by_connection_id(self, connection_id: str) -> set:
+        """Find packet indices for a connection by parsing its ID and scanning packets.
+
+        This method handles all connection types by extracting the 5-tuple from the
+        connection ID and matching it against packets in both directions.
+
+        Args:
+            connection_id: Connection identifier in one of these formats:
+                - Standard: "{protocol}-{srcIp}-{srcPort}-{dstIp}-{dstPort}"
+                - Timeout: "timeout-{srcIp}-{srcPort}-{dstIp}-{dstPort}-{packetIndex}"
+
+        Returns:
+            set: Set of packet indices (int) matching this connection. Returns empty
+                 set if connection ID is malformed or no packets match.
+
+        Examples:
+            >>> analyzer._find_packets_by_connection_id("tcp-10.1.1.14-5434-210.71.227.211-443")
+            {4217, 4219, 4220}
+
+            >>> analyzer._find_packets_by_connection_id("timeout-10.1.1.14-9492-172.64.153.46-443-4632")
+            {4629, 4630, 4631, 4632, 4633}
+
+            >>> analyzer._find_packets_by_connection_id("invalid-id")
+            set()
+        """
+        # Parse connection ID
+        parts = connection_id.split('-')
+
+        # Extract 5-tuple based on connection type
+        try:
+            if parts[0] == 'timeout':
+                # Format: timeout-srcIp-srcPort-dstIp-dstPort-packetIndex
+                if len(parts) < 6:
+                    return set()
+                src_ip = parts[1]
+                src_port = int(parts[2])
+                dst_ip = parts[3]
+                dst_port = int(parts[4])
+                # parts[5] is the packet index after timeout (we'll find all packets, not just this one)
+            else:
+                # Format: protocol-srcIp-srcPort-dstIp-dstPort
+                if len(parts) < 5:
+                    return set()
+                src_ip = parts[1]
+                src_port = int(parts[2])
+                dst_ip = parts[3]
+                dst_port = int(parts[4])
+        except (ValueError, IndexError):
+            # Port is not an integer or malformed ID
+            return set()
+
+        # Scan packets to find matches
+        matched_indices = set()
+        for idx, packet in enumerate(self.packets):
+            if not packet.haslayer(IP):
+                continue
+
+            ip = packet[IP]
+
+            # Check TCP/UDP layer
+            transport_layer = None
+            if packet.haslayer(TCP):
+                transport_layer = packet[TCP]
+            elif packet.haslayer(UDP):
+                transport_layer = packet[UDP]
+            else:
+                continue
+
+            # Match 5-tuple (bidirectional)
+            matches = (
+                (ip.src == src_ip and transport_layer.sport == src_port and
+                 ip.dst == dst_ip and transport_layer.dport == dst_port)
+                or
+                (ip.src == dst_ip and transport_layer.sport == dst_port and
+                 ip.dst == src_ip and transport_layer.dport == src_port)
+            )
+
+            if matches:
+                matched_indices.add(idx)
+
+        return matched_indices
+
+    def _build_connection_packets(self, timelines):
+        """Build detailed packet information for each connection.
+
+        Args:
+            timelines: List of timeline objects
+        """
+        connection_packets = {}
+
+        for timeline in timelines:
+            connection_id = timeline['id']
+            packet_indices = set()
+
+            # PRIMARY: Collect all packet references from stages
+            if 'stages' in timeline:
+                for stage in timeline['stages']:
+                    if 'packetRefs' in stage:
+                        packet_indices.update(stage['packetRefs'])
+
+            # FALLBACK: If no packetRefs found, scan packets by connection ID
+            if not packet_indices:
+                packet_indices = self._find_packets_by_connection_id(connection_id)
+
+            # Extract details for each packet
+            packets = []
+            for idx in sorted(packet_indices):
+                packet_detail = self._extract_packet_details(idx)
+                if packet_detail:
+                    packets.append(packet_detail)
+
+            # Calculate relative time from first packet
+            if packets:
+                first_time = packets[0]['timestamp']
+                for packet in packets:
+                    packet['relativeTime'] = f"{packet['timestamp'] - first_time:.3f}s"
+
+            connection_packets[connection_id] = packets
+
+        self.analysis_results['connection_packets'] = connection_packets
+
     def save_results(self, output_file="network_analysis_results.json", public_output_dir="public/data"):
         os.makedirs(os.path.dirname(output_file) or '.', exist_ok=True)
 
@@ -795,6 +1118,11 @@ class NetworkAnalyzer:
                 with open(mind_map_path, 'w', encoding='utf-8') as handle:
                     json.dump(self.analysis_results['mind_map'], handle, ensure_ascii=False, indent=2)
                 self._safe_print(f'心智圖已輸出至 {mind_map_path}')
+            if 'connection_packets' in self.analysis_results:
+                packets_path = os.path.join(public_output_dir, 'connection_packets.json')
+                with open(packets_path, 'w', encoding='utf-8') as handle:
+                    json.dump(self.analysis_results['connection_packets'], handle, ensure_ascii=False, indent=2)
+                self._safe_print(f'連線封包詳細資訊已輸出至 {packets_path}')
 
 def main():
     if len(sys.argv) > 1:

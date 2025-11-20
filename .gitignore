@@ -29,3 +29,36 @@ __pycache__
 *$py.class
 *.so
 .Python
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+.pytest_cache/
+
+# Environment files (IMPORTANT: Never commit secrets!)
+.env
+.env.local
+.env.*.local
+
+# Test coverage
+coverage/
+.coverage
+htmlcov/
+
+# Temporary files
+*.tmp
+*.swp
+*~
+_tmp_*.py
+/.claude
+/.claude
+/.specify
+/__pycache__
+*.pyc
+*.md
+CLAUDE.md
+/output
+/public/data
+/specs
+/tests

@@ -1,0 +1,2687 @@
+{
+  "sourceFiles": [
+    "tmp_test_capture.pcap",
+    "掉封包.pcapng"
+  ],
+  "generatedAt": "2025-10-18T08:41:30.930508+00:00",
+  "timelines": [
+    {
+      "id": "udp-10.1.1.14-5000-151.106.248.1-7000",
+      "protocol": "udp",
+      "startEpochMs": 1760774222010,
+      "endEpochMs": 1760774222010,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            0
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-5001-151.106.248.1-7000",
+      "protocol": "udp",
+      "startEpochMs": 1760774222010,
+      "endEpochMs": 1760774222010,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-5002-151.106.248.1-7000",
+      "protocol": "udp",
+      "startEpochMs": 1760774222010,
+      "endEpochMs": 1760774222010,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            2
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "tcp-10.1.1.14-5434-210.71.227.211-443",
+      "protocol": "tcp",
+      "startEpochMs": 1760710355982,
+      "endEpochMs": 1760710355997,
+      "stages": [
+        {
+          "key": "syn",
+          "label": "SYN Sent",
+          "direction": "forward",
+          "durationMs": 7,
+          "packetRefs": [
+            4217
+          ]
+        },
+        {
+          "key": "syn-ack",
+          "label": "SYN-ACK Received",
+          "direction": "backward",
+          "durationMs": 7,
+          "packetRefs": [
+            4219
+          ]
+        },
+        {
+          "key": "ack",
+          "label": "ACK Confirmed",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4226
+          ]
+        }
+      ],
+      "metrics": {
+        "rttMs": 15,
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "tcp-10.1.1.14-1716-204.79.197.222-443",
+      "protocol": "tcp",
+      "startEpochMs": 1760710355998,
+      "endEpochMs": 1760710356013,
+      "stages": [
+        {
+          "key": "syn",
+          "label": "SYN Sent",
+          "direction": "forward",
+          "durationMs": 7,
+          "packetRefs": [
+            4228
+          ]
+        },
+        {
+          "key": "syn-ack",
+          "label": "SYN-ACK Received",
+          "direction": "backward",
+          "durationMs": 7,
+          "packetRefs": [
+            4231
+          ]
+        },
+        {
+          "key": "ack",
+          "label": "ACK Confirmed",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4239
+          ]
+        }
+      ],
+      "metrics": {
+        "rttMs": 15,
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-62296-151.106.248.1-7139",
+      "protocol": "udp",
+      "startEpochMs": 1760710335415,
+      "endEpochMs": 1760710361695,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 26279,
+          "packetRefs": [
+            0
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 2979
+      }
+    },
+    {
+      "id": "udp-35.215.146.191-50008-10.1.1.14-56884",
+      "protocol": "udp",
+      "startEpochMs": 1760710335449,
+      "endEpochMs": 1760710360779,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 25330,
+          "packetRefs": [
+            5
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 169
+      }
+    },
+    {
+      "id": "udp-151.106.248.1-7139-10.1.1.14-62296",
+      "protocol": "udp",
+      "startEpochMs": 1760710335454,
+      "endEpochMs": 1760710361698,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 26243,
+          "packetRefs": [
+            6
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1164
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-53781-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710335591,
+      "endEpochMs": 1760710335591,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            29
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-64219-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710335592,
+      "endEpochMs": 1760710335592,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            30
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-54904-20.157.23.37-54000",
+      "protocol": "udp",
+      "startEpochMs": 1760710335828,
+      "endEpochMs": 1760710361086,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 25257,
+          "packetRefs": [
+            78
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 36
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-56884-35.215.146.191-50008",
+      "protocol": "udp",
+      "startEpochMs": 1760710335872,
+      "endEpochMs": 1760710360827,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 24955,
+          "packetRefs": [
+            88
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 474
+      }
+    },
+    {
+      "id": "udp-20.157.23.37-54000-10.1.1.14-54904",
+      "protocol": "udp",
+      "startEpochMs": 1760710335979,
+      "endEpochMs": 1760710361080,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 25100,
+          "packetRefs": [
+            109
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 15
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-60102-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710336007,
+      "endEpochMs": 1760710336007,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            115
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-50159-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710336007,
+      "endEpochMs": 1760710336007,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            116
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-54513-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710336022,
+      "endEpochMs": 1760710336022,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            119
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-64325-192.168.119.200-161",
+      "protocol": "udp",
+      "startEpochMs": 1760710336284,
+      "endEpochMs": 1760710356821,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 20536,
+          "packetRefs": [
+            186
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-64325-192.168.119.213-161",
+      "protocol": "udp",
+      "startEpochMs": 1760710336284,
+      "endEpochMs": 1760710356821,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 20536,
+          "packetRefs": [
+            187
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-61436-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710336549,
+      "endEpochMs": 1760710336549,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            232
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-55982-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710336550,
+      "endEpochMs": 1760710336550,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            233
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-51430-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710336840,
+      "endEpochMs": 1760710336840,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            281
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-52929-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710336841,
+      "endEpochMs": 1760710336841,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            282
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-53743-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710337567,
+      "endEpochMs": 1760710337567,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            399
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-63976-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710337568,
+      "endEpochMs": 1760710337568,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            400
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-56620-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710337860,
+      "endEpochMs": 1760710337860,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            446
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-64897-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710337861,
+      "endEpochMs": 1760710337861,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            448
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-57358-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710338033,
+      "endEpochMs": 1760710338033,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            477
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-55422-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710338034,
+      "endEpochMs": 1760710338034,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            478
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-60515-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710338035,
+      "endEpochMs": 1760710338035,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            480
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-51208-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710338036,
+      "endEpochMs": 1760710338036,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            481
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-63689-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710338799,
+      "endEpochMs": 1760710338799,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            607
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-56216-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710338799,
+      "endEpochMs": 1760710338799,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            608
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-55473-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710338858,
+      "endEpochMs": 1760710338858,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            622
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-52030-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710339047,
+      "endEpochMs": 1760710339047,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            670
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-50952-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710339048,
+      "endEpochMs": 1760710339048,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            672
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-50187-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710339048,
+      "endEpochMs": 1760710339048,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            673
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-49966-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710339049,
+      "endEpochMs": 1760710339049,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            674
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-51287-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710339602,
+      "endEpochMs": 1760710339602,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            746
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-59460-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710339602,
+      "endEpochMs": 1760710339602,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            747
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-60947-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710339817,
+      "endEpochMs": 1760710339817,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            783
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-64213-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710339818,
+      "endEpochMs": 1760710339818,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            784
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-58926-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710340622,
+      "endEpochMs": 1760710340622,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            966
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-65199-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710340622,
+      "endEpochMs": 1760710340622,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            967
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-64114-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710341073,
+      "endEpochMs": 1760710341073,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1073
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-62371-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710341073,
+      "endEpochMs": 1760710341073,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1074
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-64130-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710341074,
+      "endEpochMs": 1760710341074,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1075
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-49664-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710341074,
+      "endEpochMs": 1760710341074,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1076
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-56873-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710341553,
+      "endEpochMs": 1760710341553,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1175
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-52076-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710341553,
+      "endEpochMs": 1760710341553,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1176
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-142.250.198.74-443-10.1.1.14-63879",
+      "protocol": "udp",
+      "startEpochMs": 1760710341740,
+      "endEpochMs": 1760710351741,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 10001,
+          "packetRefs": [
+            1208
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-63879-142.250.198.74-443",
+      "protocol": "udp",
+      "startEpochMs": 1760710341754,
+      "endEpochMs": 1760710351752,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 9997,
+          "packetRefs": [
+            1211
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-54021-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710341850,
+      "endEpochMs": 1760710341850,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1232
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-62104-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710341850,
+      "endEpochMs": 1760710341850,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1233
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-54252-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710342100,
+      "endEpochMs": 1760710342100,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1281
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-57453-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710342101,
+      "endEpochMs": 1760710342101,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1282
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-60634-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710342101,
+      "endEpochMs": 1760710342101,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1283
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-51407-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710342101,
+      "endEpochMs": 1760710342101,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1284
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-52902-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710342569,
+      "endEpochMs": 1760710342569,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1389
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-57101-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710342569,
+      "endEpochMs": 1760710342569,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1390
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-56723-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710342864,
+      "endEpochMs": 1760710342864,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1442
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-59911-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710342864,
+      "endEpochMs": 1760710345617,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 2752,
+          "packetRefs": [
+            1443
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-64556-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710343268,
+      "endEpochMs": 1760710350326,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 7057,
+          "packetRefs": [
+            1519
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 5
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-58812-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710343812,
+      "endEpochMs": 1760710343812,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1626
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-52656-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710343812,
+      "endEpochMs": 1760710343812,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1627
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-55440-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710344603,
+      "endEpochMs": 1760710344603,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1810
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-63656-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710344603,
+      "endEpochMs": 1760710344603,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1811
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-58237-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710344838,
+      "endEpochMs": 1760710344838,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1869
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-53093-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710344838,
+      "endEpochMs": 1760710344838,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            1870
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-56890-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710345617,
+      "endEpochMs": 1760710345617,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            2050
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-58113-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710346083,
+      "endEpochMs": 1760710346083,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            2137
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-54286-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710346083,
+      "endEpochMs": 1760710346083,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            2138
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-50313-142.250.204.36-443",
+      "protocol": "udp",
+      "startEpochMs": 1760710346177,
+      "endEpochMs": 1760710360250,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 14072,
+          "packetRefs": [
+            2154
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 6
+      }
+    },
+    {
+      "id": "udp-142.250.204.36-443-10.1.1.14-50313",
+      "protocol": "udp",
+      "startEpochMs": 1760710346186,
+      "endEpochMs": 1760710360259,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 14073,
+          "packetRefs": [
+            2157
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 6
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-62622-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710346867,
+      "endEpochMs": 1760710346867,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            2279
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-53618-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710346867,
+      "endEpochMs": 1760710346867,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            2280
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-56875-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710347099,
+      "endEpochMs": 1760710347099,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            2323
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-63133-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710347100,
+      "endEpochMs": 1760710347100,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            2324
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-60048-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710347891,
+      "endEpochMs": 1760710347891,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            2461
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-52302-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710347891,
+      "endEpochMs": 1760710347891,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            2462
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-59720-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710349144,
+      "endEpochMs": 1760710352191,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 3047,
+          "packetRefs": [
+            2709
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 4
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-62228-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710349926,
+      "endEpochMs": 1760710352975,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 3048,
+          "packetRefs": [
+            2862
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 4
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-54699-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710354298,
+      "endEpochMs": 1760710355332,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1034,
+          "packetRefs": [
+            3646
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-62328-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710355147,
+      "endEpochMs": 1760710355147,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            3793
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-64753-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710355147,
+      "endEpochMs": 1760710355147,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            3794
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-57412",
+      "protocol": "udp",
+      "startEpochMs": 1760710355815,
+      "endEpochMs": 1760710355815,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4128
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-57167",
+      "protocol": "udp",
+      "startEpochMs": 1760710355826,
+      "endEpochMs": 1760710355891,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 65,
+          "packetRefs": [
+            4132
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-49665",
+      "protocol": "udp",
+      "startEpochMs": 1760710355876,
+      "endEpochMs": 1760710355898,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 21,
+          "packetRefs": [
+            4147
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-63003",
+      "protocol": "udp",
+      "startEpochMs": 1760710355878,
+      "endEpochMs": 1760710355878,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4148
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-51349",
+      "protocol": "udp",
+      "startEpochMs": 1760710355891,
+      "endEpochMs": 1760710355891,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4154
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-51530",
+      "protocol": "udp",
+      "startEpochMs": 1760710355893,
+      "endEpochMs": 1760710355893,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4155
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-54513",
+      "protocol": "udp",
+      "startEpochMs": 1760710355893,
+      "endEpochMs": 1760710355919,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 25,
+          "packetRefs": [
+            4156
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 3
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-51673",
+      "protocol": "udp",
+      "startEpochMs": 1760710355911,
+      "endEpochMs": 1760710355911,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4164
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-59679",
+      "protocol": "udp",
+      "startEpochMs": 1760710355911,
+      "endEpochMs": 1760710355911,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4165
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-64807",
+      "protocol": "udp",
+      "startEpochMs": 1760710355912,
+      "endEpochMs": 1760710355912,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4167
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-59744",
+      "protocol": "udp",
+      "startEpochMs": 1760710355912,
+      "endEpochMs": 1760710355912,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4168
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-56795",
+      "protocol": "udp",
+      "startEpochMs": 1760710355913,
+      "endEpochMs": 1760710355913,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4171
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-64469",
+      "protocol": "udp",
+      "startEpochMs": 1760710355914,
+      "endEpochMs": 1760710355914,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4172
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-58322",
+      "protocol": "udp",
+      "startEpochMs": 1760710355914,
+      "endEpochMs": 1760710355914,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4173
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-60102",
+      "protocol": "udp",
+      "startEpochMs": 1760710355917,
+      "endEpochMs": 1760710355917,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4174
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-50159",
+      "protocol": "udp",
+      "startEpochMs": 1760710355918,
+      "endEpochMs": 1760710355918,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4176
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-53743",
+      "protocol": "udp",
+      "startEpochMs": 1760710355930,
+      "endEpochMs": 1760710355930,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4181
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-63976",
+      "protocol": "udp",
+      "startEpochMs": 1760710355931,
+      "endEpochMs": 1760710355931,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4182
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-56620",
+      "protocol": "udp",
+      "startEpochMs": 1760710355934,
+      "endEpochMs": 1760710355934,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4184
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-64897",
+      "protocol": "udp",
+      "startEpochMs": 1760710355935,
+      "endEpochMs": 1760710355935,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4186
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-52030",
+      "protocol": "udp",
+      "startEpochMs": 1760710355935,
+      "endEpochMs": 1760710355935,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4187
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-50952",
+      "protocol": "udp",
+      "startEpochMs": 1760710355938,
+      "endEpochMs": 1760710355938,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4188
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-58609-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710355939,
+      "endEpochMs": 1760710355939,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4189
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-60777-10.1.1.1-53",
+      "protocol": "udp",
+      "startEpochMs": 1760710355939,
+      "endEpochMs": 1760710355939,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4190
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-50187",
+      "protocol": "udp",
+      "startEpochMs": 1760710355950,
+      "endEpochMs": 1760710355950,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4193
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-49966",
+      "protocol": "udp",
+      "startEpochMs": 1760710355951,
+      "endEpochMs": 1760710355951,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4195
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-58926",
+      "protocol": "udp",
+      "startEpochMs": 1760710355952,
+      "endEpochMs": 1760710355952,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4196
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-65199",
+      "protocol": "udp",
+      "startEpochMs": 1760710355953,
+      "endEpochMs": 1760710355953,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4197
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-64556",
+      "protocol": "udp",
+      "startEpochMs": 1760710355954,
+      "endEpochMs": 1760710355975,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 20,
+          "packetRefs": [
+            4198
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-62104",
+      "protocol": "udp",
+      "startEpochMs": 1760710355954,
+      "endEpochMs": 1760710355954,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4199
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-63656",
+      "protocol": "udp",
+      "startEpochMs": 1760710355955,
+      "endEpochMs": 1760710355955,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4200
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-54021",
+      "protocol": "udp",
+      "startEpochMs": 1760710355957,
+      "endEpochMs": 1760710355957,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4201
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-53093",
+      "protocol": "udp",
+      "startEpochMs": 1760710355958,
+      "endEpochMs": 1760710355958,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4202
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-58237",
+      "protocol": "udp",
+      "startEpochMs": 1760710355958,
+      "endEpochMs": 1760710355958,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4203
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-58113",
+      "protocol": "udp",
+      "startEpochMs": 1760710355959,
+      "endEpochMs": 1760710355959,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4205
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-54286",
+      "protocol": "udp",
+      "startEpochMs": 1760710355970,
+      "endEpochMs": 1760710355970,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4208
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-59720",
+      "protocol": "udp",
+      "startEpochMs": 1760710355972,
+      "endEpochMs": 1760710355972,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4209
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-62228",
+      "protocol": "udp",
+      "startEpochMs": 1760710355980,
+      "endEpochMs": 1760710355980,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4212
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-54699",
+      "protocol": "udp",
+      "startEpochMs": 1760710355980,
+      "endEpochMs": 1760710355980,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4213
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-62328",
+      "protocol": "udp",
+      "startEpochMs": 1760710355981,
+      "endEpochMs": 1760710355981,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4214
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-64753",
+      "protocol": "udp",
+      "startEpochMs": 1760710355981,
+      "endEpochMs": 1760710355981,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4215
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-58609",
+      "protocol": "udp",
+      "startEpochMs": 1760710355996,
+      "endEpochMs": 1760710355996,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4224
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-60777",
+      "protocol": "udp",
+      "startEpochMs": 1760710355997,
+      "endEpochMs": 1760710355997,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4227
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-53-10.1.1.14-55440",
+      "protocol": "udp",
+      "startEpochMs": 1760710356043,
+      "endEpochMs": 1760710356043,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            4281
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.22-5353-224.0.0.251-5353",
+      "protocol": "udp",
+      "startEpochMs": 1760710359320,
+      "endEpochMs": 1760710360100,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 780,
+          "packetRefs": [
+            4762
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 6
+      }
+    },
+    {
+      "id": "udp-10.1.1.14-60957-35.215.146.191-50008",
+      "protocol": "udp",
+      "startEpochMs": 1760710360933,
+      "endEpochMs": 1760710360959,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 26,
+          "packetRefs": [
+            5143
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 2
+      }
+    },
+    {
+      "id": "udp-35.215.146.191-50008-10.1.1.14-60957",
+      "protocol": "udp",
+      "startEpochMs": 1760710360959,
+      "endEpochMs": 1760710360959,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 1,
+          "packetRefs": [
+            5153
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 1
+      }
+    },
+    {
+      "id": "udp-10.1.1.1-47456-239.255.255.250-1900",
+      "protocol": "udp",
+      "startEpochMs": 1760710361251,
+      "endEpochMs": 1760710361272,
+      "stages": [
+        {
+          "key": "send",
+          "label": "UDP Transfer",
+          "direction": "forward",
+          "durationMs": 20,
+          "packetRefs": [
+            5230
+          ]
+        }
+      ],
+      "metrics": {
+        "packetCount": 8
+      }
+    }
+  ]
+}

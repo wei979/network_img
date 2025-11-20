@@ -1,0 +1,4 @@
+﻿scapy==2.5.0
+fastapi==0.110.1
+uvicorn[standard]==0.27.1
+python-multipart==0.0.9

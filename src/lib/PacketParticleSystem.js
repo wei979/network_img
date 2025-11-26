@@ -368,9 +368,11 @@ export class PacketParticleSystem {
           color = '#a855f7' // UDP 紫色
         }
 
+        // 使用封包的實際索引 (packet.index)，如果沒有則使用陣列索引
+        const packetIndex = packet.index ?? index
         particles.push({
-          id: `particle-${index}`,
-          index,
+          id: `particle-${packetIndex}`,
+          index: packetIndex,
           position: Math.min(1, Math.max(0, particlePosition)), // 0-1 範圍
           size,
           color,

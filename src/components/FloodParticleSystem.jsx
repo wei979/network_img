@@ -22,9 +22,9 @@ const PARTICLE_COLORS = {
 // 粒子配置
 const CONFIG = {
   // 基礎粒子數量（低流量）
-  MIN_PARTICLES: 10,
+  MIN_PARTICLES: 50,
   // 最大粒子數量（高流量，防止卡頓）
-  MAX_PARTICLES: 200,
+  MAX_PARTICLES: 500,
   // 粒子速度範圍（每秒移動的路徑比例）
   MIN_SPEED: 0.3,
   MAX_SPEED: 1.2,
@@ -36,7 +36,11 @@ const CONFIG = {
   // 更新間隔（毫秒）
   UPDATE_INTERVAL: 16, // ~60fps
   // 粒子生成間隔基數（毫秒）
-  SPAWN_INTERVAL_BASE: 50
+  SPAWN_INTERVAL_BASE: 30, // 更快的生成速度
+  // 爆發效果配置
+  BURST_THRESHOLD: 0.7, // 封包率超過 70% 峰值時觸發爆發
+  BURST_PARTICLE_COUNT: 30, // 每次爆發生成的粒子數
+  BURST_COOLDOWN: 200 // 爆發冷卻時間（毫秒）
 }
 
 /**
@@ -88,6 +92,8 @@ export default function FloodParticleSystem({
   isPlaying = true,
   // 當前時間進度 (0-1)，用於同步心電圖
   timeProgress = 0,
+  // 強度變化回調 (0-1)
+  onIntensityChange = null,
   // 樣式
   className = ''
 }) {
@@ -95,6 +101,8 @@ export default function FloodParticleSystem({
   const lastUpdateRef = useRef(performance.now())
   const animationFrameRef = useRef(null)
   const spawnTimerRef = useRef(0)
+  const burstCooldownRef = useRef(0) // 爆發冷卻計時器
+  const lastIntensityRef = useRef(0) // 追蹤上一幀的強度
   const [, forceUpdate] = useState(0)
 
   // 計算路徑向量
@@ -138,6 +146,38 @@ export default function FloodParticleSystem({
 
     return Math.min(targetCount, CONFIG.MAX_PARTICLES)
   }, [getCurrentPacketRate, statistics])
+
+  // 計算當前攻擊強度 (0-1)
+  const getCurrentIntensity = useCallback(() => {
+    const rate = getCurrentPacketRate()
+    const summary = statistics?.summary || {}
+    const peakRate = summary.peak_rate || 1000
+    return Math.min(rate.total / peakRate, 1)
+  }, [getCurrentPacketRate, statistics])
+
+  // 爆發生成粒子
+  const spawnBurstParticles = useCallback(() => {
+    const rate = getCurrentPacketRate()
+    const newParticles = []
+
+    for (let i = 0; i < CONFIG.BURST_PARTICLE_COUNT; i++) {
+      // 爆發時主要生成 SYN 粒子（紅色）
+      const type = Math.random() < 0.8 ? 'SYN' : 'SYN_ACK'
+      const color = type === 'SYN' ? PARTICLE_COLORS.SYN : PARTICLE_COLORS.SYN_ACK
+
+      newParticles.push(new Particle({
+        type,
+        color,
+        isReverse: false,
+        // 爆發粒子速度更快
+        speed: (CONFIG.MIN_SPEED + Math.random() * (CONFIG.MAX_SPEED - CONFIG.MIN_SPEED)) * 1.5,
+        // 爆發粒子稍大
+        size: CONFIG.MIN_SIZE + Math.random() * (CONFIG.MAX_SIZE - CONFIG.MIN_SIZE) * 1.3
+      }))
+    }
+
+    return newParticles
+  }, [getCurrentPacketRate])
 
   // 生成新粒子
   const spawnParticle = useCallback(() => {
@@ -199,6 +239,31 @@ export default function FloodParticleSystem({
       const targetCount = getTargetParticleCount()
       const currentCount = particlesRef.current.length
 
+      // 計算當前強度
+      const currentIntensity = getCurrentIntensity()
+
+      // 爆發效果：當強度超過閾值且強度在上升時觸發
+      burstCooldownRef.current = Math.max(0, burstCooldownRef.current - deltaTime)
+
+      if (
+        currentIntensity >= CONFIG.BURST_THRESHOLD &&
+        currentIntensity > lastIntensityRef.current &&
+        burstCooldownRef.current <= 0
+      ) {
+        // 觸發爆發！
+        const burstParticles = spawnBurstParticles()
+        particlesRef.current.push(...burstParticles)
+        burstCooldownRef.current = CONFIG.BURST_COOLDOWN
+        console.log(`[FloodParticleSystem] Burst triggered! Intensity: ${(currentIntensity * 100).toFixed(1)}%`)
+      }
+
+      lastIntensityRef.current = currentIntensity
+
+      // 通知父組件當前強度
+      if (onIntensityChange) {
+        onIntensityChange(currentIntensity)
+      }
+
       // 動態調整生成速率
       spawnTimerRef.current += deltaTime
       const spawnInterval = CONFIG.SPAWN_INTERVAL_BASE * (CONFIG.MAX_PARTICLES / Math.max(targetCount, 1))
@@ -221,7 +286,7 @@ export default function FloodParticleSystem({
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [isPlaying, getTargetParticleCount, spawnParticle])
+  }, [isPlaying, getTargetParticleCount, getCurrentIntensity, spawnParticle, spawnBurstParticles])
 
   // 計算粒子在路徑上的位置
   const getParticlePosition = (progress) => {

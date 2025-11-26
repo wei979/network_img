@@ -934,10 +934,30 @@ export default function MindMap() {
   const [showBatchViewer, setShowBatchViewer] = useState(false)
   const [batchViewerConnection, setBatchViewerConnection] = useState(null)
 
+  // 智能判斷是否為攻擊流量
+  // 規則：connectionCount > 50 視為攻擊流量，使用 FloodParticleSystem + 攻擊時間軸
+  // 否則視為正常流量，使用 PacketParticleSystem + 封包列表
+  const isAttackTraffic = useMemo(() => {
+    if (!batchViewerConnection) return false
+    return batchViewerConnection.connectionCount > 50
+  }, [batchViewerConnection])
+
   // 洪流粒子效果狀態
   const [floodStatistics, setFloodStatistics] = useState(null)
   const [floodTimeProgress, setFloodTimeProgress] = useState(0)
+  const [floodIntensity, setFloodIntensity] = useState(0) // 當前攻擊強度 (0-1)
   const floodAnimationRef = useRef(null)
+
+  // 處理強度變化回調（節流以避免過多 re-render）
+  const lastIntensityUpdateRef = useRef(0)
+  const handleFloodIntensityChange = useCallback((intensity) => {
+    const now = Date.now()
+    // 每 50ms 最多更新一次
+    if (now - lastIntensityUpdateRef.current > 50) {
+      setFloodIntensity(intensity)
+      lastIntensityUpdateRef.current = now
+    }
+  }, [])
 
   // 同步 selectedConnectionId 到 ref，讓動畫循環能訪問最新值
   useEffect(() => {
@@ -950,6 +970,10 @@ export default function MindMap() {
   const [particleSpeed, setParticleSpeed] = useState(1.0)
   const [isParticleAnimationPlaying, setIsParticleAnimationPlaying] = useState(true)
   const [particleTimeInfo, setParticleTimeInfo] = useState({ current: '0.00', total: '0.00', progress: 0 })
+
+  // 粒子與側邊欄互動狀態
+  const [activeParticleIndices, setActiveParticleIndices] = useState(new Set()) // 當前顯示的粒子索引
+  const [selectedPacketIndex, setSelectedPacketIndex] = useState(null) // 使用者點選的封包索引
 
   // 全局時間軸狀態（統一控制所有動畫）
   const globalTimeRef = useRef(0) // 當前全局時間（毫秒）- 使用 ref 避免觸發重新渲染
@@ -1479,6 +1503,21 @@ export default function MindMap() {
             total: (globalDuration / 1000).toFixed(2),
             progress: globalProgress
           })
+        }
+
+        // 更新活躍粒子索引（用於側邊欄高亮同步）- 每幀都更新確保同步
+        const activeParticles = particleSystemRef.current.getActiveParticles()
+        const newActiveIndices = new Set(activeParticles.map(p => p.index))
+        // 只在有變化時更新，避免不必要的渲染
+        if (newActiveIndices.size > 0 || activeParticleIndices.size > 0) {
+          const currentIndicesArray = [...activeParticleIndices].sort()
+          const newIndicesArray = [...newActiveIndices].sort()
+          const hasChanged = currentIndicesArray.length !== newIndicesArray.length ||
+            currentIndicesArray.some((v, i) => v !== newIndicesArray[i])
+          if (hasChanged) {
+            console.log('[MindMap] Active particles changed:', [...newActiveIndices])
+            setActiveParticleIndices(newActiveIndices)
+          }
         }
       }
 
@@ -2184,6 +2223,27 @@ export default function MindMap() {
                         <feMergeNode in="SourceGraphic" />
                       </feMerge>
                     </filter>
+                    {/* 攻擊警告光暈濾鏡 */}
+                    <filter id="attackWarningGlow" filterUnits="userSpaceOnUse" x="-100%" y="-100%" width="300%" height="300%">
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur1" />
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur2" />
+                      <feColorMatrix in="blur1" type="matrix" values="1 0 0 0 0.8  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="redBlur1" />
+                      <feColorMatrix in="blur2" type="matrix" values="1 0 0 0 0.9  0 0 0 0 0.2  0 0 0 0 0  0 0 0 0.5 0" result="redBlur2" />
+                      <feMerge>
+                        <feMergeNode in="redBlur2" />
+                        <feMergeNode in="redBlur1" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                    {/* 中等強度警告光暈 */}
+                    <filter id="attackWarningGlowMedium" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
+                      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.6  0 0 0 0 0.3  0 0 0 0 0  0 0 0 0.8 0" result="orangeBlur" />
+                      <feMerge>
+                        <feMergeNode in="orangeBlur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
                   </defs>
 
                   <g transform={`translate(${viewTransform.tx} ${viewTransform.ty}) scale(${viewTransform.scale})`}>
@@ -2335,11 +2395,19 @@ export default function MindMap() {
                               // 點擊同一聚合連線，關閉檢視器
                               setShowBatchViewer(false)
                               setBatchViewerConnection(null)
+                              setSelectedConnectionId(null)
+                              setConnectionPackets(null)  // 清除封包資料
                             } else {
                               // 開啟檢視器
                               console.log('[MindMap] Showing batch packet viewer')
                               setShowBatchViewer(true)
                               setBatchViewerConnection(connection)
+                              // 新增：設置選中的連線 ID 並獲取封包資料以啟用近景粒子系統
+                              setSelectedConnectionId(connection.id)
+                              // 使用第一個子連線的 originalId 獲取封包資料
+                              const firstChildId = connection.connections?.[0]?.originalId || connection.originalId
+                              console.log('[MindMap] Fetching packets for aggregated connection, firstChildId:', firstChildId)
+                              fetchConnectionPackets(firstChildId)
                             }
                           } else {
                             // 普通連線：原本的邏輯
@@ -2351,29 +2419,52 @@ export default function MindMap() {
                         }}
                         style={{ cursor: 'pointer' }}
                       >
-                        <path
-                          d={pathD}
-                          stroke={color}
-                          strokeWidth={
-                            isAggregated
-                              ? (connection.strokeWidth || 1) * (isSelected ? 1.5 : isHovered ? 1.3 : 1)
-                              : (isSelected ? 1.8 : isHovered ? 1.5 : isCompleted ? 1.2 : 0.8)
-                          }
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeOpacity={finalOpacity * 0.35}
-                          strokeDasharray={strokeDasharray || undefined}
-                          fill="none"
-                        />
+                        {/* 判斷是否為當前檢視中的聚合連線 */}
+                        {(() => {
+                          const isActiveFloodConnection = isAggregated && showBatchViewer && connection.id === batchViewerConnection?.id
+                          // 脈動效果：基於強度的線條粗細變化
+                          const pulseMultiplier = isActiveFloodConnection
+                            ? 1 + floodIntensity * 0.5 * Math.sin(Date.now() / 200) // 脈動頻率約 5Hz
+                            : 1
+                          // 警告濾鏡：強度超過 50% 時套用
+                          const warningFilter = isActiveFloodConnection && floodIntensity > 0.5
+                            ? floodIntensity > 0.7 ? 'url(#attackWarningGlow)' : 'url(#attackWarningGlowMedium)'
+                            : undefined
+                          // 高強度時使用紅色
+                          const strokeColor = isActiveFloodConnection && floodIntensity > 0.7
+                            ? '#ef4444' // 紅色警告
+                            : isActiveFloodConnection && floodIntensity > 0.5
+                              ? '#f97316' // 橙色警告
+                              : color
 
-                        {/* 洪流粒子效果 - 聚合連線在近景模式時顯示 */}
-                        {isAggregated && showBatchViewer && floodStatistics && connection.id === batchViewerConnection?.id && (
+                          return (
+                            <path
+                              d={pathD}
+                              stroke={strokeColor}
+                              strokeWidth={
+                                isAggregated
+                                  ? (connection.strokeWidth || 1) * (isSelected ? 1.5 : isHovered ? 1.3 : 1) * pulseMultiplier
+                                  : (isSelected ? 1.8 : isHovered ? 1.5 : isCompleted ? 1.2 : 0.8)
+                              }
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeOpacity={finalOpacity * (isActiveFloodConnection ? 0.6 : 0.35)}
+                              strokeDasharray={strokeDasharray || undefined}
+                              fill="none"
+                              filter={warningFilter}
+                            />
+                          )
+                        })()}
+
+                        {/* 洪流粒子效果 - 攻擊流量在近景模式時顯示 */}
+                        {isAggregated && showBatchViewer && floodStatistics && connection.id === batchViewerConnection?.id && isAttackTraffic && (
                           <FloodParticleSystem
                             fromPoint={adjustedFromPoint}
                             toPoint={adjustedToPoint}
                             statistics={floodStatistics}
                             isPlaying={!isPaused}
                             timeProgress={floodTimeProgress}
+                            onIntensityChange={handleFloodIntensityChange}
                           />
                         )}
 
@@ -2483,15 +2574,36 @@ export default function MindMap() {
                             const particleY = adjustedFromPoint.y + (adjustedToPoint.y - adjustedFromPoint.y) * particle.position
 
                             return (
-                              <g key={particle.id}>
+                              <g
+                                key={particle.id}
+                                style={{ cursor: 'pointer' }}
+                              >
+                                {/* 透明點擊區域 (hitbox) - 比可見粒子大很多，方便點擊 */}
+                                <circle
+                                  cx={particleX}
+                                  cy={particleY}
+                                  r={Math.max(particle.size * 2, 5)}
+                                  fill="transparent"
+                                  stroke="none"
+                                  style={{ pointerEvents: 'all' }}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    e.preventDefault()
+                                    console.log('[MindMap] Particle clicked:', particle.index, particle)
+                                    setSelectedPacketIndex(particle.index)
+                                  }}
+                                />
                                 {/* 粒子圓點 */}
                                 <circle
                                   cx={particleX}
                                   cy={particleY}
                                   r={particle.size * 0.4}
                                   fill={particle.color}
-                                  opacity={0.9}
-                                  filter={particle.glowColor ? "url(#nodeGlow)" : undefined}
+                                  opacity={selectedPacketIndex === particle.index ? 1 : 0.9}
+                                  filter={particle.glowColor || selectedPacketIndex === particle.index ? "url(#nodeGlow)" : undefined}
+                                  stroke={selectedPacketIndex === particle.index ? "#FFD700" : "none"}
+                                  strokeWidth={selectedPacketIndex === particle.index ? 0.3 : 0}
+                                  style={{ pointerEvents: 'none' }}
                                 >
                                   {/* 錯誤封包閃爍動畫 */}
                                   {particle.isError && (
@@ -2783,9 +2895,22 @@ export default function MindMap() {
       {showBatchViewer && batchViewerConnection && (
         <BatchPacketViewer
           aggregatedConnection={batchViewerConnection}
+          playbackProgress={floodTimeProgress}
+          isAttackTraffic={isAttackTraffic}
+          activeParticleIndices={activeParticleIndices}
+          selectedPacketIndex={selectedPacketIndex}
+          onPacketSelect={(index) => setSelectedPacketIndex(index)}
+          onStatisticsLoaded={(data) => {
+            console.log('[MindMap] Statistics loaded from AttackTimelineChart:', data.summary)
+            setFloodStatistics(data)
+          }}
           onClose={() => {
             setShowBatchViewer(false)
             setBatchViewerConnection(null)
+            setFloodStatistics(null)
+            setFloodIntensity(0)
+            setSelectedPacketIndex(null)
+            setActiveParticleIndices(new Set())
           }}
         />
       )}

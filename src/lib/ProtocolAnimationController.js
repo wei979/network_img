@@ -140,6 +140,17 @@ export class ProtocolAnimationController {
         } else {
           this.state.currentStage = stage
         }
+
+        // 修復：當到達最後一個階段且時間已超過總時長時，標記為完成
+        const isLastStage = i === stages.length - 1
+        if (isLastStage && this.elapsedMs >= durationTotal) {
+          this.isCompleted = true
+          // 觸發完成事件
+          if (this.hooks.onComplete && !this.wasCompleted) {
+            this.hooks.onComplete(this.protocolState?.finalState || 'completed')
+            this.wasCompleted = true
+          }
+        }
         return
       }
     }

@@ -9,6 +9,10 @@ import { Activity, AlertTriangle, Clock, Zap, TrendingUp, Server, Loader } from 
 export default function AttackTimelineChart({
   aggregatedConnection,
   onTimePointClick,
+  // 播放進度 (0-1)，用於同步顯示
+  playbackProgress = 0,
+  // 統計資料載入完成的回調
+  onStatisticsLoaded = null,
   className = ''
 }) {
   const [statistics, setStatistics] = useState(null)
@@ -52,6 +56,11 @@ export default function AttackTimelineChart({
         const data = await response.json()
         console.log('[AttackTimelineChart] Statistics loaded:', data.summary)
         setStatistics(data)
+
+        // 通知父組件統計資料已載入
+        if (onStatisticsLoaded) {
+          onStatisticsLoaded(data)
+        }
 
         // 開始動畫
         startAnimation()
@@ -463,6 +472,50 @@ export default function AttackTimelineChart({
                 stroke="white"
                 strokeWidth="2"
               />
+            </g>
+          )}
+
+          {/* 播放進度指示器 */}
+          {playbackProgress > 0 && playbackProgress < 1 && (
+            <g>
+              {/* 未播放區域遮罩（暗顯示） */}
+              <rect
+                x={chartData.padding.left + chartData.chartWidth * playbackProgress}
+                y={chartData.padding.top}
+                width={chartData.chartWidth * (1 - playbackProgress)}
+                height={chartData.chartHeight}
+                fill="rgba(0, 0, 0, 0.4)"
+              />
+              {/* 當前播放位置線 */}
+              <line
+                x1={chartData.padding.left + chartData.chartWidth * playbackProgress}
+                y1={chartData.padding.top - 5}
+                x2={chartData.padding.left + chartData.chartWidth * playbackProgress}
+                y2={chartData.padding.top + chartData.chartHeight + 5}
+                stroke="#22d3ee"
+                strokeWidth="2"
+              >
+                <animate
+                  attributeName="stroke-opacity"
+                  values="1;0.5;1"
+                  dur="1s"
+                  repeatCount="indefinite"
+                />
+              </line>
+              {/* 當前位置指示點 */}
+              <circle
+                cx={chartData.padding.left + chartData.chartWidth * playbackProgress}
+                cy={chartData.padding.top - 8}
+                r="4"
+                fill="#22d3ee"
+              >
+                <animate
+                  attributeName="r"
+                  values="3;5;3"
+                  dur="1s"
+                  repeatCount="indefinite"
+                />
+              </circle>
             </g>
           )}
         </svg>

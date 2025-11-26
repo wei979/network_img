@@ -15,8 +15,24 @@ import AttackTimelineChart from './AttackTimelineChart'
  * 2. 數量限制：每條連線只載入前 20 個封包
  * 3. 虛擬滾動：只渲染可見範圍的內容
  */
-export default function BatchPacketViewer({ aggregatedConnection, onClose }) {
-  const [activeTab, setActiveTab] = useState('timeline') // 'timeline' | 'packets'
+export default function BatchPacketViewer({
+  aggregatedConnection,
+  onClose,
+  playbackProgress = 0, // 播放進度 (0-1)
+  onStatisticsLoaded = null, // 統計資料載入完成回調
+  isAttackTraffic = true, // 是否為攻擊流量 (connectionCount > 50)
+  activeParticleIndices = new Set(), // 當前動畫中顯示的粒子索引
+  selectedPacketIndex = null, // 使用者點選的封包索引
+  onPacketSelect = null // 封包點選回調
+}) {
+  // 智能預設標籤：攻擊流量預設顯示時間軸，正常流量預設顯示封包列表
+  const [activeTab, setActiveTab] = useState(isAttackTraffic ? 'timeline' : 'packets') // 'timeline' | 'packets'
+
+  // 當流量類型變化時，自動切換到對應的預設標籤
+  useEffect(() => {
+    setActiveTab(isAttackTraffic ? 'timeline' : 'packets')
+  }, [isAttackTraffic])
+
   const [batchData, setBatchData] = useState({})
   const [loading, setLoading] = useState(false)
   const [loadedCount, setLoadedCount] = useState(0)
@@ -24,6 +40,35 @@ export default function BatchPacketViewer({ aggregatedConnection, onClose }) {
   const [expandedConnections, setExpandedConnections] = useState(new Set())
 
   const scrollContainerRef = useRef(null)
+  const packetRefsMap = useRef(new Map()) // 存儲封包元素的 ref
+
+  // 當選中的封包索引變化時，自動滾動到該封包並展開其所屬連線
+  useEffect(() => {
+    if (selectedPacketIndex === null) return
+
+    // 查找封包所屬的連線
+    let targetConnId = null
+    for (const [connId, connData] of Object.entries(batchData)) {
+      if (connData.packets?.some(p => p.index === selectedPacketIndex)) {
+        targetConnId = connId
+        break
+      }
+    }
+
+    // 展開連線並切換到封包列表標籤
+    if (targetConnId) {
+      setActiveTab('packets')
+      setExpandedConnections(prev => new Set([...prev, targetConnId]))
+
+      // 延遲一下確保 DOM 更新後再滾動
+      setTimeout(() => {
+        const packetEl = packetRefsMap.current.get(selectedPacketIndex)
+        if (packetEl) {
+          packetEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 100)
+    }
+  }, [selectedPacketIndex, batchData])
 
   // 配置
   const BATCH_SIZE = 10
@@ -188,12 +233,32 @@ export default function BatchPacketViewer({ aggregatedConnection, onClose }) {
         {/* 封包列表（展開時顯示）*/}
         {isExpanded && connData.packets && (
           <div className="border-t border-slate-700 p-4 space-y-3 max-h-96 overflow-y-auto bg-slate-900/50">
-            {connData.packets.map((packet, pIndex) => (
-              <div key={pIndex} className="bg-slate-800/70 rounded-lg p-3 border border-slate-700">
+            {connData.packets.map((packet, pIndex) => {
+              const isActive = activeParticleIndices.has(packet.index)
+              const isSelected = selectedPacketIndex === packet.index
+
+              // 動態計算高亮樣式
+              let highlightClass = 'bg-slate-800/70 border-slate-700'
+              if (isSelected) {
+                highlightClass = 'bg-amber-900/40 border-amber-400 packet-selected-glow'
+              } else if (isActive) {
+                highlightClass = 'bg-cyan-900/30 border-cyan-400/50 packet-active-glow'
+              }
+
+              return (
+              <div
+                key={pIndex}
+                ref={el => {
+                  if (el) packetRefsMap.current.set(packet.index, el)
+                }}
+                data-packet-index={packet.index}
+                className={`rounded-lg p-3 border cursor-pointer transition-all duration-300 ${highlightClass}`}
+                onClick={() => onPacketSelect?.(packet.index)}
+              >
                 {/* 封包標題 */}
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-300">
+                    <span className={`text-xs font-semibold ${isSelected ? 'text-amber-300' : isActive ? 'text-cyan-300' : 'text-slate-300'}`}>
                       封包 #{packet.index}
                     </span>
                     {packet.errorType && (
@@ -258,7 +323,8 @@ export default function BatchPacketViewer({ aggregatedConnection, onClose }) {
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
 
             {connData.total_packets > connData.returned_packets && (
               <div className="text-xs text-slate-500 italic text-center py-2">
@@ -359,6 +425,8 @@ export default function BatchPacketViewer({ aggregatedConnection, onClose }) {
           <div className="h-full overflow-y-auto p-4">
             <AttackTimelineChart
               aggregatedConnection={aggregatedConnection}
+              playbackProgress={playbackProgress}
+              onStatisticsLoaded={onStatisticsLoaded}
               onTimePointClick={(point) => {
                 console.log('[BatchPacketViewer] Time point clicked:', point)
                 setActiveTab('packets')

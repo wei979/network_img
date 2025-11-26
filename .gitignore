@@ -62,3 +62,7 @@ CLAUDE.md
 /public/data
 /specs
 /tests
+/__pycache__
+CLAUDE.md
+nul
+/.claude

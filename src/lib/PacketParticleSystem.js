@@ -68,7 +68,12 @@ export class PacketParticleSystem {
   }
 
   /**
-   * 初始化時間軸 - 計算總時長和歸一化時間戳
+   * 初始化時間軸 - 計算總時長和歸一化時間戳（等比例拉長版）
+   *
+   * 實現策略：
+   * 1. 保留真實封包的相對時間比例
+   * 2. 將整個時間軸拉長到可觀察的長度（至少 20 秒）
+   * 3. 確保所有封包都有足夠的顯示時間
    */
   _initializeTimeline() {
     if (this.packets.length === 0) {
@@ -83,41 +88,87 @@ export class PacketParticleSystem {
 
     this.startTimestamp = minTime
     this.endTimestamp = maxTime
-    this.duration = (maxTime - minTime) * 1000 // 轉換為毫秒
 
-    // 如果所有封包時間戳相同，設置一個最小時長
-    if (this.duration === 0) {
-      this.duration = 1000 // 1 秒
+    // 真實時間跨度（秒）
+    const realDurationSeconds = maxTime - minTime
+
+    // 如果所有封包時間戳相同，使用等間隔模式
+    if (realDurationSeconds === 0) {
+      this.duration = 20000 // 拉長到 20 秒
+
+      // 等間隔分布所有封包
+      this.packets.forEach((packet, index) => {
+        packet._normalizedTime = this.packets.length > 1
+          ? index / (this.packets.length - 1)
+          : 0
+        packet._travelTime = 0.5 // 每個封包 500ms 傳輸時間
+      })
+
+      console.log('[PacketParticleSystem] Equal-time packets, using stretched equal-interval mode:', {
+        packets: this.packets.length,
+        stretchedDuration: (this.duration / 1000).toFixed(1) + 's'
+      })
+      return
     }
 
-    // 為每個封包計算歸一化時間 (0-1) 和動態傳輸時間
-    this.packets.forEach((packet, index) => {
-      packet._normalizedTime = this.duration > 0
-        ? (packet.timestamp - this.startTimestamp) / (this.endTimestamp - this.startTimestamp)
-        : 0
+    // === 關鍵：等比例拉長時間軸 ===
+    // 目標拉長倍數：確保拉長後的時長至少 20 秒
+    const MIN_STRETCHED_DURATION_SECONDS = 20
+    const stretchFactor = Math.max(1, MIN_STRETCHED_DURATION_SECONDS / realDurationSeconds)
 
-      // 計算到下一個封包的時間間隔（秒）
-      const nextPacket = this.packets[index + 1]
-      const timeToNext = nextPacket
-        ? nextPacket.timestamp - packet.timestamp
-        : 0.5 // 最後一個封包使用預設值
+    // 拉長後的總時長（毫秒）
+    const stretchedDurationSeconds = realDurationSeconds * stretchFactor
+    this.duration = stretchedDurationSeconds * 1000
 
-      // 使用間隔的 50% 作為傳輸時間，並限制在合理範圍內
-      // 最小 100ms，最大 1000ms
-      const travelTime = Math.max(0.1, Math.min(timeToNext * 0.5, 1.0))
-      packet._travelTime = travelTime // 儲存每個封包的傳輸時間（秒）
+    console.log('[PacketParticleSystem] Timeline stretching:', {
+      realDuration: realDurationSeconds.toFixed(4) + 's',
+      stretchFactor: stretchFactor.toFixed(1) + 'x',
+      stretchedDuration: stretchedDurationSeconds.toFixed(1) + 's',
+      packets: this.packets.length
     })
 
-    // 調試日誌
-    if (this.packets.length > 0) {
-      const travelTimes = this.packets.map(p => (p._travelTime * 1000).toFixed(0))
-      console.log('[PacketParticleSystem] Dynamic travel times (ms):', {
-        min: Math.min(...travelTimes),
-        max: Math.max(...travelTimes),
-        avg: (travelTimes.reduce((a, b) => a + parseInt(b), 0) / travelTimes.length).toFixed(0),
-        samples: travelTimes.slice(0, 10) // 顯示前 10 個
-      })
-    }
+    // 為每個封包計算歸一化時間 (0-1) 和拉長後的傳輸時間
+    this.packets.forEach((packet, index) => {
+      // 歸一化時間：保持相對位置不變（0-1）
+      packet._normalizedTime = realDurationSeconds > 0
+        ? (packet.timestamp - this.startTimestamp) / realDurationSeconds
+        : 0
+
+      // 計算到下一個封包的真實時間間隔（秒）
+      const nextPacket = this.packets[index + 1]
+      const realIntervalSeconds = nextPacket
+        ? nextPacket.timestamp - packet.timestamp
+        : realDurationSeconds * 0.1 // 最後一個封包使用總時長的 10%
+
+      // 拉長後的間隔時間
+      const stretchedIntervalSeconds = realIntervalSeconds * stretchFactor
+
+      // 傳輸時間：使用拉長後間隔的 30%，確保有足夠的間隙
+      // 最小 0.3 秒，最大 2 秒
+      const travelTime = Math.max(0.3, Math.min(stretchedIntervalSeconds * 0.3, 2.0))
+      packet._travelTime = travelTime
+
+      // 調試：記錄前幾個封包的詳細資訊
+      if (index < 5) {
+        console.log(`[PacketParticleSystem] Packet #${index + 1}:`, {
+          normalizedTime: (packet._normalizedTime * 100).toFixed(1) + '%',
+          realInterval: (realIntervalSeconds * 1000).toFixed(2) + 'ms',
+          stretchedInterval: stretchedIntervalSeconds.toFixed(2) + 's',
+          travelTime: (travelTime * 1000).toFixed(0) + 'ms'
+        })
+      }
+    })
+
+    // 調試日誌：統計資訊
+    const travelTimes = this.packets.map(p => p._travelTime)
+    const avgTravelTime = travelTimes.reduce((a, b) => a + b, 0) / travelTimes.length
+
+    console.log('[PacketParticleSystem] Travel time statistics:', {
+      min: (Math.min(...travelTimes) * 1000).toFixed(0) + 'ms',
+      max: (Math.max(...travelTimes) * 1000).toFixed(0) + 'ms',
+      avg: (avgTravelTime * 1000).toFixed(0) + 'ms',
+      totalPackets: this.packets.length
+    })
   }
 
   /**
@@ -198,13 +249,14 @@ export class PacketParticleSystem {
     const particles = []
     const totalDurationSeconds = this.duration / 1000
 
-    // 調試日誌
-    if (Math.random() < 0.05) {
+    // 調試日誌（增加頻率以便診斷）
+    if (Math.random() < 0.1) {
       console.log('[PacketParticleSystem] getActiveParticles:', {
         currentTime: (this.currentTime / 1000).toFixed(2) + 's',
         duration: (this.duration / 1000).toFixed(2) + 's',
         progress: (progress * 100).toFixed(1) + '%',
-        packetCount: this.packets.length
+        totalPackets: this.packets.length,
+        visibleParticles: '將在下方計算'
       })
     }
 
@@ -212,11 +264,18 @@ export class PacketParticleSystem {
     this.packets.forEach((packet, index) => {
       const packetProgress = packet._normalizedTime
 
-      // 使用封包的動態傳輸時間（基於到下一個封包的間隔）
+      // 使用封包的拉長後傳輸時間（已在 _initializeTimeline 中計算）
       const packetTravelTime = packet._travelTime || 0.5 // 秒
-      const displayDuration = totalDurationSeconds > 0
+
+      // displayDuration：粒子在時間軸上的可見區間（歸一化 0-1）
+      // 由於時間軸已經等比例拉長，直接使用拉長後的傳輸時間計算
+      // 不再需要固定的 25% 最小值，因為拉長後的傳輸時間已經足夠大
+      const calculatedDuration = totalDurationSeconds > 0
         ? packetTravelTime / totalDurationSeconds
-        : 0.05
+        : 0.05 // 備用值
+
+      // 設定較小的最小值（5%）以避免粒子佔據過多時間軸空間
+      const displayDuration = Math.max(0.05, calculatedDuration)
 
       // 判斷封包方向
       let isForward = true // 預設為前向
@@ -238,10 +297,10 @@ export class PacketParticleSystem {
 
           if (isForward) {
             // 前向：從 0 移動到 1
-            particlePosition = travelProgress
+            particlePosition = Math.max(0, Math.min(1, travelProgress))
           } else {
             // 反向：從 1 移動到 0
-            particlePosition = 1.0 - travelProgress
+            particlePosition = Math.max(0, Math.min(1, 1.0 - travelProgress))
           }
         } else if (progress < packetProgress && progress + 1.0 >= packetProgress + displayDuration) {
           // 循環播放：如果當前進度在下一輪，且粒子應該顯示
@@ -255,13 +314,14 @@ export class PacketParticleSystem {
             particlePosition = 1.0 - travelProgress
           }
 
-          // 處理循環邊界
-          if (particlePosition > 1.0) {
+          // 處理循環邊界並限制在 [0, 1] 範圍
+          while (particlePosition > 1.0) {
             particlePosition = particlePosition - 1.0
           }
-          if (particlePosition < 0) {
+          while (particlePosition < 0) {
             particlePosition = particlePosition + 1.0
           }
+          particlePosition = Math.max(0, Math.min(1, particlePosition))
         }
       } else {
         // 非循環模式：只在封包時間點附近顯示
@@ -270,14 +330,19 @@ export class PacketParticleSystem {
           const travelProgress = (progress - packetProgress) / displayDuration
 
           if (isForward) {
-            particlePosition = travelProgress
+            particlePosition = Math.max(0, Math.min(1, travelProgress))
           } else {
-            particlePosition = 1.0 - travelProgress
+            particlePosition = Math.max(0, Math.min(1, 1.0 - travelProgress))
           }
         }
       }
 
       if (shouldShow) {
+        // 調試：記錄粒子位置資訊（增加頻率）
+        if (index < 5 && Math.random() < 0.05) {
+          console.log('[Particle Debug] #' + index, 'id:', packet.id, 'position:', particlePosition.toFixed(3), 'isForward:', isForward, 'packetProgress:', (packetProgress * 100).toFixed(1) + '%', 'displayDuration:', (displayDuration * 100).toFixed(1) + '%')
+        }
+
         // 計算粒子大小（基於封包長度）
         const minSize = 2
         const maxSize = 8
@@ -317,6 +382,11 @@ export class PacketParticleSystem {
       }
     })
 
+    // 調試：記錄可見粒子數量
+    if (Math.random() < 0.1) {
+      console.log('[PacketParticleSystem] Visible particles:', particles.length, '/', this.packets.length)
+    }
+
     return particles
   }
 
@@ -326,8 +396,9 @@ export class PacketParticleSystem {
   _getPacketLabel(packet, index) {
     const parts = []
 
-    // 封包編號
-    parts.push(`#${index}`)
+    // 封包編號：優先使用封包的實際序號，否則使用索引
+    const packetNumber = packet.number ?? packet.seq ?? (index + 1)
+    parts.push(`#${packetNumber}`)
 
     // 協議類型
     if (packet.headers?.tcp) {

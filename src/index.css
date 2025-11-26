@@ -76,3 +76,44 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* 封包高亮發光效果 */
+.packet-active-glow {
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.4),
+              0 0 16px rgba(34, 211, 238, 0.2),
+              inset 0 0 4px rgba(34, 211, 238, 0.1);
+  animation: pulse-active 2s ease-in-out infinite;
+}
+
+.packet-selected-glow {
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.6),
+              0 0 24px rgba(251, 191, 36, 0.3),
+              inset 0 0 6px rgba(251, 191, 36, 0.15);
+  animation: pulse-selected 1s ease-in-out infinite;
+}
+
+@keyframes pulse-active {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(34, 211, 238, 0.4),
+                0 0 16px rgba(34, 211, 238, 0.2),
+                inset 0 0 4px rgba(34, 211, 238, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(34, 211, 238, 0.5),
+                0 0 24px rgba(34, 211, 238, 0.3),
+                inset 0 0 6px rgba(34, 211, 238, 0.15);
+  }
+}
+
+@keyframes pulse-selected {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(251, 191, 36, 0.6),
+                0 0 24px rgba(251, 191, 36, 0.3),
+                inset 0 0 6px rgba(251, 191, 36, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(251, 191, 36, 0.8),
+                0 0 36px rgba(251, 191, 36, 0.4),
+                inset 0 0 10px rgba(251, 191, 36, 0.2);
+  }
+}

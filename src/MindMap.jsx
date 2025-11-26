@@ -20,7 +20,9 @@ import { ProtocolAnimationController } from './lib/ProtocolAnimationController'
 import { getProtocolColor } from './lib/ProtocolStates'
 import PacketParticleSystem from './lib/PacketParticleSystem'
 import PacketViewer from './components/PacketViewer'
+import BatchPacketViewer from './components/BatchPacketViewer'
 import TimelineControls from './components/TimelineControls'
+import FloodParticleSystem from './components/FloodParticleSystem'
 
 const API_TIMELINES_URL = '/api/timelines'
 const STATIC_TIMELINES_URL = '/data/protocol_timeline_sample.json'
@@ -791,6 +793,92 @@ const buildConnections = (timelines) => {
   return connections
 }
 
+/**
+ * 建立合併後的連線（遠景模式用）
+ * 將相同節點對之間的多條連線合併為單一視覺連線
+ */
+const buildAggregatedConnections = (timelines) => {
+  const aggregatedMap = new Map()
+
+  timelines.forEach((timeline, index) => {
+    const parsed = parseTimelineId(timeline)
+    if (!parsed) {
+      return
+    }
+
+    // 使用節點對作為 key（忽略端口，只看 IP）
+    const nodeKey = `${parsed.src.ip}<->${parsed.dst.ip}`
+
+    if (!aggregatedMap.has(nodeKey)) {
+      // 創建新的合併連線
+      aggregatedMap.set(nodeKey, {
+        id: `aggregated-${nodeKey}`,
+        src: parsed.src.ip,
+        dst: parsed.dst.ip,
+        connections: [], // 所有原始連線
+        protocols: new Set(), // 使用的協議類型
+        totalPackets: 0,
+        totalBytes: 0,
+        connectionCount: 0
+      })
+    }
+
+    const aggregated = aggregatedMap.get(nodeKey)
+
+    // 添加原始連線引用
+    aggregated.connections.push({
+      id: `${timeline.id}-${index}`,
+      originalId: timeline.id,
+      protocol: timeline.protocol,
+      protocolType: timeline.protocolType,
+      stages: timeline.stages,
+      metrics: timeline.metrics
+    })
+
+    // 累計統計資訊
+    aggregated.protocols.add(timeline.protocol)
+    aggregated.connectionCount++
+
+    // 累計封包和流量（如果有 metrics）
+    if (timeline.metrics) {
+      aggregated.totalPackets += timeline.metrics.packetCount || 0
+      aggregated.totalBytes += timeline.metrics.totalBytes || 0
+    }
+  })
+
+  // 轉換為數組並計算視覺屬性
+  const connections = Array.from(aggregatedMap.values()).map(agg => ({
+    ...agg,
+    protocols: Array.from(agg.protocols),
+    // 計算線條粗細（基於連線數量，範圍 1-10）
+    strokeWidth: Math.min(1 + Math.log10(agg.connectionCount) * 2, 10),
+    // 主要協議（使用最多的協議）
+    primaryProtocol: agg.connections[0].protocol,
+    primaryProtocolType: agg.connections[0].protocolType,
+    // 使用第一條子連線的 originalId 來獲取 renderState（修復遠景顯示 ?? 問題）
+    originalId: agg.connections[0].originalId
+  }))
+
+  const stats = {
+    original: timelines.length,
+    aggregated: connections.length,
+    reduction: ((1 - connections.length / timelines.length) * 100).toFixed(1) + '%',
+    sample: connections.slice(0, 3).map(c => ({
+      id: c.id,
+      src: c.src,
+      dst: c.dst,
+      count: c.connectionCount
+    }))
+  }
+
+  console.log('[MindMap] Aggregated connections:', stats)
+  console.log('[MindMap] Aggregation details:', connections.map(c =>
+    `${c.src} → ${c.dst}: ${c.connectionCount} 條連線`
+  ).join(', '))
+
+  return connections
+}
+
 const protocolColor = (protocol, protocolType) => {
   // 優先使用協議類型的顏色
   if (protocolType) {
@@ -841,6 +929,15 @@ export default function MindMap() {
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
   const [connectionPackets, setConnectionPackets] = useState(null)
   const [loadingPackets, setLoadingPackets] = useState(false)
+
+  // 批量封包檢視器狀態
+  const [showBatchViewer, setShowBatchViewer] = useState(false)
+  const [batchViewerConnection, setBatchViewerConnection] = useState(null)
+
+  // 洪流粒子效果狀態
+  const [floodStatistics, setFloodStatistics] = useState(null)
+  const [floodTimeProgress, setFloodTimeProgress] = useState(0)
+  const floodAnimationRef = useRef(null)
 
   // 同步 selectedConnectionId 到 ref，讓動畫循環能訪問最新值
   useEffect(() => {
@@ -1525,6 +1622,84 @@ export default function MindMap() {
     }
   }
 
+  // 載入洪流粒子效果統計資料
+  const fetchFloodStatistics = async (connection) => {
+    if (!connection?.connections) {
+      setFloodStatistics(null)
+      return
+    }
+
+    const connectionIds = connection.connections.map(c => c.originalId)
+    console.log('[MindMap] Fetching flood statistics for', connectionIds.length, 'connections')
+
+    try {
+      const response = await fetch('/api/packets/statistics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          connection_ids: connectionIds,
+          time_bucket_ms: 50
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to load flood statistics")
+      }
+
+      const data = await response.json()
+      console.log('[MindMap] Flood statistics loaded:', data.summary)
+      setFloodStatistics(data)
+
+      // 啟動時間進度動畫
+      startFloodAnimation(data.summary?.duration_seconds || 10)
+    } catch (err) {
+      console.error('[MindMap] Failed to load flood statistics:', err)
+      setFloodStatistics(null)
+    }
+  }
+
+  // 洪流動畫時間進度
+  const startFloodAnimation = (durationSeconds) => {
+    // 取消舊動畫
+    if (floodAnimationRef.current) {
+      cancelAnimationFrame(floodAnimationRef.current)
+    }
+
+    const startTime = Date.now()
+    // 動畫循環時長：使用實際時長但加速播放（最長 30 秒循環）
+    const animationDuration = Math.min(durationSeconds * 1000, 30000)
+
+    const animate = () => {
+      const elapsed = (Date.now() - startTime) % animationDuration
+      const progress = elapsed / animationDuration
+      setFloodTimeProgress(progress)
+      floodAnimationRef.current = requestAnimationFrame(animate)
+    }
+
+    floodAnimationRef.current = requestAnimationFrame(animate)
+  }
+
+  // 當選擇聚合連線時載入洪流統計
+  useEffect(() => {
+    if (showBatchViewer && batchViewerConnection) {
+      fetchFloodStatistics(batchViewerConnection)
+    } else {
+      // 清理
+      if (floodAnimationRef.current) {
+        cancelAnimationFrame(floodAnimationRef.current)
+      }
+      setFloodStatistics(null)
+      setFloodTimeProgress(0)
+    }
+
+    return () => {
+      if (floodAnimationRef.current) {
+        cancelAnimationFrame(floodAnimationRef.current)
+      }
+    }
+  }, [showBatchViewer, batchViewerConnection])
+
   // 管理粒子系統的生命週期
   useEffect(() => {
     // 提取封包陣列（後端返回的格式是 { packets: [...] }）
@@ -1766,7 +1941,26 @@ export default function MindMap() {
     return map
   }, [nodesComputed])
 
-  const connections = useMemo(() => buildConnections(timelines), [timelines])
+  // 建立兩種連線列表：詳細版（每條獨立連線）和合併版（遠景模式用）
+  const detailedConnections = useMemo(() => buildConnections(timelines), [timelines])
+  const aggregatedConnections = useMemo(() => buildAggregatedConnections(timelines), [timelines])
+
+  // 根據模式選擇使用哪種連線列表
+  // 1. 遠景模式：使用合併連線（減少視覺混亂）
+  // 2. 聚合連線近景模式（showBatchViewer）：只顯示被選中的聚合連線
+  // 3. 一般近景模式（isFocusMode）：使用詳細連線（顯示每條獨立的 TCP stream）
+  const connections = useMemo(() => {
+    if (showBatchViewer && batchViewerConnection) {
+      // 聚合連線近景：只顯示被選中的聚合連線
+      return [batchViewerConnection]
+    }
+    if (isFocusMode) {
+      // 一般近景：詳細連線
+      return detailedConnections
+    }
+    // 遠景模式：合併連線
+    return aggregatedConnections
+  }, [showBatchViewer, batchViewerConnection, isFocusMode, detailedConnections, aggregatedConnections])
 
   // 計算每個節點的連線角度分散索引
   const connectionAngles = useMemo(() => {
@@ -2013,8 +2207,10 @@ export default function MindMap() {
 
                     // 從 controller 獲取豐富的動畫狀態
                     const renderState = renderStates[connection.originalId] // 使用 originalId 匹配 timeline.id
-                    const protocolType = renderState?.protocolType || connection.protocolType
-                    const color = renderState?.protocolColor || protocolColor(connection.protocol, protocolType)
+                    // 聚合連線使用 primaryProtocolType/primaryProtocol，一般連線使用 protocolType/protocol
+                    const protocolType = renderState?.protocolType || connection.protocolType || connection.primaryProtocolType
+                    const protocol = connection.protocol || connection.primaryProtocol || 'TCP'
+                    const color = renderState?.protocolColor || protocolColor(protocol, protocolType)
                     const visualEffects = renderState?.visualEffects || {}
 
                     // 圓點動畫沿路徑
@@ -2109,6 +2305,7 @@ export default function MindMap() {
 
                     const isHovered = hoveredConnectionId === connection.id
                     const isSelected = selectedConnectionId === connection.id
+                    const isAggregated = connection.id?.startsWith('aggregated-')
                     const shouldShowLabel = isHovered || isSelected
 
                     // 聚焦模式：當選中連線時，只顯示該連線，隱藏其他連線
@@ -2130,17 +2327,38 @@ export default function MindMap() {
                         }}
                         onMouseLeave={() => setHoveredConnectionId(null)}
                         onClick={() => {
-                          const newConnectionId = selectedConnectionId === connection.id ? null : connection.id
-                          setSelectedConnectionId(newConnectionId)
-                          // 使用 originalId 來獲取封包資訊（API 期望的是沒有索引後綴的 ID）
-                          fetchConnectionPackets(newConnectionId ? connection.originalId : null)
+                          // 檢查是否為聚合連線
+                          if (connection.id?.startsWith('aggregated-')) {
+                            // 聚合連線：開啟批量檢視器
+                            console.log('[MindMap] Aggregated connection clicked:', connection)
+                            if (showBatchViewer && batchViewerConnection?.id === connection.id) {
+                              // 點擊同一聚合連線，關閉檢視器
+                              setShowBatchViewer(false)
+                              setBatchViewerConnection(null)
+                            } else {
+                              // 開啟檢視器
+                              console.log('[MindMap] Showing batch packet viewer')
+                              setShowBatchViewer(true)
+                              setBatchViewerConnection(connection)
+                            }
+                          } else {
+                            // 普通連線：原本的邏輯
+                            const newConnectionId = selectedConnectionId === connection.id ? null : connection.id
+                            setSelectedConnectionId(newConnectionId)
+                            // 使用 originalId 來獲取封包資訊（API 期望的是沒有索引後綴的 ID）
+                            fetchConnectionPackets(newConnectionId ? connection.originalId : null)
+                          }
                         }}
                         style={{ cursor: 'pointer' }}
                       >
                         <path
                           d={pathD}
                           stroke={color}
-                          strokeWidth={isSelected ? 1.8 : isHovered ? 1.5 : isCompleted ? 1.2 : 0.8}
+                          strokeWidth={
+                            isAggregated
+                              ? (connection.strokeWidth || 1) * (isSelected ? 1.5 : isHovered ? 1.3 : 1)
+                              : (isSelected ? 1.8 : isHovered ? 1.5 : isCompleted ? 1.2 : 0.8)
+                          }
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeOpacity={finalOpacity * 0.35}
@@ -2148,19 +2366,34 @@ export default function MindMap() {
                           fill="none"
                         />
 
+                        {/* 洪流粒子效果 - 聚合連線在近景模式時顯示 */}
+                        {isAggregated && showBatchViewer && floodStatistics && connection.id === batchViewerConnection?.id && (
+                          <FloodParticleSystem
+                            fromPoint={adjustedFromPoint}
+                            toPoint={adjustedToPoint}
+                            statistics={floodStatistics}
+                            isPlaying={!isPaused}
+                            timeProgress={floodTimeProgress}
+                          />
+                        )}
+
                         {/* 遠景動畫元素 - 只在沒有粒子系統時顯示 */}
                         {!(isSelected && particleSystemRef.current) && (
                           <>
-                            {/* 動畫圓點 */}
+                            {/* 動畫圓點 - 聚合連線根據連線數量調整大小 */}
                             <circle
                               cx={dotPoint.x}
                               cy={dotPoint.y}
-                              r={isSelected ? 2.8 : isPulsing ? 2.2 : 1.6}
+                              r={
+                                isAggregated
+                                  ? Math.min(1.6 + Math.log10(connection.connectionCount || 1) * 1.5, 4) * (isSelected ? 1.5 : 1)
+                                  : (isSelected ? 2.8 : isPulsing ? 2.2 : 1.6)
+                              }
                               fill={color}
                               filter="url(#nodeGlow)"
                               opacity={isBlinking ? 0.5 : finalOpacity}
                             >
-                              {isPulsing && (
+                              {isPulsing && !isAggregated && (
                                 <animate
                                   attributeName="r"
                                   values="1.6;2.4;1.6"
@@ -2187,7 +2420,7 @@ export default function MindMap() {
                               style={{ pointerEvents: 'none' }}
                               opacity={finalOpacity}
                             >
-                              {(protocolType || connection.protocol).toUpperCase()}
+                              {(protocolType || protocol).toUpperCase()}
                             </text>
                             <text
                               x={labelPoint.x}
@@ -2199,6 +2432,19 @@ export default function MindMap() {
                             >
                               {stageLabel}
                             </text>
+                            {/* 聚合連線顯示連線數量 */}
+                            {isAggregated && connection.connectionCount > 1 && (
+                              <text
+                                x={labelPoint.x}
+                                y={labelPoint.y - 5.5}
+                                textAnchor="middle"
+                                className="text-[1.2px] fill-amber-400 font-bold"
+                                style={{ pointerEvents: 'none' }}
+                                opacity={finalOpacity * 0.85}
+                              >
+                                ×{connection.connectionCount}
+                              </text>
+                            )}
 
                             {/* 協議和階段標籤 */}
                             {shouldShowLabel && (
@@ -2210,7 +2456,7 @@ export default function MindMap() {
                                   className="text-[1.9px] fill-slate-200 font-semibold"
                                   style={{ pointerEvents: 'none' }}
                                 >
-                                  {(protocolType || connection.protocol).toUpperCase()} · {stageLabel}
+                                  {(protocolType || protocol).toUpperCase()} · {stageLabel}
                                 </text>
 
                                 {/* 完成百分比 */}
@@ -2380,7 +2626,8 @@ export default function MindMap() {
                   const hoveredConn = connections.find(c => c.id === hoveredConnectionId)
                   if (!hoveredConn) return null
                   const renderState = renderStates[hoveredConn.originalId] // 使用 originalId 匹配 timeline.id
-                  const protocolType = renderState?.protocolType || hoveredConn.protocolType
+                  const protocolType = renderState?.protocolType || hoveredConn.protocolType || hoveredConn.primaryProtocolType
+                  const protocol = hoveredConn.protocol || hoveredConn.primaryProtocol || 'TCP'
                   const stageLabel = translateStageLabel(renderState?.currentStage?.label) || '??'
                   const progress = Math.round((renderState?.timelineProgress || 0) * 100)
 
@@ -2393,7 +2640,7 @@ export default function MindMap() {
                         transform: 'translate(-50%, -100%)'
                       }}
                     >
-                      <div className="font-semibold text-cyan-300">{(protocolType || hoveredConn.protocol).toUpperCase()}</div>
+                      <div className="font-semibold text-cyan-300">{(protocolType || protocol).toUpperCase()}</div>
                       <div className="text-slate-300 text-[11px] mt-1">階段: {stageLabel}</div>
                       <div className="text-slate-400 text-[10px] mt-0.5">進度: {progress}%</div>
                     </div>
@@ -2412,7 +2659,8 @@ export default function MindMap() {
             <div className="mt-4 space-y-3 max-h-[450px] overflow-y-auto pr-2">
               {connections.map((connection) => {
                 const renderState = renderStates[connection.originalId] // 使用 originalId 匹配 timeline.id
-                const protocolType = renderState?.protocolType || connection.protocolType
+                const protocolType = renderState?.protocolType || connection.protocolType || connection.primaryProtocolType
+                const protocol = connection.protocol || connection.primaryProtocol || 'TCP'
                 const stageLabel = translateStageLabel(renderState?.currentStage?.label) || '??'
                 const stageProgress = Math.round((renderState?.timelineProgress || 0) * 100)
                 const isCompleted = renderState?.isCompleted
@@ -2433,9 +2681,28 @@ export default function MindMap() {
                 return (
                   <div
                     key={connection.id}
-                    onClick={() => setSelectedConnectionId(
-                      selectedConnectionId === connection.id ? null : connection.id
-                    )}
+                    onClick={() => {
+                      // 檢查是否為聚合連線
+                      if (connection.id?.startsWith('aggregated-')) {
+                        // 聚合連線：開啟批量檢視器
+                        console.log('[MindMap Sidebar] Aggregated connection clicked:', connection)
+                        if (showBatchViewer && batchViewerConnection?.id === connection.id) {
+                          // 點擊同一聚合連線，關閉檢視器
+                          setShowBatchViewer(false)
+                          setBatchViewerConnection(null)
+                        } else {
+                          // 開啟檢視器
+                          console.log('[MindMap Sidebar] Showing batch packet viewer')
+                          setShowBatchViewer(true)
+                          setBatchViewerConnection(connection)
+                        }
+                      } else {
+                        // 普通連線：切換選擇狀態
+                        setSelectedConnectionId(
+                          selectedConnectionId === connection.id ? null : connection.id
+                        )
+                      }
+                    }}
                     className={`rounded-lg border p-4 transition-all duration-300 cursor-pointer ${
                       isSelected
                         ? 'border-cyan-400 bg-cyan-900/40 shadow-lg shadow-cyan-500/20 ring-2 ring-cyan-400/50'
@@ -2451,7 +2718,7 @@ export default function MindMap() {
                         <span className={`font-semibold ${
                           isCompleted ? 'text-green-300' : 'text-cyan-300'
                         }`}>
-                          {(protocolType || connection.protocol).toUpperCase()}
+                          {(protocolType || protocol).toUpperCase()}
                         </span>
                       </div>
                     </div>
@@ -2509,6 +2776,17 @@ export default function MindMap() {
             setSelectedConnectionId(null)
           }}
           loading={loadingPackets}
+        />
+      )}
+
+      {/* 批量封包檢視器（聚合連線用） */}
+      {showBatchViewer && batchViewerConnection && (
+        <BatchPacketViewer
+          aggregatedConnection={batchViewerConnection}
+          onClose={() => {
+            setShowBatchViewer(false)
+            setBatchViewerConnection(null)
+          }}
         />
       )}
 

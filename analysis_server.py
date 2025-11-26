@@ -99,6 +99,37 @@ def get_session_data_dir(request: Request) -> Path:
     return data_dir
 
 
+def cleanup_session_directory(session_dir: Path) -> None:
+    """
+    Clean up all files in the current session directory.
+    Called when uploading a new file to remove old analysis results.
+
+    Args:
+        session_dir: Path to session directory to clean
+    """
+    import shutil
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    if not session_dir.exists():
+        return
+
+    try:
+        # Remove all files in the session directory
+        for item in session_dir.iterdir():
+            if item.is_file():
+                item.unlink()
+                logger.debug(f"Removed old file: {item.name}")
+            elif item.is_dir():
+                shutil.rmtree(item)
+                logger.debug(f"Removed old directory: {item.name}")
+
+        logger.info(f"Cleaned up session directory: {session_dir.name}")
+    except Exception as e:
+        logger.error(f"Failed to cleanup session directory {session_dir.name}: {e}")
+
+
 def cleanup_expired_sessions(max_age_seconds: int = 14400):
     """
     Clean up expired session directories.
@@ -133,8 +164,17 @@ def cleanup_expired_sessions(max_age_seconds: int = 14400):
             continue
 
         try:
+            # Check if directory is empty
+            files = list(session_dir.glob('*'))
+            if not files:
+                # Empty directory, remove it
+                session_dir.rmdir()
+                cleaned_count += 1
+                logger.info(f"Cleaned up empty session directory: {session_dir.name}")
+                continue
+
             # Check directory last modification time
-            last_modified = session_dir.stat().st_mtime
+            last_modified = max(f.stat().st_mtime for f in files)
             age = current_time - last_modified
 
             if age > max_age_seconds:
@@ -252,6 +292,232 @@ async def get_timelines(
     return fixture
 
 
+@app.post('/api/packets/batch')
+async def get_batch_packets(
+    request: Request,
+    session_id: str = Depends(require_session)
+) -> Dict[str, Any]:
+    """Get packets for multiple connections in batch (requires session)
+
+    Request body:
+        {
+            "connection_ids": ["tcp-...", "tcp-...", ...],
+            "packets_per_connection": 20  // Max packets per connection
+        }
+
+    Returns:
+        {
+            "results": {
+                "tcp-...": {"packets": [...], "total_packets": 100},
+                "tcp-...": {"packets": [...], "total_packets": 50}
+            },
+            "total_connections": 2
+        }
+    """
+    session_dir = get_session_data_dir(request)
+    packets_file = session_dir / 'connection_packets.json'
+
+    # Parse request body
+    body = await request.json()
+    connection_ids = body.get('connection_ids', [])
+    packets_per_connection = min(body.get('packets_per_connection', 20), 100)  # Max 100 per connection
+
+    # Validate
+    if not connection_ids:
+        raise HTTPException(status_code=400, detail='connection_ids is required')
+
+    if len(connection_ids) > 100:
+        raise HTTPException(status_code=400, detail='Maximum 100 connections per batch request')
+
+    # Check if connection_packets file exists
+    if not packets_file.exists():
+        raise HTTPException(
+            status_code=404,
+            detail='No packet data available. Please analyze a PCAP file first.'
+        )
+
+    # Load all connection packets
+    with packets_file.open('r', encoding='utf-8') as handle:
+        all_connection_packets = json.load(handle)
+
+    # Build batch results
+    results = {}
+    for conn_id in connection_ids:
+        if conn_id in all_connection_packets:
+            packets = all_connection_packets[conn_id]
+            results[conn_id] = {
+                'packets': packets[:packets_per_connection],
+                'total_packets': len(packets),
+                'returned_packets': min(len(packets), packets_per_connection)
+            }
+        else:
+            results[conn_id] = {
+                'packets': [],
+                'total_packets': 0,
+                'returned_packets': 0,
+                'error': 'Connection not found'
+            }
+
+    return {
+        'results': results,
+        'total_connections': len(connection_ids),
+        'packets_per_connection': packets_per_connection
+    }
+
+
+@app.post('/api/packets/statistics')
+async def get_packet_statistics(
+    request: Request,
+    session_id: str = Depends(require_session)
+) -> Dict[str, Any]:
+    """Get packet rate statistics for attack timeline visualization
+
+    Request body:
+        {
+            "connection_ids": ["tcp-...", ...],  // Optional: filter by connections
+            "time_bucket_ms": 100  // Time bucket size in milliseconds
+        }
+
+    Returns:
+        {
+            "timeline": [
+                {"time": 0, "packet_count": 5, "byte_count": 1200, "syn_count": 5},
+                {"time": 100, "packet_count": 12, "byte_count": 2800, "syn_count": 10},
+                ...
+            ],
+            "summary": {
+                "total_packets": 4975,
+                "total_bytes": 361542,
+                "duration_ms": 3200,
+                "peak_rate": 520,  // packets per second
+                "avg_rate": 155,
+                "attack_type": "SYN Flood"
+            }
+        }
+    """
+    import math
+
+    session_dir = get_session_data_dir(request)
+    packets_file = session_dir / 'connection_packets.json'
+
+    # Parse request body
+    body = await request.json()
+    connection_ids = body.get('connection_ids', None)  # None means all connections
+    time_bucket_ms = min(body.get('time_bucket_ms', 100), 1000)  # Max 1 second buckets
+
+    # Check if connection_packets file exists
+    if not packets_file.exists():
+        raise HTTPException(
+            status_code=404,
+            detail='No packet data available. Please analyze a PCAP file first.'
+        )
+
+    # Load all connection packets
+    with packets_file.open('r', encoding='utf-8') as handle:
+        all_connection_packets = json.load(handle)
+
+    # Filter connections if specified
+    if connection_ids:
+        filtered_packets = {k: v for k, v in all_connection_packets.items() if k in connection_ids}
+    else:
+        filtered_packets = all_connection_packets
+
+    # Collect all packets with timestamps
+    all_packets = []
+    for conn_id, packets in filtered_packets.items():
+        for packet in packets:
+            if 'timestamp' in packet:
+                all_packets.append({
+                    'timestamp': packet['timestamp'],
+                    'length': packet.get('length', 0),
+                    'tcp_flags': packet.get('headers', {}).get('tcp', {}).get('flags', ''),
+                    'connection_id': conn_id
+                })
+
+    if not all_packets:
+        return {
+            'timeline': [],
+            'summary': {
+                'total_packets': 0,
+                'total_bytes': 0,
+                'duration_ms': 0,
+                'peak_rate': 0,
+                'avg_rate': 0,
+                'attack_type': 'Unknown'
+            }
+        }
+
+    # Sort by timestamp
+    all_packets.sort(key=lambda p: p['timestamp'])
+
+    # Calculate time range
+    min_time = all_packets[0]['timestamp']
+    max_time = all_packets[-1]['timestamp']
+    duration_seconds = max_time - min_time
+    duration_ms = int(duration_seconds * 1000)
+
+    # Create time buckets
+    num_buckets = max(1, math.ceil(duration_ms / time_bucket_ms))
+    timeline = []
+
+    for i in range(num_buckets):
+        bucket_start = min_time + (i * time_bucket_ms / 1000)
+        bucket_end = bucket_start + (time_bucket_ms / 1000)
+
+        bucket_packets = [p for p in all_packets if bucket_start <= p['timestamp'] < bucket_end]
+
+        syn_count = sum(1 for p in bucket_packets if 'S' in p.get('tcp_flags', ''))
+        ack_count = sum(1 for p in bucket_packets if 'A' in p.get('tcp_flags', ''))
+        rst_count = sum(1 for p in bucket_packets if 'R' in p.get('tcp_flags', ''))
+
+        timeline.append({
+            'time_ms': i * time_bucket_ms,
+            'time_seconds': round(i * time_bucket_ms / 1000, 2),
+            'packet_count': len(bucket_packets),
+            'byte_count': sum(p.get('length', 0) for p in bucket_packets),
+            'syn_count': syn_count,
+            'ack_count': ack_count,
+            'rst_count': rst_count
+        })
+
+    # Calculate summary statistics
+    total_packets = len(all_packets)
+    total_bytes = sum(p.get('length', 0) for p in all_packets)
+    total_syn = sum(1 for p in all_packets if 'S' in p.get('tcp_flags', ''))
+
+    # Calculate rates (packets per second)
+    packet_counts = [b['packet_count'] for b in timeline]
+    peak_rate = int(max(packet_counts) * (1000 / time_bucket_ms)) if packet_counts else 0
+    avg_rate = int(total_packets / duration_seconds) if duration_seconds > 0 else 0
+
+    # Detect attack type
+    syn_ratio = total_syn / total_packets if total_packets > 0 else 0
+    if syn_ratio > 0.7 and total_packets > 100:
+        attack_type = 'SYN Flood'
+    elif peak_rate > 1000:
+        attack_type = 'High Volume Attack'
+    else:
+        attack_type = 'Normal Traffic'
+
+    return {
+        'timeline': timeline,
+        'summary': {
+            'total_packets': total_packets,
+            'total_bytes': total_bytes,
+            'total_connections': len(filtered_packets),
+            'duration_ms': duration_ms,
+            'duration_seconds': round(duration_seconds, 2),
+            'peak_rate': peak_rate,
+            'avg_rate': avg_rate,
+            'syn_count': total_syn,
+            'syn_ratio': round(syn_ratio * 100, 1),
+            'attack_type': attack_type
+        }
+    }
+
+
+# Dynamic route MUST come AFTER static routes (/api/packets/batch, /api/packets/statistics)
+# to avoid route conflicts where 'batch' or 'statistics' gets matched as {connection_id}
 @app.get('/api/packets/{connection_id}')
 async def get_connection_packets(
     connection_id: str,
@@ -329,8 +595,14 @@ async def analyze_capture(
     if not data:
         raise HTTPException(status_code=400, detail='Upload is empty')
 
-    # Save uploaded file to session directory
+    # Get session directory and clean up old files
     session_dir = get_session_data_dir(request)
+
+    # Clean up old files in current session before saving new file
+    cleanup_session_directory(session_dir)
+    print(f"[DEBUG] Cleaned up old session files")
+
+    # Save uploaded file to session directory
     pcap_path = session_dir / 'uploaded.pcap'
     print(f"[DEBUG] Saving to: {pcap_path}")
 

@@ -180,7 +180,7 @@ export class ProtocolAnimationController {
     }
 
     const direction = stage.direction || 'forward'
-    
+
     switch (direction) {
       case 'forward':
         return { x: progress, y: 0 }
@@ -191,11 +191,11 @@ export class ProtocolAnimationController {
         const cycle = Math.sin(progress * Math.PI * 2) * 0.5 + 0.5
         return { x: cycle, y: 0 }
       case 'wait':
-        // 等待狀態，停在中間
-        return { x: 0.5, y: 0 }
+        // 等待狀態，停在起點而非中段
+        return { x: 0, y: 0 }
       case 'none':
-        // 無移動
-        return { x: 0.5, y: 0 }
+        // 無移動，停在起點
+        return { x: 0, y: 0 }
       default:
         return { x: progress, y: 0 }
     }

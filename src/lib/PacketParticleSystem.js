@@ -6,7 +6,21 @@
  * - 粒子位置計算
  * - 速度控制
  * - 錯誤封包標記
+ * - 粒子生命週期動畫 (spawn → transfer → arrive)
  */
+
+// 粒子生命週期階段定義
+export const PARTICLE_PHASES = {
+  SPAWN: 'spawn',      // 生成階段：粒子從源點彈出
+  TRANSFER: 'transfer', // 傳輸階段：粒子沿路徑移動
+  ARRIVE: 'arrive'     // 到達階段：粒子被目的地吸收
+}
+
+// 生命週期階段配置（使用位置比例）
+const PHASE_CONFIG = {
+  spawnEnd: 0.12,     // 生成階段結束位置
+  arriveStart: 0.88,  // 到達階段開始位置
+}
 
 export class PacketParticleSystem {
   constructor(packets, connectionPath, options = {}) {
@@ -55,12 +69,6 @@ export class PacketParticleSystem {
 
       this.connectionSource = `${srcIp}:${srcPort}`
       this.connectionDest = `${dstIp}:${dstPort}`
-
-      console.log('[PacketParticleSystem] Connection endpoints:', {
-        connectionId: this.options.connectionId,
-        source: this.connectionSource,
-        dest: this.connectionDest
-      })
     } else {
       this.connectionSource = null
       this.connectionDest = null
@@ -103,11 +111,6 @@ export class PacketParticleSystem {
           : 0
         packet._travelTime = 0.5 // 每個封包 500ms 傳輸時間
       })
-
-      console.log('[PacketParticleSystem] Equal-time packets, using stretched equal-interval mode:', {
-        packets: this.packets.length,
-        stretchedDuration: (this.duration / 1000).toFixed(1) + 's'
-      })
       return
     }
 
@@ -119,13 +122,6 @@ export class PacketParticleSystem {
     // 拉長後的總時長（毫秒）
     const stretchedDurationSeconds = realDurationSeconds * stretchFactor
     this.duration = stretchedDurationSeconds * 1000
-
-    console.log('[PacketParticleSystem] Timeline stretching:', {
-      realDuration: realDurationSeconds.toFixed(4) + 's',
-      stretchFactor: stretchFactor.toFixed(1) + 'x',
-      stretchedDuration: stretchedDurationSeconds.toFixed(1) + 's',
-      packets: this.packets.length
-    })
 
     // 為每個封包計算歸一化時間 (0-1) 和拉長後的傳輸時間
     this.packets.forEach((packet, index) => {
@@ -147,27 +143,6 @@ export class PacketParticleSystem {
       // 最小 0.3 秒，最大 2 秒
       const travelTime = Math.max(0.3, Math.min(stretchedIntervalSeconds * 0.3, 2.0))
       packet._travelTime = travelTime
-
-      // 調試：記錄前幾個封包的詳細資訊
-      if (index < 5) {
-        console.log(`[PacketParticleSystem] Packet #${index + 1}:`, {
-          normalizedTime: (packet._normalizedTime * 100).toFixed(1) + '%',
-          realInterval: (realIntervalSeconds * 1000).toFixed(2) + 'ms',
-          stretchedInterval: stretchedIntervalSeconds.toFixed(2) + 's',
-          travelTime: (travelTime * 1000).toFixed(0) + 'ms'
-        })
-      }
-    })
-
-    // 調試日誌：統計資訊
-    const travelTimes = this.packets.map(p => p._travelTime)
-    const avgTravelTime = travelTimes.reduce((a, b) => a + b, 0) / travelTimes.length
-
-    console.log('[PacketParticleSystem] Travel time statistics:', {
-      min: (Math.min(...travelTimes) * 1000).toFixed(0) + 'ms',
-      max: (Math.max(...travelTimes) * 1000).toFixed(0) + 'ms',
-      avg: (avgTravelTime * 1000).toFixed(0) + 'ms',
-      totalPackets: this.packets.length
     })
   }
 
@@ -214,18 +189,6 @@ export class PacketParticleSystem {
 
     // 直接將全局進度映射到本連線的時間
     this.currentTime = globalProgress * this.duration
-
-    // 調試日誌
-    if (Math.random() < 0.05) {
-      console.log('[PacketParticleSystem] setGlobalTime:', {
-        globalTime: (globalTime / 1000).toFixed(2) + 's',
-        globalDuration: (globalDuration / 1000).toFixed(2) + 's',
-        globalProgress: (globalProgress * 100).toFixed(1) + '%',
-        currentTime: (this.currentTime / 1000).toFixed(2) + 's',
-        duration: (this.duration / 1000).toFixed(2) + 's',
-        localProgress: ((this.currentTime / this.duration) * 100).toFixed(1) + '%'
-      })
-    }
   }
 
   /**
@@ -236,29 +199,79 @@ export class PacketParticleSystem {
   }
 
   /**
+   * 計算粒子生命週期狀態
+   * @param {number} position - 粒子在路徑上的位置 (0-1)
+   * @returns {Object} - 包含 phase, scale, opacity, phaseProgress
+   */
+  _calculateLifecycleState(position) {
+    const { spawnEnd, arriveStart } = PHASE_CONFIG
+
+    if (position <= spawnEnd) {
+      // 生成階段：彈出動畫
+      const phaseProgress = position / spawnEnd
+      // 使用 easeOutBack 緩動函數產生彈出效果
+      const overshoot = 1.4
+      const t = phaseProgress - 1
+      const scale = 1 + t * t * ((overshoot + 1) * t + overshoot)
+
+      return {
+        phase: PARTICLE_PHASES.SPAWN,
+        scale: Math.max(0, Math.min(1.3, scale)), // 最大放大 1.3 倍產生彈性效果
+        opacity: Math.min(1, phaseProgress * 2), // 快速淡入
+        phaseProgress,
+        glowIntensity: 1 - phaseProgress // 生成時有光暈
+      }
+    } else if (position >= arriveStart) {
+      // 到達階段：吸收動畫
+      const phaseProgress = (position - arriveStart) / (1 - arriveStart)
+      // 使用 easeInQuad 緩動函數產生加速吸入效果
+      const easedProgress = phaseProgress * phaseProgress
+      const scale = 1 - easedProgress * 0.9 // 縮小到 0.1
+
+      return {
+        phase: PARTICLE_PHASES.ARRIVE,
+        scale: Math.max(0.1, scale),
+        opacity: 1 - easedProgress * 0.8, // 逐漸淡出
+        phaseProgress,
+        glowIntensity: phaseProgress // 到達時閃爍
+      }
+    } else {
+      // 傳輸階段：正常顯示
+      const phaseProgress = (position - spawnEnd) / (arriveStart - spawnEnd)
+
+      return {
+        phase: PARTICLE_PHASES.TRANSFER,
+        scale: 1,
+        opacity: 1,
+        phaseProgress,
+        glowIntensity: 0
+      }
+    }
+  }
+
+  /**
+   * 提取 TCP flags 字串
+   * @param {Object} packet - 封包資料
+   * @returns {string|null} - TCP flags 字串
+   */
+  _extractTcpFlags(packet) {
+    if (!packet.headers?.tcp?.flags) return null
+    const flags = packet.headers.tcp.flags
+    return Array.isArray(flags) ? flags.join('|') : String(flags)
+  }
+
+  /**
    * 獲取當前應顯示的粒子
-   * 返回每個粒子的位置、大小、顏色等資訊
+   * 返回每個粒子的位置、大小、顏色、生命週期等資訊
    */
   getActiveParticles() {
     if (this.packets.length === 0 || this.duration === 0) {
-      console.log('[PacketParticleSystem] No packets or zero duration')
       return []
     }
 
     const progress = this.currentTime / this.duration
     const particles = []
     const totalDurationSeconds = this.duration / 1000
-
-    // 調試日誌（增加頻率以便診斷）
-    if (Math.random() < 0.1) {
-      console.log('[PacketParticleSystem] getActiveParticles:', {
-        currentTime: (this.currentTime / 1000).toFixed(2) + 's',
-        duration: (this.duration / 1000).toFixed(2) + 's',
-        progress: (progress * 100).toFixed(1) + '%',
-        totalPackets: this.packets.length,
-        visibleParticles: '將在下方計算'
-      })
-    }
 
     // 只顯示當前時間範圍內的封包
     this.packets.forEach((packet, index) => {
@@ -338,34 +351,42 @@ export class PacketParticleSystem {
       }
 
       if (shouldShow) {
-        // 調試：記錄粒子位置資訊（增加頻率）
-        if (index < 5 && Math.random() < 0.05) {
-          console.log('[Particle Debug] #' + index, 'id:', packet.id, 'position:', particlePosition.toFixed(3), 'isForward:', isForward, 'packetProgress:', (packetProgress * 100).toFixed(1) + '%', 'displayDuration:', (displayDuration * 100).toFixed(1) + '%')
-        }
-
         // 計算粒子大小（基於封包長度）
         const minSize = 2
         const maxSize = 8
-        const size = minSize + (Math.log(packet.length + 1) / Math.log(65536)) * (maxSize - minSize)
+        const baseSize = minSize + (Math.log(packet.length + 1) / Math.log(65536)) * (maxSize - minSize)
+
+        // 計算生命週期狀態
+        const lifecycleState = this._calculateLifecycleState(particlePosition)
+        const size = baseSize * lifecycleState.scale
 
         // 計算粒子顏色（基於協議或錯誤狀態）
         let color = '#60a5fa' // 預設藍色
         let glowColor = null
 
+        // 提取 TCP flags
+        const tcpFlags = this._extractTcpFlags(packet)
+
         if (packet.errorType) {
           color = '#ef4444' // 錯誤封包為紅色
           glowColor = '#fee2e2'
         } else if (packet.headers?.tcp) {
-          const flags = packet.headers.tcp.flags || ''
-          const flagsStr = Array.isArray(flags) ? flags.join('|') : String(flags)
+          const flagsStr = tcpFlags || ''
 
           if (flagsStr.includes('SYN')) {
             color = '#22c55e' // SYN 綠色
           } else if (flagsStr.includes('FIN') || flagsStr.includes('RST')) {
             color = '#f59e0b' // FIN/RST 橙色
+          } else if (flagsStr.includes('URG') || flagsStr.includes('PSH')) {
+            color = '#ef4444' // URG/PSH 攻擊類 - 紅色
           }
         } else if (packet.headers?.udp) {
           color = '#a855f7' // UDP 紫色
+        }
+
+        // 生成/到達階段增加光暈效果
+        if (lifecycleState.glowIntensity > 0) {
+          glowColor = color
         }
 
         // 使用封包的實際索引 (packet.index)，如果沒有則使用陣列索引
@@ -375,19 +396,24 @@ export class PacketParticleSystem {
           index: packetIndex,
           position: Math.min(1, Math.max(0, particlePosition)), // 0-1 範圍
           size,
+          baseSize, // 原始大小（未經縮放）
           color,
           glowColor,
           packet,
           isError: !!packet.errorType,
-          label: this.options.showLabels ? this._getPacketLabel(packet, index) : null
+          label: this.options.showLabels ? this._getPacketLabel(packet, index) : null,
+          // 生命週期相關屬性
+          phase: lifecycleState.phase,
+          scale: lifecycleState.scale,
+          opacity: lifecycleState.opacity,
+          phaseProgress: lifecycleState.phaseProgress,
+          glowIntensity: lifecycleState.glowIntensity,
+          // TCP 相關屬性
+          tcpFlags,
+          direction: isForward ? 'forward' : 'backward'
         })
       }
     })
-
-    // 調試：記錄可見粒子數量
-    if (Math.random() < 0.1) {
-      console.log('[PacketParticleSystem] Visible particles:', particles.length, '/', this.packets.length)
-    }
 
     return particles
   }

@@ -184,15 +184,23 @@ class NetworkAnalyzer:
             self.protocol_timelines = timelines  # Set as attribute for easy access
             return payload
 
+        # 特定協議檢測
         tcp_handshakes = self._extract_tcp_handshakes()
+        tcp_teardowns = self._extract_tcp_teardowns()
         udp_transfers = self._extract_udp_transfers()
         http_requests = self._detect_http_requests()
         timeouts = self._detect_timeouts()
 
         timelines.extend(tcp_handshakes)
+        timelines.extend(tcp_teardowns)
         timelines.extend(udp_transfers)
         timelines.extend(http_requests)
         timelines.extend(timeouts)
+
+        # Fallback: 如果沒有檢測到任何特定協議，使用通用 TCP 連線檢測
+        if len(timelines) == 0 and len(self.packets) > 0:
+            generic_tcp = self._extract_generic_tcp_connections()
+            timelines.extend(generic_tcp)
 
         payload = {
             'sourceFiles': [os.path.basename(self.pcap_file)],
@@ -281,6 +289,266 @@ class NetworkAnalyzer:
 
         return timelines
 
+    def _extract_tcp_teardowns(self):
+        """檢測 TCP 四向揮手（連線結束）
+
+        TCP Teardown 流程：
+        1. 主動關閉方發送 FIN
+        2. 被動方回覆 ACK
+        3. 被動方發送 FIN
+        4. 主動方回覆 ACK
+
+        也處理簡化的雙向 FIN+ACK 情況
+        """
+        timelines = []
+        teardowns = {}  # key: (initiator_ip, initiator_port, responder_ip, responder_port)
+
+        for index, packet in enumerate(self.packets):
+            if not packet.haslayer(IP) or not packet.haslayer(TCP):
+                continue
+
+            ip = packet[IP]
+            tcp = packet[TCP]
+            ts = float(packet.time)
+            flags = int(tcp.flags)
+
+            fin = bool(flags & 0x01)
+            ack = bool(flags & 0x10)
+            rst = bool(flags & 0x04)
+
+            src_key = (ip.src, tcp.sport, ip.dst, tcp.dport)
+            dst_key = (ip.dst, tcp.dport, ip.src, tcp.sport)
+
+            # 檢測 FIN 封包（開始 teardown）
+            if fin:
+                if src_key not in teardowns and dst_key not in teardowns:
+                    # 新的 teardown 序列
+                    teardowns[src_key] = {
+                        'fin1_time': ts,
+                        'fin1_packet': index,
+                        'initiator': src_key,
+                        'packets': [index]
+                    }
+                elif dst_key in teardowns:
+                    # 對方的 FIN（第二個 FIN）
+                    info = teardowns[dst_key]
+                    if 'fin2_time' not in info:
+                        info['fin2_time'] = ts
+                        info['fin2_packet'] = index
+                        info['packets'].append(index)
+                elif src_key in teardowns:
+                    # 同方向重傳的 FIN，更新時間
+                    info = teardowns[src_key]
+                    info['packets'].append(index)
+
+            # 檢測 ACK 封包
+            elif ack and not fin and not rst:
+                # 檢查是否是對 FIN 的 ACK
+                if dst_key in teardowns:
+                    info = teardowns[dst_key]
+                    if 'ack1_time' not in info:
+                        info['ack1_time'] = ts
+                        info['ack1_packet'] = index
+                        info['packets'].append(index)
+                    elif 'fin2_time' in info and 'ack2_time' not in info:
+                        info['ack2_time'] = ts
+                        info['ack2_packet'] = index
+                        info['packets'].append(index)
+
+            # 檢測 RST 封包（強制結束）
+            elif rst:
+                if src_key in teardowns or dst_key in teardowns:
+                    key = src_key if src_key in teardowns else dst_key
+                    info = teardowns[key]
+                    info['rst_time'] = ts
+                    info['rst_packet'] = index
+                    info['packets'].append(index)
+
+        # 將完成的 teardown 轉換為 timeline
+        for key, info in teardowns.items():
+            # 至少需要一個 FIN
+            if 'fin1_time' not in info:
+                continue
+
+            start_time = info['fin1_time']
+            end_time = info.get('ack2_time') or info.get('rst_time') or info.get('fin2_time') or info.get('ack1_time') or start_time
+
+            stages = []
+
+            # Stage 1: FIN Sent
+            stages.append({
+                'key': 'fin1',
+                'label': 'FIN Sent',
+                'direction': 'forward',
+                'durationMs': max(600, int((info.get('ack1_time', start_time) - start_time) * 1000)),
+                'packetRefs': [info['fin1_packet']]
+            })
+
+            # Stage 2: ACK Received (如果有)
+            if 'ack1_time' in info:
+                stages.append({
+                    'key': 'ack1',
+                    'label': 'ACK Received',
+                    'direction': 'backward',
+                    'durationMs': max(600, int((info.get('fin2_time', info['ack1_time']) - info['ack1_time']) * 1000)),
+                    'packetRefs': [info.get('ack1_packet', info['fin1_packet'])]
+                })
+
+            # Stage 3: FIN Received (如果有)
+            if 'fin2_time' in info:
+                stages.append({
+                    'key': 'fin2',
+                    'label': 'FIN Received',
+                    'direction': 'backward',
+                    'durationMs': max(600, int((info.get('ack2_time', info['fin2_time']) - info['fin2_time']) * 1000)),
+                    'packetRefs': [info.get('fin2_packet', info['fin1_packet'])]
+                })
+
+            # Stage 4: Final ACK (如果有)
+            if 'ack2_time' in info:
+                stages.append({
+                    'key': 'ack2',
+                    'label': 'Final ACK',
+                    'direction': 'forward',
+                    'durationMs': max(600, 1),
+                    'packetRefs': [info.get('ack2_packet', info['fin1_packet'])]
+                })
+
+            # RST 結束（如果有）
+            if 'rst_time' in info:
+                stages.append({
+                    'key': 'rst',
+                    'label': 'RST (Force Close)',
+                    'direction': 'both',
+                    'durationMs': max(600, 1),
+                    'packetRefs': [info.get('rst_packet', info['fin1_packet'])]
+                })
+
+            timeline = {
+                'id': f"tcp-teardown-{key[0]}-{key[1]}-{key[2]}-{key[3]}",
+                'protocol': 'tcp',
+                'protocolType': 'tcp-teardown',
+                'startEpochMs': int(start_time * 1000),
+                'endEpochMs': int(end_time * 1000),
+                'stages': stages,
+                'metrics': {
+                    'teardownDurationMs': max(1, int((end_time - start_time) * 1000)),
+                    'packetCount': len(info['packets'])
+                }
+            }
+            timelines.append(timeline)
+
+        return timelines
+
+    def _extract_generic_tcp_connections(self):
+        """提取通用 TCP 連線（作為 fallback）
+
+        當其他特定協議檢測沒有結果時，按 5-tuple 分組所有 TCP 封包，
+        創建基本的資料傳輸 timeline。
+        """
+        connections = {}  # key: (src_ip, src_port, dst_ip, dst_port)
+
+        for index, packet in enumerate(self.packets):
+            if not packet.haslayer(IP) or not packet.haslayer(TCP):
+                continue
+
+            ip = packet[IP]
+            tcp = packet[TCP]
+            ts = float(packet.time)
+            length = len(packet)
+            flags = int(tcp.flags)
+
+            # 標準化 key（排序確保雙向一致）
+            endpoint1 = (ip.src, tcp.sport)
+            endpoint2 = (ip.dst, tcp.dport)
+            normalized_key = tuple(sorted([endpoint1, endpoint2]))
+
+            if normalized_key not in connections:
+                connections[normalized_key] = {
+                    'start_time': ts,
+                    'end_time': ts,
+                    'packets': [],
+                    'total_bytes': 0,
+                    'flags_seen': set()
+                }
+
+            conn = connections[normalized_key]
+            conn['end_time'] = max(conn['end_time'], ts)
+            conn['packets'].append(index)
+            conn['total_bytes'] += length
+
+            # 記錄看到的 flags
+            if flags & 0x02:  # SYN
+                conn['flags_seen'].add('SYN')
+            if flags & 0x01:  # FIN
+                conn['flags_seen'].add('FIN')
+            if flags & 0x04:  # RST
+                conn['flags_seen'].add('RST')
+            if flags & 0x10:  # ACK
+                conn['flags_seen'].add('ACK')
+            if flags & 0x08:  # PSH
+                conn['flags_seen'].add('PSH')
+
+        timelines = []
+        for key, conn in connections.items():
+            # 至少需要 2 個封包才有意義
+            if len(conn['packets']) < 2:
+                continue
+
+            start_time = conn['start_time']
+            end_time = conn['end_time']
+            duration_ms = max(1, int((end_time - start_time) * 1000))
+
+            # 根據看到的 flags 決定 protocolType
+            flags_seen = conn['flags_seen']
+            if 'SYN' in flags_seen and 'FIN' in flags_seen:
+                protocol_type = 'tcp-session'  # 完整會話
+            elif 'SYN' in flags_seen:
+                protocol_type = 'tcp-handshake'  # 可能是不完整的握手
+            elif 'FIN' in flags_seen or 'RST' in flags_seen:
+                protocol_type = 'tcp-teardown'  # 連線結束
+            else:
+                protocol_type = 'tcp-data'  # 純資料傳輸
+
+            # 創建簡單的單階段或雙階段 timeline
+            stages = []
+            half_duration = max(800, duration_ms // 2)
+
+            stages.append({
+                'key': 'transfer',
+                'label': 'Data Transfer',
+                'direction': 'forward',
+                'durationMs': half_duration,
+                'packetRefs': conn['packets'][:len(conn['packets'])//2] or conn['packets'][:1]
+            })
+
+            stages.append({
+                'key': 'response',
+                'label': 'Response',
+                'direction': 'backward',
+                'durationMs': half_duration,
+                'packetRefs': conn['packets'][len(conn['packets'])//2:] or conn['packets'][-1:]
+            })
+
+            endpoint1, endpoint2 = key
+            timeline = {
+                'id': f"tcp-data-{endpoint1[0]}-{endpoint1[1]}-{endpoint2[0]}-{endpoint2[1]}",
+                'protocol': 'tcp',
+                'protocolType': protocol_type,
+                'startEpochMs': int(start_time * 1000),
+                'endEpochMs': int(end_time * 1000),
+                'stages': stages,
+                'metrics': {
+                    'durationMs': duration_ms,
+                    'packetCount': len(conn['packets']),
+                    'totalBytes': conn['total_bytes'],
+                    'flagsSeen': list(flags_seen)
+                }
+            }
+            timelines.append(timeline)
+
+        return timelines
+
     def _extract_udp_transfers(self):
         transfers = {}
 
@@ -331,9 +599,13 @@ class NetworkAnalyzer:
         return timelines
 
     def _detect_http_requests(self):
-        """檢測 HTTP/HTTPS 請求和回應"""
+        """檢測 HTTP/HTTPS 請求和回應
+
+        修復：使用 processed_connections 追蹤已處理的連線，避免重複生成 timeline
+        """
         timelines = []
         http_sessions = {}
+        processed_connections = set()  # 追蹤已處理的連線（標準化 key）
 
         for index, packet in enumerate(self.packets):
             if not packet.haslayer(TCP) or not packet.haslayer(IP):
@@ -348,6 +620,13 @@ class NetworkAnalyzer:
             is_https = tcp.sport == 443 or tcp.dport == 443
 
             if not (is_http or is_https):
+                continue
+
+            # 標準化連線 key（排序確保雙向一致）
+            normalized_key = tuple(sorted([(ip.src, tcp.sport), (ip.dst, tcp.dport)]))
+
+            # 跳過已處理的連線
+            if normalized_key in processed_connections:
                 continue
 
             # 識別請求和回應
@@ -400,14 +679,21 @@ class NetworkAnalyzer:
                     }
                 }
                 timelines.append(timeline)
+                processed_connections.add(normalized_key)  # 標記為已處理
                 http_sessions.pop(conn_key)
 
         return timelines
 
     def _detect_timeouts(self):
-        """檢測連線超時情況"""
+        """檢測連線超時情況
+
+        修復：使用標準化雙向 key 和時間窗口去重，避免同一超時事件被重複記錄
+        - 雙向連線會產生相同的 normalized_key
+        - 時間窗口（四捨五入到秒）用於識別同一超時事件
+        """
         timelines = []
         connections = {}
+        processed_timeout_events = set()  # 追蹤已處理的超時事件 (normalized_key, time_window)
 
         for index, packet in enumerate(self.packets):
             if not packet.haslayer(TCP) or not packet.haslayer(IP):
@@ -416,50 +702,65 @@ class NetworkAnalyzer:
             ip = packet[IP]
             tcp = packet[TCP]
             ts = float(packet.time)
+
+            # 標準化連線 key（排序確保雙向一致）
+            normalized_key = tuple(sorted([(ip.src, tcp.sport), (ip.dst, tcp.dport)]))
             conn_key = (ip.src, tcp.sport, ip.dst, tcp.dport)
 
-            if conn_key not in connections:
-                connections[conn_key] = {
+            if normalized_key not in connections:
+                connections[normalized_key] = {
                     'start_time': ts,
                     'last_time': ts,
                     'packet_count': 1,
-                    'start_packet': index
+                    'start_packet': index,
+                    'conn_key': conn_key  # 保存原始方向用於 ID 生成
                 }
             else:
-                conn = connections[conn_key]
+                conn = connections[normalized_key]
                 time_gap = ts - conn['last_time']
 
                 # 如果超過 3 秒沒有封包，視為可能的超時
                 if time_gap > 3.0:
-                    timeline = {
-                        'id': f"timeout-{ip.src}-{tcp.sport}-{ip.dst}-{tcp.dport}-{conn['start_packet']}-{index}",
-                        'protocol': 'tcp',
-                        'protocolType': 'timeout',
-                        'startEpochMs': int(conn['last_time'] * 1000),
-                        'endEpochMs': int(ts * 1000),
-                        'stages': [
-                            {
-                                'key': 'waiting',
-                                'label': '等待回應',
-                                'direction': 'forward',
-                                'durationMs': int(time_gap * 1000 * 0.5)
-                            },
-                            {
-                                'key': 'timeout',
-                                'label': '連線超時',
-                                'direction': 'none',
-                                'durationMs': int(time_gap * 1000 * 0.5)
+                    # 使用時間窗口（四捨五入到秒）來識別同一超時事件
+                    timeout_event_key = (normalized_key, round(conn['last_time']))
+
+                    # 只有當這個超時事件尚未處理時才創建 timeline
+                    if timeout_event_key not in processed_timeout_events:
+                        orig = conn['conn_key']
+                        timeline = {
+                            'id': f"timeout-{orig[0]}-{orig[1]}-{orig[2]}-{orig[3]}-{conn['start_packet']}-{index}",
+                            'protocol': 'tcp',
+                            'protocolType': 'timeout',
+                            'startEpochMs': int(conn['last_time'] * 1000),
+                            'endEpochMs': int(ts * 1000),
+                            'stages': [
+                                {
+                                    'key': 'waiting',
+                                    'label': '等待回應',
+                                    'direction': 'forward',
+                                    'durationMs': int(time_gap * 1000 * 0.5)
+                                },
+                                {
+                                    'key': 'timeout',
+                                    'label': '連線超時',
+                                    'direction': 'none',
+                                    'durationMs': int(time_gap * 1000 * 0.5)
+                                }
+                            ],
+                            'metrics': {
+                                'timeoutMs': int(time_gap * 1000),
+                                'packetCount': conn['packet_count']
                             }
-                        ],
-                        'metrics': {
-                            'timeoutMs': int(time_gap * 1000),
-                            'packetCount': conn['packet_count']
                         }
-                    }
-                    timelines.append(timeline)
+                        timelines.append(timeline)
+                        processed_timeout_events.add(timeout_event_key)
+                        # 關鍵修復：更新 start_packet 為當前 index
+                        # 這樣後續的超時事件不會重複包含已處理的封包範圍
+                        conn['start_packet'] = index
 
                 conn['last_time'] = ts
                 conn['packet_count'] += 1
+                conn['conn_key'] = conn_key  # 更新最近的方向
 
         return timelines
 
@@ -598,6 +899,223 @@ class NetworkAnalyzer:
         if top_n is not None:
             items = items[:top_n]
         return [{'name': str(key), 'count': value} for key, value in items]
+
+    def detect_attacks(self):
+        """偵測潛在的網路攻擊並計算攻擊指標。"""
+        if not self.packets:
+            return None
+
+        # 初始化計數器
+        tcp_flags = {
+            'syn': 0,
+            'syn_ack': 0,
+            'ack': 0,
+            'fin': 0,
+            'rst': 0,
+            'psh': 0
+        }
+
+        connections = defaultdict(lambda: {
+            'packets': 0,
+            'syn_count': 0,
+            'ack_count': 0,
+            'fin_count': 0,
+            'rst_count': 0,
+            'data_packets': 0,
+            'first_time': None,
+            'last_time': None
+        })
+
+        source_ips = Counter()
+        target_ports = Counter()
+        total_tcp_packets = 0
+
+        # 時間範圍
+        first_packet_time = None
+        last_packet_time = None
+
+        for packet in self.packets:
+            if not packet.haslayer(IP):
+                continue
+
+            ip_layer = packet[IP]
+            packet_time = float(packet.time)
+
+            if first_packet_time is None:
+                first_packet_time = packet_time
+            last_packet_time = packet_time
+
+            if packet.haslayer(TCP):
+                total_tcp_packets += 1
+                tcp_layer = packet[TCP]
+                flags = tcp_layer.flags
+
+                # 解析 TCP flags
+                is_syn = bool(flags & 0x02)
+                is_ack = bool(flags & 0x10)
+                is_fin = bool(flags & 0x01)
+                is_rst = bool(flags & 0x04)
+                is_psh = bool(flags & 0x08)
+
+                # 統計 flags
+                if is_syn and not is_ack:
+                    tcp_flags['syn'] += 1
+                if is_syn and is_ack:
+                    tcp_flags['syn_ack'] += 1
+                if is_ack and not is_syn:
+                    tcp_flags['ack'] += 1
+                if is_fin:
+                    tcp_flags['fin'] += 1
+                if is_rst:
+                    tcp_flags['rst'] += 1
+                if is_psh:
+                    tcp_flags['psh'] += 1
+
+                # 連線追蹤
+                src_ip = ip_layer.src
+                dst_ip = ip_layer.dst
+                src_port = tcp_layer.sport
+                dst_port = tcp_layer.dport
+
+                # 標準化連線 key（雙向）
+                conn_key = tuple(sorted([(src_ip, src_port), (dst_ip, dst_port)]))
+                conn = connections[conn_key]
+                conn['packets'] += 1
+
+                if is_syn and not is_ack:
+                    conn['syn_count'] += 1
+                if is_ack:
+                    conn['ack_count'] += 1
+                if is_fin:
+                    conn['fin_count'] += 1
+                if is_rst:
+                    conn['rst_count'] += 1
+                if is_psh:
+                    conn['data_packets'] += 1
+
+                if conn['first_time'] is None:
+                    conn['first_time'] = packet_time
+                conn['last_time'] = packet_time
+
+                # 來源統計
+                source_ips[src_ip] += 1
+                target_ports[dst_port] += 1
+
+        # 計算攻擊指標
+        duration_seconds = (last_packet_time - first_packet_time) if first_packet_time and last_packet_time else 1
+        duration_seconds = max(duration_seconds, 0.001)  # 避免除以零
+
+        total_connections = len(connections)
+
+        # RST 比例
+        rst_ratio = tcp_flags['rst'] / total_tcp_packets if total_tcp_packets > 0 else 0
+
+        # 每秒連線數
+        connections_per_second = total_connections / duration_seconds
+
+        # 握手完成率（有 SYN 且有對應 SYN-ACK 的比例）
+        handshake_completion_rate = tcp_flags['syn_ack'] / tcp_flags['syn'] if tcp_flags['syn'] > 0 else 1
+
+        # 無資料傳輸的連線比例
+        teardown_without_data = sum(1 for c in connections.values()
+                                    if c['data_packets'] == 0 and (c['fin_count'] > 0 or c['rst_count'] > 0))
+        teardown_without_data_rate = teardown_without_data / total_connections if total_connections > 0 else 0
+
+        # 來源 IP 集中度（最大來源佔總流量的比例）
+        max_source_count = source_ips.most_common(1)[0][1] if source_ips else 0
+        total_source_packets = sum(source_ips.values())
+        source_concentration = max_source_count / total_source_packets if total_source_packets > 0 else 0
+
+        # 目標端口集中度
+        max_target_count = target_ports.most_common(1)[0][1] if target_ports else 0
+        total_target_packets = sum(target_ports.values())
+        target_concentration = max_target_count / total_target_packets if total_target_packets > 0 else 0
+
+        # 攻擊類型判斷
+        attack_type = None
+        attack_description = None
+        severity = 'normal'
+        confidence = 0.0
+
+        # SYN Flood 檢測
+        if tcp_flags['syn'] > 100 and handshake_completion_rate < 0.3:
+            attack_type = 'SYN Flood'
+            attack_description = '大量 SYN 請求但極少完成握手，典型的 SYN Flood 攻擊'
+            severity = 'high' if tcp_flags['syn'] > 500 else 'medium'
+            confidence = min(0.9, (1 - handshake_completion_rate) * 0.8 + 0.2)
+
+        # RST Flood 檢測
+        elif rst_ratio > 0.5 and total_tcp_packets > 50:
+            attack_type = 'RST Flood'
+            attack_description = '超過 50% 的封包是 RST，可能是 RST Flood 攻擊或連線重置攻擊'
+            severity = 'high' if rst_ratio > 0.7 else 'medium'
+            confidence = min(0.9, rst_ratio * 0.9)
+
+        # FIN Flood 檢測
+        elif tcp_flags['fin'] > 100 and teardown_without_data_rate > 0.8:
+            attack_type = 'FIN Flood'
+            attack_description = '大量 FIN 封包但無實際資料傳輸，可能是 FIN Flood 攻擊'
+            severity = 'high' if tcp_flags['fin'] > 500 else 'medium'
+            confidence = min(0.9, teardown_without_data_rate * 0.85)
+
+        # 連線耗盡攻擊檢測
+        elif connections_per_second > 50 and teardown_without_data_rate > 0.7:
+            attack_type = 'Connection Exhaustion'
+            attack_description = '高速建立大量短暫連線，意圖耗盡伺服器連線資源'
+            severity = 'high' if connections_per_second > 100 else 'medium'
+            confidence = min(0.85, connections_per_second / 200 + teardown_without_data_rate * 0.3)
+
+        # 端口掃描檢測
+        elif len(target_ports) > 50 and source_concentration > 0.8:
+            attack_type = 'Port Scan'
+            attack_description = '單一來源掃描大量端口，可能是偵察行為'
+            severity = 'low'
+            confidence = min(0.8, len(target_ports) / 100 * 0.5 + source_concentration * 0.3)
+
+        # 異常分數計算（0-100）
+        anomaly_score = 0
+        if rst_ratio > 0.3:
+            anomaly_score += rst_ratio * 30
+        if handshake_completion_rate < 0.5:
+            anomaly_score += (1 - handshake_completion_rate) * 25
+        if teardown_without_data_rate > 0.5:
+            anomaly_score += teardown_without_data_rate * 25
+        if connections_per_second > 20:
+            anomaly_score += min(20, connections_per_second / 5)
+
+        anomaly_score = min(100, anomaly_score)
+
+        # 構建結果
+        attack_analysis = {
+            'metrics': {
+                'total_tcp_packets': total_tcp_packets,
+                'total_connections': total_connections,
+                'duration_seconds': round(duration_seconds, 2),
+                'connections_per_second': round(connections_per_second, 2),
+                'rst_ratio': round(rst_ratio, 3),
+                'fin_ratio': round(tcp_flags['fin'] / total_tcp_packets if total_tcp_packets > 0 else 0, 3),
+                'handshake_completion_rate': round(handshake_completion_rate, 3),
+                'teardown_without_data_rate': round(teardown_without_data_rate, 3),
+                'source_concentration': round(source_concentration, 3),
+                'target_concentration': round(target_concentration, 3),
+                'unique_source_ips': len(source_ips),
+                'unique_target_ports': len(target_ports)
+            },
+            'tcp_flags': tcp_flags,
+            'top_sources': [{'ip': ip, 'count': count} for ip, count in source_ips.most_common(5)],
+            'top_targets': [{'port': port, 'count': count} for port, count in target_ports.most_common(5)],
+            'attack_detection': {
+                'detected': attack_type is not None,
+                'type': attack_type,
+                'description': attack_description,
+                'severity': severity,
+                'confidence': round(confidence, 2),
+                'anomaly_score': round(anomaly_score, 1)
+            }
+        }
+
+        self.analysis_results['attack_analysis'] = attack_analysis
+        return attack_analysis
 
     def build_mind_map(self, max_protocols=6, max_sources=5, max_targets=5):
         """Build a hierarchical mind map structure from connection data."""
@@ -1155,6 +1673,9 @@ def main():
     NetworkAnalyzer._safe_print('建立心智圖 ...')
     analyzer.build_mind_map()
 
+    NetworkAnalyzer._safe_print('生成協議時間軸 ...')
+    analyzer.generate_protocol_timelines()
+
     report = analyzer.generate_report()
     NetworkAnalyzer._safe_print('\n' + report)
 
@@ -1166,5 +1687,6 @@ def main():
     NetworkAnalyzer._safe_print(f'\n詳細報告已儲存至 {report_path}')
 
 
+if __name__ == "__main__":
     main()
 

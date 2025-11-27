@@ -217,6 +217,7 @@ def _run_analysis(pcap_path: Path) -> Dict[str, Any]:
     analyzer.basic_statistics()
     analyzer.detect_packet_loss()
     analyzer.analyze_latency()
+    analyzer.detect_attacks()  # 攻擊偵測
     analyzer.build_mind_map()
     analyzer.generate_protocol_timelines()
 
@@ -283,13 +284,56 @@ async def get_timelines(
     # Try session-specific timeline first
     if timeline_file.exists():
         with timeline_file.open('r', encoding='utf-8') as handle:
-            return json.load(handle)
+            data = json.load(handle)
+            # 嘗試附加攻擊分析數據
+            analysis_file = session_dir / 'network_analysis_results.json'
+            if analysis_file.exists():
+                with analysis_file.open('r', encoding='utf-8') as af:
+                    analysis_data = json.load(af)
+                    if 'attack_analysis' in analysis_data:
+                        data['attackAnalysis'] = analysis_data['attack_analysis']
+            return data
 
     # Fallback to static fixture if no session-specific data exists
     fixture = _load_timeline_fixture()
     if not fixture:
         raise HTTPException(status_code=404, detail='No timeline data available')
     return fixture
+
+
+@app.get('/api/attacks')
+async def get_attack_analysis(
+    request: Request,
+    session_id: str = Depends(require_session)
+) -> Dict[str, Any]:
+    """Get attack detection analysis (requires session)"""
+    session_dir = get_session_data_dir(request)
+    analysis_file = session_dir / 'network_analysis_results.json'
+
+    if not analysis_file.exists():
+        raise HTTPException(status_code=404, detail='No analysis data available')
+
+    with analysis_file.open('r', encoding='utf-8') as handle:
+        data = json.load(handle)
+
+    attack_analysis = data.get('attack_analysis')
+    if not attack_analysis:
+        return {
+            'metrics': {},
+            'tcp_flags': {},
+            'top_sources': [],
+            'top_targets': [],
+            'attack_detection': {
+                'detected': False,
+                'type': None,
+                'description': None,
+                'severity': 'normal',
+                'confidence': 0,
+                'anomaly_score': 0
+            }
+        }
+
+    return attack_analysis
 
 
 @app.post('/api/packets/batch')
@@ -484,20 +528,80 @@ async def get_packet_statistics(
     total_packets = len(all_packets)
     total_bytes = sum(p.get('length', 0) for p in all_packets)
     total_syn = sum(1 for p in all_packets if 'S' in p.get('tcp_flags', ''))
+    total_fin = sum(1 for p in all_packets if 'F' in p.get('tcp_flags', ''))
+    total_rst = sum(1 for p in all_packets if 'R' in p.get('tcp_flags', ''))
+    total_ack = sum(1 for p in all_packets if 'A' in p.get('tcp_flags', ''))
+    total_urg = sum(1 for p in all_packets if 'U' in p.get('tcp_flags', ''))
+    total_psh = sum(1 for p in all_packets if 'P' in p.get('tcp_flags', ''))
+    # URG-PSH-FIN combination: packets with all three flags set simultaneously
+    total_urg_psh_fin = sum(1 for p in all_packets
+        if all(f in p.get('tcp_flags', '') for f in ['U', 'P', 'F']))
 
     # Calculate rates (packets per second)
     packet_counts = [b['packet_count'] for b in timeline]
     peak_rate = int(max(packet_counts) * (1000 / time_bucket_ms)) if packet_counts else 0
     avg_rate = int(total_packets / duration_seconds) if duration_seconds > 0 else 0
 
-    # Detect attack type
+    # Calculate TCP flag ratios
     syn_ratio = total_syn / total_packets if total_packets > 0 else 0
-    if syn_ratio > 0.7 and total_packets > 100:
+    fin_ratio = total_fin / total_packets if total_packets > 0 else 0
+    rst_ratio = total_rst / total_packets if total_packets > 0 else 0
+    ack_ratio = total_ack / total_packets if total_packets > 0 else 0
+    urg_ratio = total_urg / total_packets if total_packets > 0 else 0
+    psh_ratio = total_psh / total_packets if total_packets > 0 else 0
+    urg_psh_fin_ratio = total_urg_psh_fin / total_packets if total_packets > 0 else 0
+
+    # Detect attack type with priority order and calculate threat level
+    # Priority: URG-PSH-FIN (most specific) > SYN Flood > FIN Flood > RST Attack > ...
+    threat_level = 'low'  # low, medium, high
+
+    # URG-PSH-FIN Attack has HIGHEST priority - this is a very specific malicious pattern
+    if urg_psh_fin_ratio > 0.2 and total_packets > 50:
+        # URG-PSH-FIN Attack: Abnormal flag combination attack
+        # Packets with URG+PSH+FIN simultaneously indicate malicious traffic
+        attack_type = 'URG-PSH-FIN Attack'
+        threat_level = 'high'
+    elif urg_ratio > 0.3 and psh_ratio > 0.5 and fin_ratio > 0.3 and total_packets > 50:
+        # Alternative URG-PSH-FIN detection: High individual flag ratios
+        attack_type = 'URG-PSH-FIN Attack'
+        threat_level = 'high'
+    elif syn_ratio > 0.7 and total_packets > 100:
         attack_type = 'SYN Flood'
+        threat_level = 'high'
+    elif fin_ratio > 0.5 and syn_ratio < 0.3 and total_packets > 100:
+        # FIN Flood: High FIN ratio but low SYN (sending FIN without proper handshake)
+        attack_type = 'FIN Flood'
+        threat_level = 'high'
+    elif rst_ratio > 0.4 and total_packets > 100:
+        attack_type = 'RST Attack'
+        threat_level = 'high' if rst_ratio > 0.6 else 'medium'
     elif peak_rate > 1000:
         attack_type = 'High Volume Attack'
+        threat_level = 'medium'
+    elif (fin_ratio > 0.4 or rst_ratio > 0.3) and total_packets > 50:
+        # Suspicious: elevated FIN or RST but not conclusive
+        attack_type = 'Suspicious Traffic'
+        threat_level = 'medium'
     else:
         attack_type = 'Normal Traffic'
+        threat_level = 'low'
+
+    # Calculate anomaly score (0-100) based on flag ratios
+    anomaly_score = 0
+    if syn_ratio > 0.5:
+        anomaly_score += min(30, (syn_ratio - 0.5) * 60)
+    if fin_ratio > 0.3:
+        anomaly_score += min(25, (fin_ratio - 0.3) * 50)
+    if rst_ratio > 0.2:
+        anomaly_score += min(25, (rst_ratio - 0.2) * 50)
+    if ack_ratio < 0.3:
+        anomaly_score += min(20, (0.3 - ack_ratio) * 66)
+    # URG-PSH-FIN combination is highly anomalous
+    if urg_psh_fin_ratio > 0.1:
+        anomaly_score += min(30, urg_psh_fin_ratio * 100)
+    if urg_ratio > 0.2:
+        anomaly_score += min(15, (urg_ratio - 0.2) * 50)
+    anomaly_score = min(100, round(anomaly_score))
 
     return {
         'timeline': timeline,
@@ -511,7 +615,21 @@ async def get_packet_statistics(
             'avg_rate': avg_rate,
             'syn_count': total_syn,
             'syn_ratio': round(syn_ratio * 100, 1),
-            'attack_type': attack_type
+            'fin_count': total_fin,
+            'fin_ratio': round(fin_ratio * 100, 1),
+            'rst_count': total_rst,
+            'rst_ratio': round(rst_ratio * 100, 1),
+            'ack_count': total_ack,
+            'ack_ratio': round(ack_ratio * 100, 1),
+            'urg_count': total_urg,
+            'urg_ratio': round(urg_ratio * 100, 1),
+            'psh_count': total_psh,
+            'psh_ratio': round(psh_ratio * 100, 1),
+            'urg_psh_fin_count': total_urg_psh_fin,
+            'urg_psh_fin_ratio': round(urg_psh_fin_ratio * 100, 1),
+            'attack_type': attack_type,
+            'threat_level': threat_level,
+            'anomaly_score': anomaly_score
         }
     }
 
@@ -626,6 +744,8 @@ async def analyze_capture(
         analyzer.detect_packet_loss()
         print(f"[DEBUG] Running analyze_latency...")
         analyzer.analyze_latency()
+        print(f"[DEBUG] Running detect_attacks...")
+        analyzer.detect_attacks()
         print(f"[DEBUG] Running build_mind_map...")
         analyzer.build_mind_map()
         print(f"[DEBUG] Running generate_protocol_timelines...")
@@ -655,21 +775,26 @@ async def analyze_capture(
         raise HTTPException(status_code=500, detail=f"{type(exc).__name__}: {str(exc)}") from exc
 
 
+# Global scheduler reference for proper cleanup
+_scheduler = None
+
+
 # Startup event to initialize cleanup scheduler
 @app.on_event("startup")
 async def start_cleanup_scheduler():
     """Initialize APScheduler to run session cleanup periodically"""
+    global _scheduler
     from apscheduler.schedulers.background import BackgroundScheduler
     import logging
 
     logger = logging.getLogger(__name__)
-    scheduler = BackgroundScheduler()
+    _scheduler = BackgroundScheduler()
 
     # Schedule cleanup to run every hour
     cleanup_interval_hours = int(os.getenv("CLEANUP_INTERVAL", "3600")) / 3600
     max_age = int(os.getenv("SESSION_MAX_AGE", "14400"))
 
-    scheduler.add_job(
+    _scheduler.add_job(
         cleanup_expired_sessions,
         'interval',
         hours=cleanup_interval_hours,
@@ -678,5 +803,19 @@ async def start_cleanup_scheduler():
         replace_existing=True
     )
 
-    scheduler.start()
+    _scheduler.start()
     logger.info(f"Session cleanup scheduler started (interval: {cleanup_interval_hours}h, max_age: {max_age}s)")
+
+
+@app.on_event("shutdown")
+async def shutdown_cleanup_scheduler():
+    """Properly shutdown the APScheduler to prevent zombie processes"""
+    global _scheduler
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    if _scheduler is not None:
+        _scheduler.shutdown(wait=False)  # Don't wait for jobs to complete
+        logger.info("Session cleanup scheduler stopped")
+        _scheduler = None

@@ -8,7 +8,10 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "backend": "python -m uvicorn analysis_server:app --host 0.0.0.0 --port 8000",
+    "backend:dev": "python -m uvicorn analysis_server:app --host 0.0.0.0 --port 8000 --reload",
+    "kill:8000": "cmd /c \"for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :8000 ^| findstr LISTENING') do taskkill /F /PID %a\""
   },
   "dependencies": {
     "lucide-react": "^0.545.0",

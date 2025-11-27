@@ -1,0 +1,174 @@
+{
+  "url": "https://fastapi.tiangolo.com/",
+  "title": "FastAPI¶",
+  "content": "FastAPI framework, high performance, easy to learn, fast to code, ready for production\n\nDocumentation: https://fastapi.tiangolo.com\n\nSource Code: https://github.com/fastapi/fastapi\n\nFastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints.\n\nThe key features are:\n\n* estimation based on tests on an internal development team, building production applications.\n\n\"[...] I'm using FastAPI a ton these days. [...] I'm actually planning to use it for all of my team's ML services at Microsoft. Some of them are getting integrated into the core Windows product and some Office products.\"\n\n\"We adopted the FastAPI library to spawn a REST server that can be queried to obtain predictions. [for Ludwig]\"\n\n\"Netflix is pleased to announce the open-source release of our crisis management orchestration framework: Dispatch! [built with FastAPI]\"\n\n\"I’m over the moon excited about FastAPI. It’s so fun!\"\n\n\"Honestly, what you've built looks super solid and polished. In many ways, it's what I wanted Hug to be - it's really inspiring to see someone build that.\"\n\n\"If you're looking to learn one modern framework for building REST APIs, check out FastAPI [...] It's fast, easy to use and easy to learn [...]\"\n\n\"We've switched over to FastAPI for our APIs [...] I think you'll like it [...]\"\n\n\"If anyone is looking to build a production Python API, I would highly recommend FastAPI. It is beautifully designed, simple to use and highly scalable, it has become a key component in our API first development strategy and is driving many automations and services such as our Virtual TAC Engineer.\"\n\nIf you are building a CLI app to be used in the terminal instead of a web API, check out Typer.\n\nTyper is FastAPI's little sibling. And it's intended to be the FastAPI of CLIs. ⌨️ 🚀\n\nFastAPI stands on the shoulders of giants:\n\nCreate and activate a virtual environment and then install FastAPI:\n\nNote: Make sure you put \"fastapi[standard]\" in quotes to ensure it works in all terminals.\n\nCreate a file main.py with:\n\nIf your code uses async / await, use async def:\n\nIf you don't know, check the \"In a hurry?\" section about async and await in the docs.\n\nThe command fastapi dev reads your main.py file, detects the FastAPI app in it, and starts a server using Uvicorn.\n\nBy default, fastapi dev will start with auto-reload enabled for local development.\n\nYou can read more about it in the FastAPI CLI docs.\n\nOpen your browser at http://127.0.0.1:8000/items/5?q=somequery.\n\nYou will see the JSON response as:\n\nYou already created an API that:\n\nNow go to http://127.0.0.1:8000/docs.\n\nYou will see the automatic interactive API documentation (provided by Swagger UI):\n\nAnd now, go to http://127.0.0.1:8000/redoc.\n\nYou will see the alternative automatic documentation (provided by ReDoc):\n\nNow modify the file main.py to receive a body from a PUT request.\n\nDeclare the body using standard Python types, thanks to Pydantic.\n\nThe fastapi dev server should reload automatically.\n\nNow go to http://127.0.0.1:8000/docs.\n\nAnd now, go to http://127.0.0.1:8000/redoc.\n\nIn summary, you declare once the types of parameters, body, etc. as function parameters.\n\nYou do that with standard modern Python types.\n\nYou don't have to learn a new syntax, the methods or classes of a specific library, etc.\n\nJust standard Python.\n\nFor example, for an int:\n\nor for a more complex Item model:\n\n...and with that single declaration you get:\n\nComing back to the previous code example, FastAPI will:\n\nWe just scratched the surface, but you already get the idea of how it all works.\n\nTry changing the line with:\n\n...and see how your editor will auto-complete the attributes and know their types:\n\nFor a more complete example including more features, see the Tutorial - User Guide.\n\nSpoiler alert: the tutorial - user guide includes:\n\nIndependent TechEmpower benchmarks show FastAPI applications running under Uvicorn as one of the fastest Python frameworks available, only below Starlette and Uvicorn themselves (used internally by FastAPI). (*)\n\nTo understand more about it, see the section Benchmarks.\n\nFastAPI depends on Pydantic and Starlette.\n\nWhen you install FastAPI with pip install \"fastapi[standard]\" it comes with the standard group of optional dependencies:\n\nIf you don't want to include the standard optional dependencies, you can install with pip install fastapi instead of pip install \"fastapi[standard]\".\n\nIf you want to install FastAPI with the standard dependencies but without the fastapi-cloud-cli, you can install with pip install \"fastapi[standard-no-fastapi-cloud-cli]\".\n\nThere are some additional dependencies you might want to install.\n\nAdditional optional Pydantic dependencies:\n\nAdditional optional FastAPI dependencies:\n\nThis project is licensed under the terms of the MIT license.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "FastAPI¶",
+      "id": "fastapi"
+    },
+    {
+      "level": "h2",
+      "text": "Sponsors¶",
+      "id": "sponsors"
+    },
+    {
+      "level": "h2",
+      "text": "Opinions¶",
+      "id": "opinions"
+    },
+    {
+      "level": "h2",
+      "text": "Typer, the FastAPI of CLIs¶",
+      "id": "typer-the-fastapi-of-clis"
+    },
+    {
+      "level": "h2",
+      "text": "Requirements¶",
+      "id": "requirements"
+    },
+    {
+      "level": "h2",
+      "text": "Installation¶",
+      "id": "installation"
+    },
+    {
+      "level": "h2",
+      "text": "Example¶",
+      "id": "example"
+    },
+    {
+      "level": "h3",
+      "text": "Create it¶",
+      "id": "create-it"
+    },
+    {
+      "level": "h3",
+      "text": "Run it¶",
+      "id": "run-it"
+    },
+    {
+      "level": "h3",
+      "text": "Check it¶",
+      "id": "check-it"
+    },
+    {
+      "level": "h3",
+      "text": "Interactive API docs¶",
+      "id": "interactive-api-docs"
+    },
+    {
+      "level": "h3",
+      "text": "Alternative API docs¶",
+      "id": "alternative-api-docs"
+    },
+    {
+      "level": "h2",
+      "text": "Example upgrade¶",
+      "id": "example-upgrade"
+    },
+    {
+      "level": "h3",
+      "text": "Interactive API docs upgrade¶",
+      "id": "interactive-api-docs-upgrade"
+    },
+    {
+      "level": "h3",
+      "text": "Alternative API docs upgrade¶",
+      "id": "alternative-api-docs-upgrade"
+    },
+    {
+      "level": "h3",
+      "text": "Recap¶",
+      "id": "recap"
+    },
+    {
+      "level": "h2",
+      "text": "Performance¶",
+      "id": "performance"
+    },
+    {
+      "level": "h2",
+      "text": "Dependencies¶",
+      "id": "dependencies"
+    },
+    {
+      "level": "h3",
+      "text": "standard Dependencies¶",
+      "id": "standard-dependencies"
+    },
+    {
+      "level": "h3",
+      "text": "Without standard Dependencies¶",
+      "id": "without-standard-dependencies"
+    },
+    {
+      "level": "h3",
+      "text": "Without fastapi-cloud-cli¶",
+      "id": "without-fastapi-cloud-cli"
+    },
+    {
+      "level": "h3",
+      "text": "Additional Optional Dependencies¶",
+      "id": "additional-optional-dependencies"
+    },
+    {
+      "level": "h2",
+      "text": "License¶",
+      "id": "license"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "$ pip install \"fastapi[standard]\"\n\n---> 100%",
+      "language": "unknown"
+    },
+    {
+      "code": "from typing import Union\n\nfrom fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get(\"/\")\ndef read_root():\n    return {\"Hello\": \"World\"}\n\n\n@app.get(\"/items/{item_id}\")\ndef read_item(item_id: int, q: Union[str, None] = None):\n    return {\"item_id\": item_id, \"q\": q}",
+      "language": "python"
+    },
+    {
+      "code": "from typing import Union\n\nfrom fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get(\"/\")\nasync def read_root():\n    return {\"Hello\": \"World\"}\n\n\n@app.get(\"/items/{item_id}\")\nasync def read_item(item_id: int, q: Union[str, None] = None):\n    return {\"item_id\": item_id, \"q\": q}",
+      "language": "python"
+    },
+    {
+      "code": "$ fastapi dev main.py\n\n ╭────────── FastAPI CLI - Development mode ───────────╮\n │                                                     │\n │  Serving at: http://127.0.0.1:8000                  │\n │                                                     │\n │  API docs: http://127.0.0.1:8000/docs               │\n │                                                     │\n │  Running in development mode, for production use:   │\n │                                                     │\n │  fastapi run                                        │\n │                                                     │\n ╰─────────────────────────────────────────────────────╯\n\nINFO:     Will watch for changes in these directories: ['/home/user/code/awesomeapp']\nINFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)\nINFO:     Started reloader process [2248755] using WatchFiles\nINFO:     Started server process [2248757]\nINFO:     Waiting for application startup.\nINFO:     Application startup complete.",
+      "language": "unknown"
+    },
+    {
+      "code": "{\"item_id\": 5, \"q\": \"somequery\"}",
+      "language": "unknown"
+    },
+    {
+      "code": "from typing import Union\n\nfrom fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\n\nclass Item(BaseModel):\n    name: str\n    price: float\n    is_offer: Union[bool, None] = None\n\n\n@app.get(\"/\")\ndef read_root():\n    return {\"Hello\": \"World\"}\n\n\n@app.get(\"/items/{item_id}\")\ndef read_item(item_id: int, q: Union[str, None] = None):\n    return {\"item_id\": item_id, \"q\": q}\n\n\n@app.put(\"/items/{item_id}\")\ndef update_item(item_id: int, item: Item):\n    return {\"item_name\": item.name, \"item_id\": item_id}",
+      "language": "python"
+    },
+    {
+      "code": "item_id: int",
+      "language": "unknown"
+    },
+    {
+      "code": "return {\"item_name\": item.name, \"item_id\": item_id}",
+      "language": "unknown"
+    },
+    {
+      "code": "... \"item_name\": item.name ...",
+      "language": "unknown"
+    },
+    {
+      "code": "... \"item_price\": item.price ...",
+      "language": "unknown"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://fastapi.tiangolo.com/",
+    "https://fastapi.tiangolo.com/fastapi-people/",
+    "https://fastapi.tiangolo.com/virtual-environments/",
+    "https://fastapi.tiangolo.com/async/",
+    "https://fastapi.tiangolo.com/fastapi-cli/",
+    "https://fastapi.tiangolo.com/tutorial/",
+    "https://fastapi.tiangolo.com/benchmarks/"
+  ]
+}

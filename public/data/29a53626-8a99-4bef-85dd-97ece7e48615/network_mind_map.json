@@ -1,0 +1,67 @@
+{
+  "name": "Network Traffic",
+  "meta": {
+    "total_packets": 1654,
+    "protocols": 1,
+    "generated_at": "2025-11-27T16:44:50.062646"
+  },
+  "children": [
+    {
+      "name": "TCP (1654)",
+      "protocol": "TCP",
+      "packet_count": 1654,
+      "children": [
+        {
+          "name": "10.0.0.2",
+          "packet_count": 500,
+          "meta": {
+            "protocol": "TCP",
+            "unique_destinations": 500
+          },
+          "children": [
+            {
+              "name": "10.128.0.2:80",
+              "packet_count": 1,
+              "meta": {
+                "connection": "10.0.0.2:2977 -> 10.128.0.2:80",
+                "protocol": "TCP"
+              }
+            },
+            {
+              "name": "10.128.0.2:80",
+              "packet_count": 1,
+              "meta": {
+                "connection": "10.0.0.2:2978 -> 10.128.0.2:80",
+                "protocol": "TCP"
+              }
+            },
+            {
+              "name": "10.128.0.2:80",
+              "packet_count": 1,
+              "meta": {
+                "connection": "10.0.0.2:2979 -> 10.128.0.2:80",
+                "protocol": "TCP"
+              }
+            },
+            {
+              "name": "10.128.0.2:80",
+              "packet_count": 1,
+              "meta": {
+                "connection": "10.0.0.2:2980 -> 10.128.0.2:80",
+                "protocol": "TCP"
+              }
+            },
+            {
+              "name": "10.128.0.2:80",
+              "packet_count": 1,
+              "meta": {
+                "connection": "10.0.0.2:2981 -> 10.128.0.2:80",
+                "protocol": "TCP"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

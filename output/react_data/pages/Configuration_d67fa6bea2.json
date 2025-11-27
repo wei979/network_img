@@ -1,0 +1,115 @@
+{
+  "url": "https://react.dev/reference/react-compiler/configuration",
+  "title": "Configuration",
+  "content": "This page lists all configuration options available in React Compiler.\n\nFor most apps, the default options should work out of the box. If you have a special need, you can use these advanced options.\n\nThese options control what the compiler optimizes and how it selects components and hooks to compile.\n\nReact version configuration ensures the compiler generates code compatible with your React version.\n\ntarget specifies which React version you’re using (17, 18, or 19).\n\nThese options control how the compiler responds to code that doesn’t follow the Rules of React.\n\npanicThreshold determines whether to fail the build or skip problematic components.\n\nLogging and analysis options help you understand what the compiler is doing.\n\nlogger provides custom logging for compilation events.\n\nConditional compilation lets you control when optimized code is used.\n\ngating enables runtime feature flags for A/B testing or gradual rollouts.\n\nFor most React 19 applications, the compiler works without configuration:\n\nOlder React versions need the runtime package and target configuration:\n\nStart with specific directories and expand gradually:",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Configuration",
+      "id": ""
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Compilation Control",
+      "id": "compilation-control"
+    },
+    {
+      "level": "h2",
+      "text": "Version Compatibility",
+      "id": "version-compatibility"
+    },
+    {
+      "level": "h2",
+      "text": "Error Handling",
+      "id": "error-handling"
+    },
+    {
+      "level": "h2",
+      "text": "Debugging",
+      "id": "debugging"
+    },
+    {
+      "level": "h2",
+      "text": "Feature Flags",
+      "id": "feature-flags"
+    },
+    {
+      "level": "h2",
+      "text": "Common Configuration Patterns",
+      "id": "common-patterns"
+    },
+    {
+      "level": "h3",
+      "text": "Default configuration",
+      "id": "default-configuration"
+    },
+    {
+      "level": "h3",
+      "text": "React 17/18 projects",
+      "id": "react-17-18"
+    },
+    {
+      "level": "h3",
+      "text": "Incremental adoption",
+      "id": "incremental-adoption"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "// babel.config.jsmodule.exports = {  plugins: [    [      'babel-plugin-react-compiler', {        // compiler options      }    ]  ]};",
+      "language": "unknown"
+    },
+    {
+      "code": "{  compilationMode: 'annotation' // Only compile \"use memo\" functions}",
+      "language": "unknown"
+    },
+    {
+      "code": "// For React 18 projects{  target: '18' // Also requires react-compiler-runtime package}",
+      "language": "unknown"
+    },
+    {
+      "code": "// Recommended for production{  panicThreshold: 'none' // Skip components with errors instead of failing the build}",
+      "language": "unknown"
+    },
+    {
+      "code": "{  logger: {    logEvent(filename, event) {      if (event.kind === 'CompileSuccess') {        console.log('Compiled:', filename);      }    }  }}",
+      "language": "unknown"
+    },
+    {
+      "code": "{  gating: {    source: 'my-feature-flags',    importSpecifierName: 'isCompilerEnabled'  }}",
+      "language": "unknown"
+    },
+    {
+      "code": "// babel.config.jsmodule.exports = {  plugins: [    'babel-plugin-react-compiler'  ]};",
+      "language": "unknown"
+    },
+    {
+      "code": "npm install react-compiler-runtime@latest",
+      "language": "unknown"
+    },
+    {
+      "code": "{  target: '18' // or '17'}",
+      "language": "unknown"
+    },
+    {
+      "code": "{  compilationMode: 'annotation' // Only compile \"use memo\" functions}",
+      "language": "unknown"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://react.dev/reference/react",
+    "https://react.dev/reference/react-compiler/configuration",
+    "https://react.dev/reference/react-compiler/compilationMode",
+    "https://react.dev/reference/react-compiler/target",
+    "https://react.dev/reference/rules",
+    "https://react.dev/reference/react-compiler/panicThreshold",
+    "https://react.dev/reference/react-compiler/logger",
+    "https://react.dev/reference/react-compiler/gating"
+  ]
+}

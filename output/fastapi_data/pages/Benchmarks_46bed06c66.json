@@ -1,0 +1,22 @@
+{
+  "url": "https://fastapi.tiangolo.com/benchmarks/",
+  "title": "Benchmarks¶",
+  "content": "Independent TechEmpower benchmarks show FastAPI applications running under Uvicorn as one of the fastest Python frameworks available, only below Starlette and Uvicorn themselves (used internally by FastAPI).\n\nBut when checking benchmarks and comparisons you should keep the following in mind.\n\nWhen you check the benchmarks, it is common to see several tools of different types compared as equivalent.\n\nSpecifically, to see Uvicorn, Starlette and FastAPI compared together (among many other tools).\n\nThe simpler the problem solved by the tool, the better performance it will get. And most of the benchmarks don't test the additional features provided by the tool.\n\nThe hierarchy is like:\n\nUvicorn: an ASGI server",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Benchmarks¶",
+      "id": "benchmarks"
+    },
+    {
+      "level": "h2",
+      "text": "Benchmarks and speed¶",
+      "id": "benchmarks-and-speed"
+    }
+  ],
+  "code_samples": [],
+  "patterns": [],
+  "links": [
+    "https://fastapi.tiangolo.com/benchmarks/"
+  ]
+}

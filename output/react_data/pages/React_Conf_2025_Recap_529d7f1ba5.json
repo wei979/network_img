@@ -1,0 +1,64 @@
+{
+  "url": "https://react.dev/blog/2025/10/16/react-conf-2025-recap",
+  "title": "React Conf 2025 Recap",
+  "content": "Oct 16, 2025 by Matt Carroll and Ricky Hanlon\n\nLast week we hosted React Conf 2025 where we announced the React Foundation and showcased new features coming to React and React Native.\n\nReact Conf 2025 was held on October 7-8, 2025, in Henderson, Nevada.\n\nThe entire day 1 and day 2 streams are available online, and you can view photos from the event here.\n\nIn this post, we’ll summarize the talks and announcements from the event.\n\nWatch the full day 1 stream here.\n\nIn the day 1 keynote, Joe Savona shared the updates from the team and community since the last React Conf and highlights from React 19.0 and 19.1.\n\nMofei Zhang highlighted the new features in React 19.2 including:\n\nJack Pope announced new features in Canary including:\n\nLauren Tan announced React Compiler v1.0 and recommended all apps use React Compiler for benefits like:\n\nFinally, Seth Webster announced the React Foundation to steward React’s open source development and community.\n\nWatch the full day 2 stream here.\n\nJorge Cohen and Nicola Corti kicked off day 2 highlighting React Native’s incredible growth with 4M weekly downloads (100% growth YoY), and some notable app migrations from Shopify, Zalando, and HelloFresh, award-winning apps like RISE, RUNNA, and Partyful, and AI apps from Mistral, Replit, and v0.\n\nRiccardo Cipolleschi shared two major announcements for React Native:\n\nRuben Norte and Alex Hunt finished out the keynote by announcing:\n\nThroughout the conference, there were talks from the React team including:\n\nThe second half of day 2 had a series of talks from React Framework teams including:\n\nThere were three Q&A panels during the conference:\n\nWe also heard talks from the community including:\n\nThank you to all the staff, speakers, and participants, who made React Conf 2025 possible. There are too many to list, but we want to thank a few in particular.\n\nThank you to Matt Carroll for planning the entire event and building the conference website.\n\nThank you to Michael Chan for MCing React Conf with incredible dedication and energy, delivering thoughtful speaker intros, fun jokes, and genuine enthusiasm throughout the event. Thank you to Jorge Cohen for hosting the livestream, interviewing each speaker, and bringing the in-person React Conf experience online.\n\nThank you to Mateusz Kornacki, Mike Grabowski, Kris Lis and the team at Callstack for co-organizing React Conf and providing design, engineering, and marketing support. Thank you to the ZeroSlope team: Sunny Leggett, Tracey Harrison, Tara Larish, Whitney Pogue, and Brianne Smythia for helping to organize the event.\n\nThank you to Jorge Cabiedes Acosta, Gijs Weterings, Tim Yung, and Jason Bonta for bringing questions from the Discord to the livestream. Thank you to Lynn Yu for leading the moderation of the Discord. Thank you to Seth Webster for welcoming us each day; and to Christopher Chedeau, Kevin Gozali, and Pieter De Baets for joining us with a special message during the after-party.\n\nThank you to Kadi Kraman, Beto and Nicolas Solerieu for building the conference mobile app. Thank you Wojtek Szafraniec for help with the conference website. Thank you to Mustache & Cornerstone for the visuals, stage, and sound; and to the Westin Hotel for hosting us.\n\nThank you to all the sponsors who made the event possible: Amazon, MUI, Vercel, Expo, RedwoodSDK, Ag Grid, RevenueCat, Resend, Mux, Old Mission, Arcjet, Infinite Red, and RenderATL.\n\nThank you to all the speakers who shared their knowledge and experience with the community.\n\nFinally, thank you to everyone who attended in person and online to show what makes React, React. React is more than a library, it is a community, and it was inspiring to see everyone come together to share and learn together.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "React Conf 2025 Recap",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Day 1 Keynote",
+      "id": "day-1-keynote"
+    },
+    {
+      "level": "h2",
+      "text": "Day 2 Keynote",
+      "id": "day-2-keynote"
+    },
+    {
+      "level": "h2",
+      "text": "React team talks",
+      "id": "react-team-talks"
+    },
+    {
+      "level": "h2",
+      "text": "React framework talks",
+      "id": "react-framework-talks"
+    },
+    {
+      "level": "h2",
+      "text": "Q&A",
+      "id": "q-and-a"
+    },
+    {
+      "level": "h2",
+      "text": "And more…",
+      "id": "and-more"
+    },
+    {
+      "level": "h2",
+      "text": "Thanks",
+      "id": "thanks"
+    }
+  ],
+  "code_samples": [],
+  "patterns": [],
+  "links": [
+    "https://react.dev/blog",
+    "https://react.dev/blog/2025/10/16/react-conf-2025-recap",
+    "https://react.dev/blog/2025/10/07/introducing-the-react-foundation",
+    "https://react.dev/reference/react/Activity",
+    "https://react.dev/reference/react/useEffectEvent",
+    "https://react.dev/reference/dev-tools/react-performance-tracks",
+    "https://react.dev/blog/2025/10/01/react-19-2",
+    "https://react.dev/reference/react/ViewTransition",
+    "https://react.dev/reference/react/Fragment",
+    "https://react.dev/blog/2025/10/07/react-compiler-1",
+    "https://react.dev/learn/react-compiler/introduction",
+    "https://react.dev/learn/react-compiler/installation",
+    "https://react.dev/learn/react-compiler/incremental-adoption"
+  ]
+}

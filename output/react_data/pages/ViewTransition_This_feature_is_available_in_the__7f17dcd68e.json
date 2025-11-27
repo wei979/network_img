@@ -1,0 +1,245 @@
+{
+  "url": "https://react.dev/reference/react/ViewTransition",
+  "title": "<ViewTransition> - This feature is available in the latest Canary version of React",
+  "content": "The <ViewTransition /> API is currently only available in React’s Canary and Experimental channels.\n\nLearn more about React’s release channels here.\n\n<ViewTransition> lets you animate elements that update inside a Transition.\n\nWrap elements in <ViewTransition> to animate them when they update inside a Transition. React uses the following heuristics to determine if a View Transition activates for an animation:\n\nBy default, <ViewTransition> animates with a smooth cross-fade (the browser default view transition). You can customize the animation by providing a View Transition Class to the <ViewTransition> component. You can customize animations for each kind of trigger (see Styling View Transitions).\n\nUnder the hood, React applies view-transition-name to inline styles of the nearest DOM node nested inside the <ViewTransition> component. If there are multiple sibling DOM nodes like <ViewTransition><div /><div /></ViewTransition> then React adds a suffix to the name to make each unique but conceptually they’re part of the same one. React doesn’t apply these eagerly but only at the time that boundary should participate in an animation.\n\nReact automatically calls startViewTransition itself behind the scenes so you should never do that yourself. In fact, if you have something else on the page running a ViewTransition React will interrupt it. So it’s recommended that you use React itself to coordinate these. If you had other ways of trigger ViewTransitions in the past, we recommend that you migrate to the built-in way.\n\nIf there are other React ViewTransitions already running then React will wait for them to finish before starting the next one. However, importantly if there are multiple updates happening while the first one is running, those will all be batched into one. If you start A->B. Then in the meantime you get an update to go to C and then D. When the first A->B animation finishes the next one will animate from B->D.\n\nThe getSnapshotBeforeUpdate life-cycle will be called before startViewTransition and some view-transition-name will update at the same time.\n\nThen React calls startViewTransition. Inside the updateCallback, React will:\n\nAfter the ready Promise of the startViewTransition is resolved, React will then revert the view-transition-name. Then React will invoke the onEnter, onExit, onUpdate and onShare callbacks to allow for manual programmatic control over the Animations. This will be after the built-in default ones have already been computed.\n\nIf a flushSync happens to get in the middle of this sequence, then React will skip the Transition since it relies on being able to complete synchronously.\n\nAfter the finished Promise of the startViewTransition is resolved, React will then invoke useEffect. This prevents those from interfering with the performance of the Animation. However, this is not a guarantee because if another setState happens while the Animation is running it’ll still have to invoke the useEffect earlier to preserve the sequential guarantees.\n\nBy default, <ViewTransition> animates with a smooth cross-fade. You can customize the animation, or specify a shared element transition, with these props:\n\nThese callbacks allow you to adjust the animation imperatively using the animate APIs:\n\nEach callback receives as arguments:\n\nThe View Transition Class is the CSS class name(s) applied by React during the transition when the ViewTransition activates. It can be a string or an object.\n\nThe value 'none' can be used to prevent a View Transition from activating for a specific trigger.\n\nIn many early examples of View Transitions around the web, you’ll have seen using a view-transition-name and then style it using ::view-transition-...(my-name) selectors. We don’t recommend that for styling. Instead, we normally recommend using a View Transition Class instead.\n\nTo customize the animation for a <ViewTransition> you can provide a View Transition Class to one of the activation props. The View Transition Class is a CSS class name that React applies to the child elements when the ViewTransition activates.\n\nFor example, to customize an “enter” animation, provide a class name to the enter prop:\n\nWhen the <ViewTransition> activates an “enter” animation, React will add the class name slide-in. Then you can refer to this class using view transition pseudo selectors to build reusable animations:\n\nIn the future, CSS libraries may add built-in animations using View Transition Classes to make this easier to use.\n\nEnter/Exit Transitions trigger when a <ViewTransition> is added or removed by a component in a transition:\n\nWhen setShow is called, show switches to true and the Child component is rendered. When setShow is called inside startTransition, and Child renders a ViewTransition before any other DOM nodes, an enter animation is triggered.\n\nWhen show switches back to false, an exit animation is triggered.\n\n<ViewTransition> only activates if it is placed before any DOM node. If Child instead looked like this, no animation would trigger:\n\nNormally, we don’t recommend assigning a name to a <ViewTransition> and instead let React assign it an automatic name. The reason you might want to assign a name is to animate between completely different components when one tree unmounts and another tree mounts at the same time. To preserve continuity.\n\nWhen one tree unmounts and another mounts, if there’s a pair where the same name exists in the unmounting tree and the mounting tree, they trigger the “share” animation on both. It animates from the unmounting side to the mounting side.\n\nUnlike an exit/enter animation this can be deeply inside the deleted/mounted tree. If a <ViewTransition> would also be eligible for exit/enter, then the “share” animation takes precedence.\n\nIf Transition first unmounts one side and then leads to a <Suspense> fallback being shown before eventually the new name being mounted, then no shared element transition happens.\n\nIf either the mounted or unmounted side of a pair is outside the viewport, then no pair is formed. This ensures that it doesn’t fly in or out of the viewport when something is scrolled. Instead it’s treated as a regular enter/exit by itself.\n\nThis does not happen if the same Component instance changes position, which triggers an “update”. Those animate regardless if one position is outside the viewport.\n\nThere’s currently a quirk where if a deeply nested unmounted <ViewTransition> is inside the viewport but the mounted side is not within the viewport, then the unmounted side animates as its own “exit” animation even if it’s deeply nested instead of as part of the parent animation.\n\nIt’s important that there’s only one thing with the same name mounted at a time in the entire app. Therefore it’s important to use unique namespaces for the name to avoid conflicts. To ensure you can do this you might want to add a constant in a separate module that you import.\n\nWhen reordering a list, without updating the content, the “update” animation triggers on each <ViewTransition> in the list if they’re outside a DOM node. Similar to enter/exit animations.\n\nThis means that this will trigger the animation on this <ViewTransition>:\n\nHowever, this wouldn’t animate each individual item:\n\nInstead, any parent <ViewTransition> would cross-fade. If there is no parent <ViewTransition> then there’s no animation in that case.\n\nThis means you might want to avoid wrapper elements in lists where you want to allow the Component to control its own reorder animation:\n\nThe above rule also applies if one of the items updates to resize, which then causes the siblings to resize, it’ll also animate its sibling <ViewTransition> but only if they’re immediate siblings.\n\nThis means that during an update, which causes a lot of re-layout, it doesn’t individually animate every <ViewTransition> on the page. That would lead to a lot of noisy animations which distracts from the actual change. Therefore React is more conservative about when an individual animation triggers.\n\nIt’s important to properly use keys to preserve identity when reordering lists. It might seem like you could use “name”, shared element transitions, to animate reorders but that would not trigger if one side was outside the viewport. To animate a reorder you often want to show that it went to a position outside the viewport.\n\nJust like any Transition, React waits for data and new CSS (<link rel=\"stylesheet\" precedence=\"...\">) before running the animation. In addition to this, ViewTransitions also wait up to 500ms for new fonts to load before starting the animation to avoid them flickering in later. For the same reason, an image wrapped in ViewTransition will wait for the image to load.\n\nIf it’s inside a new Suspense boundary instance, then the fallback is shown first. After the Suspense boundary fully loads, it triggers the <ViewTransition> to animate the reveal to the content.\n\nCurrently, this only happens for client-side Transition. In the future, this will also animate Suspense boundary for streaming SSR when content from the server suspends during the initial load.\n\nThere are two ways to animate Suspense boundaries depending on where you place the <ViewTransition>:\n\nIn this scenario when the content goes from A to B, it’ll be treated as an “update” and apply that class if appropriate. Both A and B will get the same view-transition-name and therefore they’re acting as a cross-fade by default.\n\nIn this scenario, these are two separate ViewTransition instances each with their own view-transition-name. This will be treated as an “exit” of the <A> and an “enter” of the <B>.\n\nYou can achieve different effects depending on where you choose to place the <ViewTransition> boundary.\n\nSometimes you’re wrapping a large existing component, like a whole page, and you want to animate some updates, such as changing the theme. However, you don’t want it to opt-in all updates inside the whole page to cross-fade when they’re updating. Especially if you’re incrementally adding more animations.\n\nYou can use the class “none” to opt-out of an animation. By wrapping your children in a “none” you can disable animations for updates to them while the parent still triggers.\n\nThis will only animate if the theme changes and not if only the children update. The children can still opt-in again with their own <ViewTransition> but at least it’s manual again.\n\nBy default, <ViewTransition> includes the default cross-fade from the browser.\n\nTo customize animations, you can provide props to the <ViewTransition> component to specify which animations to use, based on how the <ViewTransition> activates.\n\nFor example, we can slow down the default cross fade animation:\n\nAnd define slow-fade in CSS using view transition classes:\n\nIn addition to setting the default, you can also provide configurations for enter, exit, update, and share animations.\n\nYou can use the addTransitionType API to add a class name to the child elements when a specific transition type is activated for a specific activation trigger. This allows you to customize the animation for each type of transition.\n\nFor example, to customize the animation for all forward and backward navigations:\n\nWhen the ViewTransition activates a “navigation-back” animation, React will add the class name “slide-right”. When the ViewTransition activates a “navigation-forward” animation, React will add the class name “slide-left”.\n\nIn the future, routers and other libraries may add support for standard view-transition types and styles.\n\nReact waits for any pending Navigation to finish to ensure that scroll restoration happens within the animation. If the Navigation is blocked on React, your router must unblock in useLayoutEffect since useEffect would lead to a deadlock.\n\nIf a startTransition is started from the legacy popstate event, such as during a “back”-navigation then it must finish synchronously to ensure scroll and form restoration works correctly. This is in conflict with running a View Transition animation. Therefore, React will skip animations from popstate. Therefore animations won’t run for the back button. You can fix this by upgrading your router to use the Navigation API.\n\n<ViewTransition> only activates if it is placed before any DOM node:\n\nTo fix, ensure that the <ViewTransition> comes before any other DOM nodes:\n\nThis error occurs when two <ViewTransition> components with the same name are mounted at the same time:\n\nThis will cause the View Transition to error. In development, React detects this issue to surface it and logs two errors:\n\nTo fix, ensure that there’s only one <ViewTransition> with the same name mounted at a time in the entire app by ensuring the name is unique, or adding an id to the name:",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "<ViewTransition> - This feature is available in the latest Canary version of React",
+      "id": ""
+    },
+    {
+      "level": "h3",
+      "text": "Canary",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Reference",
+      "id": "reference"
+    },
+    {
+      "level": "h3",
+      "text": "<ViewTransition>",
+      "id": "viewtransition"
+    },
+    {
+      "level": "h5",
+      "text": "Deep Dive",
+      "id": ""
+    },
+    {
+      "level": "h4",
+      "text": "How does <ViewTransition> work?",
+      "id": "how-does-viewtransition-work"
+    },
+    {
+      "level": "h4",
+      "text": "Props",
+      "id": "props"
+    },
+    {
+      "level": "h4",
+      "text": "Callback",
+      "id": "events"
+    },
+    {
+      "level": "h3",
+      "text": "View Transition Class",
+      "id": "view-transition-class"
+    },
+    {
+      "level": "h3",
+      "text": "Styling View Transitions",
+      "id": "styling-view-transitions"
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h4",
+      "text": "Caveats",
+      "id": "caveats"
+    },
+    {
+      "level": "h2",
+      "text": "Usage",
+      "id": "usage"
+    },
+    {
+      "level": "h3",
+      "text": "Animating an element on enter/exit",
+      "id": "animating-an-element-on-enter"
+    },
+    {
+      "level": "h3",
+      "text": "Pitfall",
+      "id": ""
+    },
+    {
+      "level": "h3",
+      "text": "Animating a shared element",
+      "id": "animating-a-shared-element"
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h3",
+      "text": "Pitfall",
+      "id": ""
+    },
+    {
+      "level": "h3",
+      "text": "Animating reorder of items in a list",
+      "id": "animating-reorder-of-items-in-a-list"
+    },
+    {
+      "level": "h3",
+      "text": "Pitfall",
+      "id": ""
+    },
+    {
+      "level": "h3",
+      "text": "Animating from Suspense content",
+      "id": "animating-from-suspense-content"
+    },
+    {
+      "level": "h3",
+      "text": "Opting-out of an animation",
+      "id": "opting-out-of-an-animation"
+    },
+    {
+      "level": "h3",
+      "text": "Customizing animations",
+      "id": "customizing-animations"
+    },
+    {
+      "level": "h3",
+      "text": "Customizing animations with types",
+      "id": "customizing-animations-with-types"
+    },
+    {
+      "level": "h3",
+      "text": "Building View Transition enabled routers",
+      "id": "building-view-transition-enabled-routers"
+    },
+    {
+      "level": "h2",
+      "text": "Troubleshooting",
+      "id": "troubleshooting"
+    },
+    {
+      "level": "h3",
+      "text": "My <ViewTransition> is not activating",
+      "id": "my-viewtransition-is-not-activating"
+    },
+    {
+      "level": "h3",
+      "text": "I’m getting an error “There are two <ViewTransition name=%s> components with the same name mounted at the same time.”",
+      "id": "two-viewtransition-with-same-name"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "import {ViewTransition} from 'react';<ViewTransition>  <div>...</div></ViewTransition>",
+      "language": "python"
+    },
+    {
+      "code": "<ViewTransition enter=\"slide-in\">",
+      "language": "unknown"
+    },
+    {
+      "code": "::view-transition-group(.slide-in) {  }::view-transition-old(.slide-in) {}::view-transition-new(.slide-in) {}",
+      "language": "unknown"
+    },
+    {
+      "code": "function Child() {  return (    <ViewTransition>      <div>Hi</div>    </ViewTransition>  );}function Parent() {  const [show, setShow] = useState();  if (show) {    return <Child />;  }  return null;}",
+      "language": "javascript"
+    },
+    {
+      "code": "function Component() {  return <ViewTransition>Hi</ViewTransition>;}",
+      "language": "unknown"
+    },
+    {
+      "code": "<ViewTransition name={UNIQUE_NAME}>  <Child /></ViewTransition>",
+      "language": "unknown"
+    },
+    {
+      "code": "export const MY_NAME = \"my-globally-unique-name\";import {MY_NAME} from './shared-name';...<ViewTransition name={MY_NAME}>",
+      "language": "python"
+    },
+    {
+      "code": "items.map(item => <Component key={item.id} item={item} />)",
+      "language": "javascript"
+    },
+    {
+      "code": "function Component() {  return <ViewTransition><div>...</div></ViewTransition>;}",
+      "language": "unknown"
+    },
+    {
+      "code": "function Component() {  return <div><ViewTransition>...</ViewTransition></div>;}",
+      "language": "unknown"
+    },
+    {
+      "code": "items.map(item => <div><Component key={item.id} item={item} /></div>)",
+      "language": "javascript"
+    },
+    {
+      "code": "<ViewTransition>  <Suspense fallback={<A />}>    <B />  </Suspense></ViewTransition>",
+      "language": "unknown"
+    },
+    {
+      "code": "<Suspense fallback={<ViewTransition><A /></ViewTransition>}>  <ViewTransition><B /></ViewTransition></Suspense>",
+      "language": "unknown"
+    },
+    {
+      "code": "<ViewTransition>  <div className={theme}>    <ViewTransition update=\"none\">      {children}    </ViewTransition>  </div></ViewTransition>",
+      "language": "unknown"
+    },
+    {
+      "code": "<ViewTransition default=\"slow-fade\">  <Video /></ViewTransition>",
+      "language": "unknown"
+    },
+    {
+      "code": "::view-transition-old(.slow-fade) {    animation-duration: 500ms;}::view-transition-new(.slow-fade) {    animation-duration: 500ms;}",
+      "language": "unknown"
+    },
+    {
+      "code": "<ViewTransition default={{  'navigation-back': 'slide-right',  'navigation-forward': 'slide-left', }}>  <div>...</div></ViewTransition> // in your router:startTransition(() => {  addTransitionType('navigation-' + navigationType);});",
+      "language": "javascript"
+    },
+    {
+      "code": "function Component() {  return (    <div>      <ViewTransition>Hi</ViewTransition>    </div>  );}",
+      "language": "unknown"
+    },
+    {
+      "code": "function Component() {  return (    <ViewTransition>      <div>Hi</div>    </ViewTransition>  );}",
+      "language": "unknown"
+    },
+    {
+      "code": "function Item() {  // 🚩 All items will get the same \"name\".  return <ViewTransition name=\"item\">...</ViewTransition>;}function ItemList({items}) {  return (    <>      {item.map(item => <Item key={item.id} />)}    </>  );}",
+      "language": "javascript"
+    },
+    {
+      "code": "function Item({id}) {  // ✅ All items will get the same \"name\".  return <ViewTransition name={`item-${id}`}>...</ViewTransition>;}function ItemList({items}) {  return (    <>      {item.map(item => <Item key={item.id} item={item} />)}    </>  );}",
+      "language": "javascript"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://react.dev/reference/react",
+    "https://react.dev/reference/react/components",
+    "https://react.dev/reference/react/ViewTransition",
+    "https://react.dev/community/versioning-policy",
+    "https://react.dev/reference/react/useTransition",
+    "https://react.dev/reference/react/addTransitionType",
+    "https://react.dev/reference/react/Suspense",
+    "https://react.dev/reference/react/Activity",
+    "https://react.dev/reference/react/apis"
+  ]
+}

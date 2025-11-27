@@ -1,0 +1,157 @@
+{
+  "url": "https://react.dev/learn/react-compiler/installation",
+  "title": "Installation",
+  "content": "This guide will help you install and configure React Compiler in your React application.\n\nReact Compiler is designed to work best with React 19, but it also supports React 17 and 18. Learn more about React version compatibility.\n\nInstall React Compiler as a devDependency:\n\nReact Compiler is designed to work by default without any configuration. However, if you need to configure it in special circumstances (for example, to target React versions below 19), refer to the compiler options reference.\n\nThe setup process depends on your build tool. React Compiler includes a Babel plugin that integrates with your build pipeline.\n\nReact Compiler must run first in your Babel plugin pipeline. The compiler needs the original source information for proper analysis, so it must process your code before other transformations.\n\nCreate or update your babel.config.js:\n\nIf you use Vite, you can add the plugin to vite-plugin-react:\n\nAlternatively, if you prefer a separate Babel plugin for Vite:\n\nPlease refer to the Next.js docs for more information.\n\nInstall vite-plugin-babel, and add the compiler’s Babel plugin to it:\n\nA community webpack loader is now available here.\n\nPlease refer to Expo’s docs to enable and use the React Compiler in Expo apps.\n\nReact Native uses Babel via Metro, so refer to the Usage with Babel section for installation instructions.\n\nPlease refer to Rspack’s docs to enable and use the React Compiler in Rspack apps.\n\nPlease refer to Rsbuild’s docs to enable and use the React Compiler in Rsbuild apps.\n\nReact Compiler includes an ESLint rule that helps identify code that can’t be optimized. When the ESLint rule reports an error, it means the compiler will skip optimizing that specific component or hook. This is safe: the compiler will continue optimizing other parts of your codebase. You don’t need to fix all violations immediately. Address them at your own pace to gradually increase the number of optimized components.\n\nInstall the ESLint plugin:\n\nIf you haven’t already configured eslint-plugin-react-hooks, follow the installation instructions in the readme. The compiler rules are available in the recommended-latest preset.\n\nThe ESLint rule will:\n\nAfter installation, verify that React Compiler is working correctly.\n\nComponents optimized by React Compiler will show a “Memo ✨” badge in React DevTools:\n\nIf the compiler is working:\n\nYou can also verify the compiler is running by checking your build output. The compiled code will include automatic memoization logic that the compiler adds automatically.\n\nIf a component is causing issues after compilation, you can temporarily opt it out using the \"use no memo\" directive:\n\nThis tells the compiler to skip optimization for this specific component. You should fix the underlying issue and remove the directive once resolved.\n\nFor more troubleshooting help, see the debugging guide.\n\nNow that you have React Compiler installed, learn more about:",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Installation",
+      "id": ""
+    },
+    {
+      "level": "h3",
+      "text": "You will learn",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Prerequisites",
+      "id": "prerequisites"
+    },
+    {
+      "level": "h2",
+      "text": "Installation",
+      "id": "installation"
+    },
+    {
+      "level": "h2",
+      "text": "Basic Setup",
+      "id": "basic-setup"
+    },
+    {
+      "level": "h3",
+      "text": "Pitfall",
+      "id": ""
+    },
+    {
+      "level": "h3",
+      "text": "Babel",
+      "id": "babel"
+    },
+    {
+      "level": "h3",
+      "text": "Vite",
+      "id": "vite"
+    },
+    {
+      "level": "h3",
+      "text": "Next.js",
+      "id": "usage-with-nextjs"
+    },
+    {
+      "level": "h3",
+      "text": "React Router",
+      "id": "usage-with-react-router"
+    },
+    {
+      "level": "h3",
+      "text": "Webpack",
+      "id": "usage-with-webpack"
+    },
+    {
+      "level": "h3",
+      "text": "Expo",
+      "id": "usage-with-expo"
+    },
+    {
+      "level": "h3",
+      "text": "Metro (React Native)",
+      "id": "usage-with-react-native-metro"
+    },
+    {
+      "level": "h3",
+      "text": "Rspack",
+      "id": "usage-with-rspack"
+    },
+    {
+      "level": "h3",
+      "text": "Rsbuild",
+      "id": "usage-with-rsbuild"
+    },
+    {
+      "level": "h2",
+      "text": "ESLint Integration",
+      "id": "eslint-integration"
+    },
+    {
+      "level": "h2",
+      "text": "Verify Your Setup",
+      "id": "verify-your-setup"
+    },
+    {
+      "level": "h3",
+      "text": "Check React DevTools",
+      "id": "check-react-devtools"
+    },
+    {
+      "level": "h3",
+      "text": "Check Build Output",
+      "id": "check-build-output"
+    },
+    {
+      "level": "h2",
+      "text": "Troubleshooting",
+      "id": "troubleshooting"
+    },
+    {
+      "level": "h3",
+      "text": "Opting out specific components",
+      "id": "opting-out-specific-components"
+    },
+    {
+      "level": "h2",
+      "text": "Next Steps",
+      "id": "next-steps"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "module.exports = {  plugins: [    'babel-plugin-react-compiler', // must run first!    // ... other plugins  ],  // ... other config};",
+      "language": "unknown"
+    },
+    {
+      "code": "// vite.config.jsimport { defineConfig } from 'vite';import react from '@vitejs/plugin-react';export default defineConfig({  plugins: [    react({      babel: {        plugins: ['babel-plugin-react-compiler'],      },    }),  ],});",
+      "language": "python"
+    },
+    {
+      "code": "// vite.config.jsimport babel from 'vite-plugin-babel';import { defineConfig } from 'vite';import react from '@vitejs/plugin-react';export default defineConfig({  plugins: [    react(),    babel({      babelConfig: {        plugins: ['babel-plugin-react-compiler'],      },    }),  ],});",
+      "language": "python"
+    },
+    {
+      "code": "// vite.config.jsimport { defineConfig } from \"vite\";import babel from \"vite-plugin-babel\";import { reactRouter } from \"@react-router/dev/vite\";const ReactCompilerConfig = { /* ... */ };export default defineConfig({  plugins: [    reactRouter(),    babel({      filter: /\\.[jt]sx?$/,      babelConfig: {        presets: [\"@babel/preset-typescript\"], // if you use TypeScript        plugins: [          [\"babel-plugin-react-compiler\", ReactCompilerConfig],        ],      },    }),  ],});",
+      "language": "python"
+    },
+    {
+      "code": "import { c as _c } from \"react/compiler-runtime\";export default function MyApp() {  const $ = _c(1);  let t0;  if ($[0] === Symbol.for(\"react.memo_cache_sentinel\")) {    t0 = <div>Hello World</div>;    $[0] = t0;  } else {    t0 = $[0];  }  return t0;}",
+      "language": "python"
+    },
+    {
+      "code": "function ProblematicComponent() {  \"use no memo\";  // Component code here}",
+      "language": "unknown"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://react.dev/learn",
+    "https://react.dev/learn/react-compiler",
+    "https://react.dev/learn/react-compiler/installation",
+    "https://react.dev/reference/react-compiler/target",
+    "https://react.dev/reference/react-compiler/configuration",
+    "https://react.dev/reference/rules",
+    "https://react.dev/learn/react-developer-tools",
+    "https://react.dev/learn/react-compiler/debugging",
+    "https://react.dev/learn/react-compiler/incremental-adoption",
+    "https://react.dev/reference/react-compiler/compiling-libraries",
+    "https://react.dev/learn/react-compiler/introduction"
+  ]
+}

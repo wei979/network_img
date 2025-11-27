@@ -1,0 +1,98 @@
+{
+  "url": "https://react.dev/reference/react-dom/components",
+  "title": "React DOM Components",
+  "content": "React supports all of the browser built-in HTML and SVG components.\n\nAll of the built-in browser components support some props and events.\n\nThis includes React-specific props like ref and dangerouslySetInnerHTML.\n\nThese built-in browser components accept user input:\n\nThey are special in React because passing the value prop to them makes them controlled.\n\nThese built-in browser components let you load external resources or annotate the document with metadata:\n\nThey are special in React because React can render them into the document head, suspend while resources are loading, and enact other behaviors that are described on the reference page for each specific component.\n\nReact supports all built-in browser HTML components. This includes:\n\nSimilar to the DOM standard, React uses a camelCase convention for prop names. For example, you’ll write tabIndex instead of tabindex. You can convert existing HTML to JSX with an online converter.\n\nIf you render a tag with a dash, like <my-element>, React will assume you want to render a custom HTML element.\n\nIf you render a built-in browser HTML element with an is attribute, it will also be treated as a custom element.\n\nCustom elements have two methods of passing data into them:\n\nBy default, React will pass values bound in JSX as attributes:\n\nNon-string JavaScript values passed to custom elements will be serialized by default:\n\nReact will, however, recognize an custom element’s property as one that it may pass arbitrary values to if the property name shows up on the class during construction:\n\nA common pattern when using custom elements is that they may dispatch CustomEvents rather than accept a function to call when an event occur. You can listen for these events using an on prefix when binding to the event via JSX.\n\nEvents are case-sensitive and support dashes (-). Preserve the casing of the event and include all dashes when listening for custom element’s events:\n\nReact supports all built-in browser SVG components. This includes:\n\nSimilar to the DOM standard, React uses a camelCase convention for prop names. For example, you’ll write tabIndex instead of tabindex. You can convert existing SVG to JSX with an online converter.\n\nNamespaced attributes also have to be written without the colon:",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "React DOM Components",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Common components",
+      "id": "common-components"
+    },
+    {
+      "level": "h2",
+      "text": "Form components",
+      "id": "form-components"
+    },
+    {
+      "level": "h2",
+      "text": "Resource and Metadata Components",
+      "id": "resource-and-metadata-components"
+    },
+    {
+      "level": "h2",
+      "text": "All HTML components",
+      "id": "all-html-components"
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h3",
+      "text": "Custom HTML elements",
+      "id": "custom-html-elements"
+    },
+    {
+      "level": "h4",
+      "text": "Setting values on custom elements",
+      "id": "attributes-vs-properties"
+    },
+    {
+      "level": "h4",
+      "text": "Listening for events on custom elements",
+      "id": "custom-element-events"
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "All SVG components",
+      "id": "all-svg-components"
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "<my-element value=\"Hello, world!\"></my-element>",
+      "language": "unknown"
+    },
+    {
+      "code": "// Will be passed as `\"1,2,3\"` as the output of `[1,2,3].toString()`<my-element value={[1,2,3]}></my-element>",
+      "language": "unknown"
+    },
+    {
+      "code": "// Listens for `say-hi` events<my-element onsay-hi={console.log}></my-element>// Listens for `sayHi` events<my-element onsayHi={console.log}></my-element>",
+      "language": "unknown"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://react.dev/reference/react",
+    "https://react.dev/reference/react-dom/components",
+    "https://react.dev/reference/react-dom/components/common",
+    "https://react.dev/reference/react-dom/components/input",
+    "https://react.dev/reference/react-dom/components/select",
+    "https://react.dev/reference/react-dom/components/textarea",
+    "https://react.dev/reference/react-dom/components/link",
+    "https://react.dev/reference/react-dom/components/meta",
+    "https://react.dev/reference/react-dom/components/script",
+    "https://react.dev/reference/react-dom/components/style",
+    "https://react.dev/reference/react-dom/components/title",
+    "https://react.dev/reference/react-dom/components/option",
+    "https://react.dev/reference/react-dom/components/progress",
+    "https://react.dev/reference/react-dom/hooks/useFormStatus"
+  ]
+}

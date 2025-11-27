@@ -1,0 +1,43 @@
+{
+  "url": "https://react.dev/reference/rules",
+  "title": "Rules of React",
+  "content": "Just as different programming languages have their own ways of expressing concepts, React has its own idioms — or rules — for how to express patterns in a way that is easy to understand and yields high-quality applications.\n\nTo learn more about expressing UIs with React, we recommend reading Thinking in React.\n\nThis section describes the rules you need to follow to write idiomatic React code. Writing idiomatic React code can help you write well organized, safe, and composable applications. These properties make your app more resilient to changes and makes it easier to work with other developers, libraries, and tools.\n\nThese rules are known as the Rules of React. They are rules – and not just guidelines – in the sense that if they are broken, your app likely has bugs. Your code also becomes unidiomatic and harder to understand and reason about.\n\nWe strongly recommend using Strict Mode alongside React’s ESLint plugin to help your codebase follow the Rules of React. By following the Rules of React, you’ll be able to find and address these bugs and keep your application maintainable.\n\nPurity in Components and Hooks is a key rule of React that makes your app predictable, easy to debug, and allows React to automatically optimize your code.\n\nReact is responsible for rendering components and hooks when necessary to optimize the user experience. It is declarative: you tell React what to render in your component’s logic, and React will figure out how best to display it to your user.\n\nHooks are defined using JavaScript functions, but they represent a special type of reusable UI logic with restrictions on where they can be called. You need to follow the Rules of Hooks when using them.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Rules of React",
+      "id": ""
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Components and Hooks must be pure",
+      "id": "components-and-hooks-must-be-pure"
+    },
+    {
+      "level": "h2",
+      "text": "React calls Components and Hooks",
+      "id": "react-calls-components-and-hooks"
+    },
+    {
+      "level": "h2",
+      "text": "Rules of Hooks",
+      "id": "rules-of-hooks"
+    }
+  ],
+  "code_samples": [],
+  "patterns": [],
+  "links": [
+    "https://react.dev/reference/react",
+    "https://react.dev/reference/rules",
+    "https://react.dev/learn/thinking-in-react",
+    "https://react.dev/reference/react/StrictMode",
+    "https://react.dev/reference/rules/components-and-hooks-must-be-pure",
+    "https://react.dev/reference/rules/react-calls-components-and-hooks",
+    "https://react.dev/reference/rules/rules-of-hooks"
+  ]
+}

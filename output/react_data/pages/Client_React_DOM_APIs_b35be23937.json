@@ -1,0 +1,33 @@
+{
+  "url": "https://react.dev/reference/react-dom/client",
+  "title": "Client React DOM APIs",
+  "content": "The react-dom/client APIs let you render React components on the client (in the browser). These APIs are typically used at the top level of your app to initialize your React tree. A framework may call them for you. Most of your components don’t need to import or use them.\n\nReact supports all popular browsers, including Internet Explorer 9 and above. Some polyfills are required for older browsers such as IE 9 and IE 10.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Client React DOM APIs",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Client APIs",
+      "id": "client-apis"
+    },
+    {
+      "level": "h2",
+      "text": "Browser support",
+      "id": "browser-support"
+    }
+  ],
+  "code_samples": [],
+  "patterns": [],
+  "links": [
+    "https://react.dev/reference/react",
+    "https://react.dev/reference/react-dom/client",
+    "https://react.dev/learn/start-a-new-react-project",
+    "https://react.dev/reference/react-dom/client/createRoot",
+    "https://react.dev/reference/react-dom/client/hydrateRoot",
+    "https://react.dev/reference/react-dom/server",
+    "https://react.dev/reference/react-dom/preloadModule"
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "url": "https://react.dev/reference/react-compiler/target",
+  "title": "target",
+  "content": "The target option specifies which React version the compiler should generate code for.\n\nConfigures the React version compatibility for the compiled output.\n\nFor React 19, no special configuration is needed:\n\nThe compiler will use React 19’s built-in runtime APIs:\n\nFor React 17 and React 18 projects, you need two steps:\n\nThe compiler will use the polyfill runtime for both versions:\n\nIf you see errors like “Cannot find module ‘react/compiler-runtime’“:\n\nCheck your React version:\n\nIf using React 17 or 18, install the runtime:\n\nEnsure your target matches your React version:\n\nEnsure the runtime package is:\n\nTo verify the correct runtime is being used, note the different import (react/compiler-runtime for builtin, react-compiler-runtime standalone package for 17/18):",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "target",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Reference",
+      "id": "reference"
+    },
+    {
+      "level": "h3",
+      "text": "target",
+      "id": "target"
+    },
+    {
+      "level": "h4",
+      "text": "Type",
+      "id": "type"
+    },
+    {
+      "level": "h4",
+      "text": "Default value",
+      "id": "default-value"
+    },
+    {
+      "level": "h4",
+      "text": "Valid values",
+      "id": "valid-values"
+    },
+    {
+      "level": "h4",
+      "text": "Caveats",
+      "id": "caveats"
+    },
+    {
+      "level": "h2",
+      "text": "Usage",
+      "id": "usage"
+    },
+    {
+      "level": "h3",
+      "text": "Targeting React 19 (default)",
+      "id": "targeting-react-19"
+    },
+    {
+      "level": "h3",
+      "text": "Targeting React 17 or 18",
+      "id": "targeting-react-17-or-18"
+    },
+    {
+      "level": "h2",
+      "text": "Troubleshooting",
+      "id": "troubleshooting"
+    },
+    {
+      "level": "h3",
+      "text": "Runtime errors about missing compiler runtime",
+      "id": "missing-runtime"
+    },
+    {
+      "level": "h3",
+      "text": "Runtime package not working",
+      "id": "runtime-not-working"
+    },
+    {
+      "level": "h3",
+      "text": "Checking compiled output",
+      "id": "checking-output"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "{  target: '19' // or '18', '17'}",
+      "language": "unknown"
+    },
+    {
+      "code": "'17' | '18' | '19'",
+      "language": "unknown"
+    },
+    {
+      "code": "{  // defaults to target: '19'}",
+      "language": "unknown"
+    },
+    {
+      "code": "// Compiled output uses React 19's native APIsimport { c as _c } from 'react/compiler-runtime';",
+      "language": "python"
+    },
+    {
+      "code": "npm install react-compiler-runtime@latest",
+      "language": "unknown"
+    },
+    {
+      "code": "// For React 18{  target: '18'}// For React 17{  target: '17'}",
+      "language": "unknown"
+    },
+    {
+      "code": "// Compiled output uses the polyfillimport { c as _c } from 'react-compiler-runtime';",
+      "language": "python"
+    },
+    {
+      "code": "npm why react",
+      "language": "unknown"
+    },
+    {
+      "code": "npm install react-compiler-runtime@latest",
+      "language": "unknown"
+    },
+    {
+      "code": "{  target: '18' // Must match your React major version}",
+      "language": "unknown"
+    },
+    {
+      "code": "// For React 19 (built-in runtime)import { c } from 'react/compiler-runtime'//                      ^// For React 17/18 (polyfill runtime)import { c } from 'react-compiler-runtime'//                      ^",
+      "language": "python"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://react.dev/reference/react",
+    "https://react.dev/reference/react-compiler/configuration",
+    "https://react.dev/reference/react-compiler/target",
+    "https://react.dev/reference/react-compiler/panicThreshold",
+    "https://react.dev/reference/react-compiler/directives"
+  ]
+}

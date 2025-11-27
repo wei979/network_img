@@ -1,0 +1,455 @@
+{
+  "url": "https://react.dev/blog/2024/04/25/react-19-upgrade-guide",
+  "title": "React 19 Upgrade Guide",
+  "content": "April 25, 2024 by Ricky Hanlon\n\nThe improvements added to React 19 require some breaking changes, but we’ve worked to make the upgrade as smooth as possible, and we don’t expect the changes to impact most apps.\n\nTo help make the upgrade to React 19 easier, we’ve published a react@18.3 release that is identical to 18.2 but adds warnings for deprecated APIs and other changes that are needed for React 19.\n\nWe recommend upgrading to React 18.3 first to help identify any issues before upgrading to React 19.\n\nFor a list of changes in 18.3 see the Release Notes.\n\nIn this post, we will guide you through the steps for upgrading to React 19:\n\nIf you’d like to help us test React 19, follow the steps in this upgrade guide and report any issues you encounter. For a list of new features added to React 19, see the React 19 release post.\n\nWe introduced a new JSX transform in 2020 to improve bundle size and use JSX without importing React. In React 19, we’re adding additional improvements like using ref as a prop and JSX speed improvements that require the new transform.\n\nIf the new transform is not enabled, you will see this warning:\n\nWe expect most apps will not be affected since the transform is enabled in most environments already. For manual instructions on how to upgrade, please see the announcement post.\n\nTo install the latest version of React and React DOM:\n\nOr, if you’re using Yarn:\n\nIf you’re using TypeScript, you also need to update the types.\n\nOr, if you’re using Yarn:\n\nWe’re also including a codemod for the most common replacements. See TypeScript changes below.\n\nTo help with the upgrade, we’ve worked with the team at codemod.com to publish codemods that will automatically update your code to many of the new APIs and patterns in React 19.\n\nAll codemods are available in the react-codemod repo and the Codemod team have joined in helping maintain the codemods. To run these codemods, we recommend using the codemod command instead of the react-codemod because it runs faster, handles more complex code migrations, and provides better support for TypeScript.\n\nRun all codemods listed in this guide with the React 19 codemod recipe:\n\nThis will run the following codemods from react-codemod:\n\nThis does not include the TypeScript changes. See TypeScript changes below.\n\nChanges that include a codemod include the command below.\n\nFor a list of all available codemods, see the react-codemod repo.\n\nIn previous versions of React, errors thrown during render were caught and rethrown. In DEV, we would also log to console.error, resulting in duplicate error logs.\n\nIn React 19, we’ve improved how errors are handled to reduce duplication by not re-throwing:\n\nThis change should not impact most apps, but if your production error reporting relies on errors being re-thrown, you may need to update your error handling. To support this, we’ve added new methods to createRoot and hydrateRoot for custom error handling:\n\nFor more info, see the docs for createRoot and hydrateRoot.\n\nPropTypes were deprecated in April 2017 (v15.5.0).\n\nIn React 19, we’re removing the propType checks from the React package, and using them will be silently ignored. If you’re using propTypes, we recommend migrating to TypeScript or another type-checking solution.\n\nWe’re also removing defaultProps from function components in place of ES6 default parameters. Class components will continue to support defaultProps since there is no ES6 alternative.\n\nCodemod propTypes to TypeScript with:\n\nLegacy Context was deprecated in October 2018 (v16.6.0).\n\nLegacy Context was only available in class components using the APIs contextTypes and getChildContext, and was replaced with contextType due to subtle bugs that were easy to miss. In React 19, we’re removing Legacy Context to make React slightly smaller and faster.\n\nIf you’re still using Legacy Context in class components, you’ll need to migrate to the new contextType API:\n\nString refs were deprecated in March, 2018 (v16.3.0).\n\nClass components supported string refs before being replaced by ref callbacks due to multiple downsides. In React 19, we’re removing string refs to make React simpler and easier to understand.\n\nIf you’re still using string refs in class components, you’ll need to migrate to ref callbacks:\n\nCodemod string refs with ref callbacks:\n\nModule pattern factories were deprecated in August 2019 (v16.9.0).\n\nThis pattern was rarely used and supporting it causes React to be slightly larger and slower than necessary. In React 19, we’re removing support for module pattern factories, and you’ll need to migrate to regular functions:\n\ncreateFactory was deprecated in February 2020 (v16.13.0).\n\nUsing createFactory was common before broad support for JSX, but it’s rarely used today and can be replaced with JSX. In React 19, we’re removing createFactory and you’ll need to migrate to JSX:\n\nIn React 18, we updated react-test-renderer/shallow to re-export react-shallow-renderer. In React 19, we’re removing react-test-render/shallow to prefer installing the package directly:\n\nShallow rendering depends on React internals and can block you from future upgrades. We recommend migrating your tests to @testing-library/react or @testing-library/react-native.\n\nWe’ve moved act from react-dom/test-utils to the react package:\n\nTo fix this warning, you can import act from react:\n\nAll other test-utils functions have been removed. These utilities were uncommon, and made it too easy to depend on low level implementation details of your components and React. In React 19, these functions will error when called and their exports will be removed in a future version.\n\nSee the warning page for alternatives.\n\nCodemod ReactDOMTestUtils.act to React.act:\n\nReactDOM.render was deprecated in March 2022 (v18.0.0). In React 19, we’re removing ReactDOM.render and you’ll need to migrate to using ReactDOM.createRoot:\n\nCodemod ReactDOM.render to ReactDOMClient.createRoot:\n\nReactDOM.hydrate was deprecated in March 2022 (v18.0.0). In React 19, we’re removing ReactDOM.hydrate you’ll need to migrate to using ReactDOM.hydrateRoot,\n\nCodemod ReactDOM.hydrate to ReactDOMClient.hydrateRoot:\n\nReactDOM.unmountComponentAtNode was deprecated in March 2022 (v18.0.0). In React 19, you’ll need to migrate to using root.unmount().\n\nFor more see root.unmount() for createRoot and hydrateRoot.\n\nCodemod unmountComponentAtNode to root.unmount:\n\nReactDOM.findDOMNode was deprecated in October 2018 (v16.6.0).\n\nWe’re removing findDOMNode because it was a legacy escape hatch that was slow to execute, fragile to refactoring, only returned the first child, and broke abstraction levels (see more here). You can replace ReactDOM.findDOMNode with DOM refs:\n\nReact 19 supports ref as a prop, so we’re deprecating the element.ref in place of element.props.ref.\n\nAccessing element.ref will warn:\n\nWe are deprecating react-test-renderer because it implements its own renderer environment that doesn’t match the environment users use, promotes testing implementation details, and relies on introspection of React’s internals.\n\nThe test renderer was created before there were more viable testing strategies available like React Testing Library, and we now recommend using a modern testing library instead.\n\nIn React 19, react-test-renderer logs a deprecation warning, and has switched to concurrent rendering. We recommend migrating your tests to @testing-library/react or @testing-library/react-native for a modern and well supported testing experience.\n\nReact 19 includes several fixes and improvements to Strict Mode.\n\nWhen double rendering in Strict Mode in development, useMemo and useCallback will reuse the memoized results from the first render during the second render. Components that are already Strict Mode compatible should not notice a difference in behavior.\n\nAs with all Strict Mode behaviors, these features are designed to proactively surface bugs in your components during development so you can fix them before they are shipped to production. For example, during development, Strict Mode will double-invoke ref callback functions on initial mount, to simulate what happens when a mounted component is replaced by a Suspense fallback.\n\nIn React 19, when a component suspends, React will immediately commit the fallback of the nearest Suspense boundary without waiting for the entire sibling tree to render. After the fallback commits, React schedules another render for the suspended siblings to “pre-warm” lazy requests in the rest of the tree:\n\nPreviously, when a component suspended, the suspended siblings were rendered and then the fallback was committed.\n\nIn React 19, when a component suspends, the fallback is committed and then the suspended siblings are rendered.\n\nThis change means Suspense fallbacks display faster, while still warming lazy requests in the suspended tree.\n\nUMD was widely used in the past as a convenient way to load React without a build step. Now, there are modern alternatives for loading modules as scripts in HTML documents. Starting with React 19, React will no longer produce UMD builds to reduce the complexity of its testing and release process.\n\nTo load React 19 with a script tag, we recommend using an ESM-based CDN such as esm.sh.\n\nThis release includes changes to React internals that may impact libraries that ignore our pleas to not use internals like SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED. These changes are necessary to land improvements in React 19, and will not break libraries that follow our guidelines.\n\nBased on our Versioning Policy, these updates are not listed as breaking changes, and we are not including docs for how to upgrade them. The recommendation is to remove any code that depends on internals.\n\nTo reflect the impact of using internals, we have renamed the SECRET_INTERNALS suffix to:\n\n_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE\n\nIn the future we will more aggressively block accessing internals from React to discourage usage and ensure users are not blocked from upgrading.\n\nWe’ve cleaned up the TypeScript types based on the removed APIs in React 19. Some of the removed have types been moved to more relevant packages, and others are no longer needed to describe React’s behavior.\n\nWe’ve published types-react-codemod to migrate most type related breaking changes:\n\nIf you have a lot of unsound access to element.props, you can run this additional codemod:\n\nCheck out types-react-codemod for a list of supported replacements. If you feel a codemod is missing, it can be tracked in the list of missing React 19 codemods.\n\nThis change is included in the react-19 codemod preset as no-implicit-ref-callback-return .\n\nDue to the introduction of ref cleanup functions, returning anything else from a ref callback will now be rejected by TypeScript. The fix is usually to stop using implicit returns:\n\nThe original code returned the instance of the HTMLDivElement and TypeScript wouldn’t know if this was supposed to be a cleanup function or not.\n\nThis change is included in the react-19 codemod preset as refobject-defaults.\n\nA long-time complaint of how TypeScript and React work has been useRef. We’ve changed the types so that useRef now requires an argument. This significantly simplifies its type signature. It’ll now behave more like createContext.\n\nThis now also means that all refs are mutable. You’ll no longer hit the issue where you can’t mutate a ref because you initialised it with null:\n\nMutableRef is now deprecated in favor of a single RefObject type which useRef will always return:\n\nuseRef still has a convenience overload for useRef<T>(null) that automatically returns RefObject<T | null>. To ease migration due to the required argument for useRef, a convenience overload for useRef(undefined) was added that automatically returns RefObject<T | undefined>.\n\nCheck out [RFC] Make all refs mutable for prior discussions about this change.\n\nThis change is included in the react-element-default-any-props codemod.\n\nThe props of React elements now default to unknown instead of any if the element is typed as ReactElement. This does not affect you if you pass a type argument to ReactElement:\n\nBut if you relied on the default, you now have to handle unknown:\n\nYou should only need it if you have a lot of legacy code relying on unsound access of element props. Element introspection only exists as an escape hatch, and you should make it explicit that your props access is unsound via an explicit any.\n\nThis change is included in the react-19 codemod preset as scoped-jsx\n\nA long-time request is to remove the global JSX namespace from our types in favor of React.JSX. This helps prevent pollution of global types which prevents conflicts between different UI libraries that leverage JSX.\n\nYou’ll now need to wrap module augmentation of the JSX namespace in `declare module ”…”:\n\nThe exact module specifier depends on the JSX runtime you specified in the compilerOptions of your tsconfig.json:\n\nuseReducer now has improved type inference thanks to @mfp22.\n\nHowever, this required a breaking change where useReducer doesn’t accept the full reducer type as a type parameter but instead either needs none (and rely on contextual typing) or needs both the state and action type.\n\nThe new best practice is not to pass type arguments to useReducer.\n\nThis may not work in edge cases where you can explicitly type the state and action, by passing in the Action in a tuple:\n\nIf you define the reducer inline, we encourage to annotate the function parameters instead:\n\nThis is also what you’d also have to do if you move the reducer outside of the useReducer call:\n\nFor a full list of changes, please see the Changelog.\n\nThanks to Andrew Clark, Eli White, Jack Pope, Jan Kassens, Josh Story, Matt Carroll, Noah Lemen, Sophie Alpert, and Sebastian Silbermann for reviewing and editing this post.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "React 19 Upgrade Guide",
+      "id": ""
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h4",
+      "text": "React 18.3 has also been published",
+      "id": "react-18-3"
+    },
+    {
+      "level": "h2",
+      "text": "Installing",
+      "id": "installing"
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h4",
+      "text": "New JSX Transform is now required",
+      "id": "new-jsx-transform-is-now-required"
+    },
+    {
+      "level": "h2",
+      "text": "Codemods",
+      "id": "codemods"
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h4",
+      "text": "Run all React 19 codemods",
+      "id": "run-all-react-19-codemods"
+    },
+    {
+      "level": "h2",
+      "text": "Breaking changes",
+      "id": "breaking-changes"
+    },
+    {
+      "level": "h3",
+      "text": "Errors in render are not re-thrown",
+      "id": "errors-in-render-are-not-re-thrown"
+    },
+    {
+      "level": "h3",
+      "text": "Removed deprecated React APIs",
+      "id": "removed-deprecated-react-apis"
+    },
+    {
+      "level": "h4",
+      "text": "Removed: propTypes and defaultProps for functions",
+      "id": "removed-proptypes-and-defaultprops"
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h4",
+      "text": "Removed: Legacy Context using contextTypes and getChildContext",
+      "id": "removed-removing-legacy-context"
+    },
+    {
+      "level": "h4",
+      "text": "Removed: string refs",
+      "id": "removed-string-refs"
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h4",
+      "text": "Removed: Module pattern factories",
+      "id": "removed-module-pattern-factories"
+    },
+    {
+      "level": "h4",
+      "text": "Removed: React.createFactory",
+      "id": "removed-createfactory"
+    },
+    {
+      "level": "h4",
+      "text": "Removed: react-test-renderer/shallow",
+      "id": "removed-react-test-renderer-shallow"
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h5",
+      "text": "Please reconsider shallow rendering",
+      "id": "please-reconsider-shallow-rendering"
+    },
+    {
+      "level": "h3",
+      "text": "Removed deprecated React DOM APIs",
+      "id": "removed-deprecated-react-dom-apis"
+    },
+    {
+      "level": "h4",
+      "text": "Removed: react-dom/test-utils",
+      "id": "removed-react-dom-test-utils"
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h4",
+      "text": "Removed: ReactDOM.render",
+      "id": "removed-reactdom-render"
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h4",
+      "text": "Removed: ReactDOM.hydrate",
+      "id": "removed-reactdom-hydrate"
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h4",
+      "text": "Removed: unmountComponentAtNode",
+      "id": "removed-unmountcomponentatnode"
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h4",
+      "text": "Removed: ReactDOM.findDOMNode",
+      "id": "removed-reactdom-finddomnode"
+    },
+    {
+      "level": "h2",
+      "text": "New deprecations",
+      "id": "new-deprecations"
+    },
+    {
+      "level": "h3",
+      "text": "Deprecated: element.ref",
+      "id": "deprecated-element-ref"
+    },
+    {
+      "level": "h3",
+      "text": "Deprecated: react-test-renderer",
+      "id": "deprecated-react-test-renderer"
+    },
+    {
+      "level": "h2",
+      "text": "Notable changes",
+      "id": "notable-changes"
+    },
+    {
+      "level": "h3",
+      "text": "StrictMode changes",
+      "id": "strict-mode-improvements"
+    },
+    {
+      "level": "h3",
+      "text": "Improvements to Suspense",
+      "id": "improvements-to-suspense"
+    },
+    {
+      "level": "h3",
+      "text": "UMD builds removed",
+      "id": "umd-builds-removed"
+    },
+    {
+      "level": "h3",
+      "text": "Libraries depending on React internals may block upgrades",
+      "id": "libraries-depending-on-react-internals-may-block-upgrades"
+    },
+    {
+      "level": "h2",
+      "text": "TypeScript changes",
+      "id": "typescript-changes"
+    },
+    {
+      "level": "h3",
+      "text": "Removed deprecated TypeScript types",
+      "id": "removed-deprecated-typescript-types"
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h3",
+      "text": "ref cleanups required",
+      "id": "ref-cleanup-required"
+    },
+    {
+      "level": "h3",
+      "text": "useRef requires an argument",
+      "id": "useref-requires-argument"
+    },
+    {
+      "level": "h3",
+      "text": "Changes to the ReactElement TypeScript type",
+      "id": "changes-to-the-reactelement-typescript-type"
+    },
+    {
+      "level": "h3",
+      "text": "The JSX namespace in TypeScript",
+      "id": "the-jsx-namespace-in-typescript"
+    },
+    {
+      "level": "h3",
+      "text": "Better useReducer typings",
+      "id": "better-usereducer-typings"
+    },
+    {
+      "level": "h2",
+      "text": "Changelog",
+      "id": "changelog"
+    },
+    {
+      "level": "h3",
+      "text": "Other breaking changes",
+      "id": "other-breaking-changes"
+    },
+    {
+      "level": "h3",
+      "text": "Other notable changes",
+      "id": "other-notable-changes"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "npm install --save-exact react@^19.0.0 react-dom@^19.0.0",
+      "language": "unknown"
+    },
+    {
+      "code": "yarn add --exact react@^19.0.0 react-dom@^19.0.0",
+      "language": "unknown"
+    },
+    {
+      "code": "npm install --save-exact @types/react@^19.0.0 @types/react-dom@^19.0.0",
+      "language": "unknown"
+    },
+    {
+      "code": "yarn add --exact @types/react@^19.0.0 @types/react-dom@^19.0.0",
+      "language": "unknown"
+    },
+    {
+      "code": "npx codemod@latest react/19/migration-recipe",
+      "language": "unknown"
+    },
+    {
+      "code": "const root = createRoot(container, {  onUncaughtError: (error, errorInfo) => {    // ... log error report  },  onCaughtError: (error, errorInfo) => {    // ... log error report  }});",
+      "language": "javascript"
+    },
+    {
+      "code": "// Beforeimport PropTypes from 'prop-types';function Heading({text}) {  return <h1>{text}</h1>;}Heading.propTypes = {  text: PropTypes.string,};Heading.defaultProps = {  text: 'Hello, world!',};",
+      "language": "python"
+    },
+    {
+      "code": "// Afterinterface Props {  text?: string;}function Heading({text = 'Hello, world!'}: Props) {  return <h1>{text}</h1>;}",
+      "language": "unknown"
+    },
+    {
+      "code": "npx codemod@latest react/prop-types-typescript",
+      "language": "unknown"
+    },
+    {
+      "code": "// Beforeimport PropTypes from 'prop-types';class Parent extends React.Component {  static childContextTypes = {    foo: PropTypes.string.isRequired,  };  getChildContext() {    return { foo: 'bar' };  }  render() {    return <Child />;  }}class Child extends React.Component {  static contextTypes = {    foo: PropTypes.string.isRequired,  };  render() {    return <div>{this.context.foo}</div>;  }}",
+      "language": "python"
+    },
+    {
+      "code": "// Afterconst FooContext = React.createContext();class Parent extends React.Component {  render() {    return (      <FooContext value='bar'>        <Child />      </FooContext>    );  }}class Child extends React.Component {  static contextType = FooContext;  render() {    return <div>{this.context}</div>;  }}",
+      "language": "javascript"
+    },
+    {
+      "code": "// Beforeclass MyComponent extends React.Component {  componentDidMount() {    this.refs.input.focus();  }  render() {    return <input ref='input' />;  }}",
+      "language": "unknown"
+    },
+    {
+      "code": "// Afterclass MyComponent extends React.Component {  componentDidMount() {    this.input.focus();  }  render() {    return <input ref={input => this.input = input} />;  }}",
+      "language": "javascript"
+    },
+    {
+      "code": "npx codemod@latest react/19/replace-string-ref",
+      "language": "unknown"
+    },
+    {
+      "code": "// Beforefunction FactoryComponent() {  return { render() { return <div />; } }}",
+      "language": "unknown"
+    },
+    {
+      "code": "// Afterfunction FactoryComponent() {  return <div />;}",
+      "language": "unknown"
+    },
+    {
+      "code": "// Beforeimport { createFactory } from 'react';const button = createFactory('button');",
+      "language": "python"
+    },
+    {
+      "code": "// Afterconst button = <button />;",
+      "language": "javascript"
+    },
+    {
+      "code": "npm install react-shallow-renderer --save-dev",
+      "language": "unknown"
+    },
+    {
+      "code": "- import ShallowRenderer from 'react-test-renderer/shallow';+ import ShallowRenderer from 'react-shallow-renderer';",
+      "language": "python"
+    },
+    {
+      "code": "- import {act} from 'react-dom/test-utils'+ import {act} from 'react';",
+      "language": "python"
+    },
+    {
+      "code": "npx codemod@latest react/19/replace-act-import",
+      "language": "unknown"
+    },
+    {
+      "code": "// Beforeimport {render} from 'react-dom';render(<App />, document.getElementById('root'));// Afterimport {createRoot} from 'react-dom/client';const root = createRoot(document.getElementById('root'));root.render(<App />);",
+      "language": "python"
+    },
+    {
+      "code": "npx codemod@latest react/19/replace-reactdom-render",
+      "language": "unknown"
+    },
+    {
+      "code": "// Beforeimport {hydrate} from 'react-dom';hydrate(<App />, document.getElementById('root'));// Afterimport {hydrateRoot} from 'react-dom/client';hydrateRoot(document.getElementById('root'), <App />);",
+      "language": "python"
+    },
+    {
+      "code": "npx codemod@latest react/19/replace-reactdom-render",
+      "language": "unknown"
+    },
+    {
+      "code": "// BeforeunmountComponentAtNode(document.getElementById('root'));// Afterroot.unmount();",
+      "language": "unknown"
+    },
+    {
+      "code": "npx codemod@latest react/19/replace-reactdom-render",
+      "language": "unknown"
+    },
+    {
+      "code": "// Beforeimport {findDOMNode} from 'react-dom';function AutoselectingInput() {  useEffect(() => {    const input = findDOMNode(this);    input.select()  }, []);  return <input defaultValue=\"Hello\" />;}",
+      "language": "python"
+    },
+    {
+      "code": "// Afterfunction AutoselectingInput() {  const ref = useRef(null);  useEffect(() => {    ref.current.select();  }, []);  return <input ref={ref} defaultValue=\"Hello\" />}",
+      "language": "javascript"
+    },
+    {
+      "code": "<script type=\"module\">  import React from \"https://esm.sh/react@19/?dev\"  import ReactDOMClient from \"https://esm.sh/react-dom@19/client?dev\"  ...</script>",
+      "language": "python"
+    },
+    {
+      "code": "npx types-react-codemod@latest preset-19 ./path-to-app",
+      "language": "unknown"
+    },
+    {
+      "code": "npx types-react-codemod@latest react-element-default-any-props ./path-to-your-react-ts-files",
+      "language": "unknown"
+    },
+    {
+      "code": "- <div ref={current => (instance = current)} />+ <div ref={current => {instance = current}} />",
+      "language": "javascript"
+    },
+    {
+      "code": "// @ts-expect-error: Expected 1 argument but saw noneuseRef();// PassesuseRef(undefined);// @ts-expect-error: Expected 1 argument but saw nonecreateContext();// PassescreateContext(undefined);",
+      "language": "unknown"
+    },
+    {
+      "code": "const ref = useRef<number>(null);// Cannot assign to 'current' because it is a read-only propertyref.current = 1;",
+      "language": "javascript"
+    },
+    {
+      "code": "interface RefObject<T> {  current: T}declare function useRef<T>: RefObject<T>",
+      "language": "unknown"
+    },
+    {
+      "code": "type Example2 = ReactElement<{ id: string }>[\"props\"];//   ^? { id: string }",
+      "language": "unknown"
+    },
+    {
+      "code": "type Example = ReactElement[\"props\"];//   ^? Before, was 'any', now 'unknown'",
+      "language": "unknown"
+    },
+    {
+      "code": "// global.d.ts+ declare module \"react\" {    namespace JSX {      interface IntrinsicElements {        \"my-element\": {          myElementProps: string;        };      }    }+ }",
+      "language": "unknown"
+    },
+    {
+      "code": "- useReducer<React.Reducer<State, Action>>(reducer)+ useReducer(reducer)",
+      "language": "unknown"
+    },
+    {
+      "code": "- useReducer<React.Reducer<State, Action>>(reducer)+ useReducer<State, [Action]>(reducer)",
+      "language": "unknown"
+    },
+    {
+      "code": "- useReducer<React.Reducer<State, Action>>((state, action) => state)+ useReducer((state: State, action: Action) => state)",
+      "language": "javascript"
+    },
+    {
+      "code": "const reducer = (state: State, action: Action) => state;",
+      "language": "javascript"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://react.dev/blog",
+    "https://react.dev/blog/2024/04/25/react-19-upgrade-guide",
+    "https://react.dev/blog/2024/12/05/react-19",
+    "https://react.dev/link/new-jsx-transform",
+    "https://react.dev/blog/2024/04/25/react-19",
+    "https://react.dev/reference/react-dom/client/createRoot",
+    "https://react.dev/reference/react-dom/client/hydrateRoot",
+    "https://react.dev/warnings/react-dom-test-utils",
+    "https://react.dev/blog/2022/03/08/react-18-upgrade-guide",
+    "https://react.dev/learn/manipulating-the-dom-with-refs",
+    "https://react.dev/community/versioning-policy",
+    "https://react.dev/blog/2024/02/15/react-labs-what-we-have-been-working-on-february-2024"
+  ]
+}

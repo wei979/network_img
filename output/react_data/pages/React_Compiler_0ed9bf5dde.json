@@ -1,0 +1,56 @@
+{
+  "url": "https://react.dev/learn/react-compiler",
+  "title": "React Compiler",
+  "content": "Learn what React Compiler does and how it automatically optimizes your React application by handling memoization for you, eliminating the need for manual useMemo, useCallback, and React.memo.\n\nGet started with installing React Compiler and learn how to configure it with your build tools.\n\nLearn strategies for gradually adopting React Compiler in your existing codebase if you’re not ready to enable it everywhere yet.\n\nWhen things don’t work as expected, use our debugging guide to understand the difference between compiler errors and runtime issues, identify common breaking patterns, and follow a systematic debugging workflow.\n\nFor detailed configuration options and API reference:\n\nIn addition to these docs, we recommend checking the React Compiler Working Group for additional information and discussion about the compiler.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "React Compiler",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Introduction",
+      "id": "introduction"
+    },
+    {
+      "level": "h2",
+      "text": "Installation",
+      "id": "installation"
+    },
+    {
+      "level": "h2",
+      "text": "Incremental Adoption",
+      "id": "incremental-adoption"
+    },
+    {
+      "level": "h2",
+      "text": "Debugging and Troubleshooting",
+      "id": "debugging-and-troubleshooting"
+    },
+    {
+      "level": "h2",
+      "text": "Configuration and Reference",
+      "id": "configuration-and-reference"
+    },
+    {
+      "level": "h2",
+      "text": "Additional resources",
+      "id": "additional-resources"
+    }
+  ],
+  "code_samples": [],
+  "patterns": [],
+  "links": [
+    "https://react.dev/learn",
+    "https://react.dev/learn/react-compiler",
+    "https://react.dev/learn/react-compiler/introduction",
+    "https://react.dev/learn/react-compiler/installation",
+    "https://react.dev/learn/react-compiler/incremental-adoption",
+    "https://react.dev/learn/react-compiler/debugging",
+    "https://react.dev/reference/react-compiler/configuration",
+    "https://react.dev/reference/react-compiler/directives",
+    "https://react.dev/reference/react-compiler/compiling-libraries",
+    "https://react.dev/learn/react-developer-tools"
+  ]
+}

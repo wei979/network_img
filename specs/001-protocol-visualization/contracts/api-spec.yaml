@@ -1,0 +1,436 @@
+openapi: 3.0.3
+info:
+  title: 網路通訊協議圖形化展示系統 API
+  description: |
+    提供 PCAP 檔案上傳、解析、協定時間軸查詢與網路拓撲視覺化的 REST API。
+
+    **安全性**: 除健康檢查外，所有端點都需要會話驗證（Cookie-based）。
+
+    **會話管理**: 使用 Starlette SessionMiddleware，會話資料儲存於 Cookie 中。
+
+    **資料隔離**: 每個會話的上傳檔案與分析結果儲存於 `public/data/<session_id>/`。
+
+    **生命週期**: 會話在 4 小時無活動後過期，系統每小時自動清理過期資料。
+  version: 1.0.0
+  contact:
+    name: 網路分析團隊
+    email: support@example.com
+
+servers:
+  - url: http://localhost:8000
+    description: 開發環境
+  - url: https://api.network-viz.example.com
+    description: 生產環境
+
+tags:
+  - name: health
+    description: 健康檢查端點
+  - name: analysis
+    description: PCAP 分析與結果查詢
+  - name: timelines
+    description: 協定時間軸查詢
+  - name: upload
+    description: 檔案上傳
+
+security:
+  - sessionCookie: []
+
+paths:
+  /api/health:
+    get:
+      tags:
+        - health
+      summary: 健康檢查
+      description: 檢查 API 伺服器是否正常運行（無需驗證）
+      operationId: healthCheck
+      security: []  # 覆寫全域安全性要求
+      responses:
+        '200':
+          description: 伺服器正常運行
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2025-11-16T10:30:00Z"
+              examples:
+                success:
+                  value:
+                    status: "ok"
+                    timestamp: "2025-11-16T10:30:00Z"
+
+  /api/analysis:
+    get:
+      tags:
+        - analysis
+      summary: 取得快取的分析結果
+      description: |
+        取得當前會話最近一次 PCAP 分析的完整結果。
+
+        **需要會話驗證**: 未登入的請求將返回 401。
+
+        **資料來源**: `public/data/<session_id>/network_analysis_results.json`
+      operationId: getAnalysis
+      responses:
+        '200':
+          description: 成功取得分析結果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 尚未上傳或分析任何 PCAP 檔案
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  value:
+                    detail: "No analysis results found for this session"
+
+  /api/timelines:
+    get:
+      tags:
+        - timelines
+      summary: 取得協定時間軸資料
+      description: |
+        取得當前會話的協定時間軸資料，用於前端動畫渲染。
+
+        **需要會話驗證**: 未登入的請求將返回 401。
+
+        **資料來源**: `public/data/<session_id>/protocol_timeline_sample.json`
+
+        **回退機制**: 如果會話資料不存在，前端會自動回退到靜態檔案 `/data/protocol_timeline_sample.json`。
+      operationId: getTimelines
+      responses:
+        '200':
+          description: 成功取得時間軸資料
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimelineResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 尚未生成時間軸資料
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/analyze:
+    post:
+      tags:
+        - upload
+      summary: 上傳並分析 PCAP 檔案
+      description: |
+        接受用戶上傳的 PCAP 或 PCAPNG 檔案，執行完整的協定分析，生成時間軸與拓撲資料。
+
+        **需要會話驗證**: 未登入的請求將返回 401。
+
+        **檔案限制**:
+        - 格式：只接受 `.pcap` 或 `.pcapng`
+        - 大小：最大 500MB
+
+        **處理流程**:
+        1. 驗證會話
+        2. 驗證檔案格式
+        3. 儲存至 `public/data/<session_id>/uploaded.pcap`
+        4. 執行 `NetworkAnalyzer` 分析
+        5. 生成時間軸與拓撲 JSON
+        6. 返回成功訊息
+
+        **並發處理**: 如果同一會話有未完成的上傳，會取消前一個任務。
+      operationId: analyzePcap
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: PCAP 或 PCAPNG 檔案
+              required:
+                - file
+      responses:
+        '200':
+          description: 分析成功完成
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "PCAP file analyzed successfully"
+                  session_id:
+                    type: string
+                    format: uuid
+                    example: "550e8400-e29b-41d4-a716-446655440000"
+                  packet_count:
+                    type: integer
+                    example: 1523
+                  timeline_count:
+                    type: integer
+                    example: 42
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+                    example: ["檔案包含 3 個無法解析的封包"]
+        '400':
+          description: 請求錯誤（檔案格式不支援）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidFormat:
+                  value:
+                    detail: "不支援的檔案格式，請上傳 .pcap 或 .pcapng 檔案"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          description: 檔案過大
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                tooLarge:
+                  value:
+                    detail: "檔案超過 500MB 限制"
+        '500':
+          description: 伺服器內部錯誤（分析失敗）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                analysisFailed:
+                  value:
+                    detail: "Failed to analyze PCAP file: Invalid packet data"
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: session_id
+      description: |
+        會話 Cookie，由 Starlette SessionMiddleware 自動管理。
+
+        前端無需手動設定，瀏覽器會自動在請求中帶上此 Cookie。
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: 錯誤訊息
+      required:
+        - detail
+
+    AnalysisResult:
+      type: object
+      description: 完整的 PCAP 分析結果
+      properties:
+        source_file:
+          type: string
+          example: "uploaded.pcap"
+        total_packets:
+          type: integer
+          example: 1523
+        protocols:
+          type: object
+          additionalProperties:
+            type: integer
+          example:
+            TCP: 1200
+            UDP: 300
+            ICMP: 23
+        packet_sizes:
+          type: object
+          properties:
+            min:
+              type: integer
+              example: 54
+            max:
+              type: integer
+              example: 1514
+            average:
+              type: number
+              format: float
+              example: 842.5
+        unique_ips:
+          type: array
+          items:
+            type: string
+          example: ["192.168.1.100", "8.8.8.8", "1.1.1.1"]
+        top_ports:
+          type: object
+          additionalProperties:
+            type: integer
+          example:
+            "443": 350
+            "80": 250
+            "53": 120
+
+    TimelineResponse:
+      type: object
+      description: 協定時間軸回應
+      properties:
+        sourceFiles:
+          type: array
+          items:
+            type: string
+          example: ["uploaded.pcap"]
+        generatedAt:
+          type: string
+          format: date-time
+          example: "2025-11-16T10:35:00Z"
+        timelines:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProtocolTimeline'
+      required:
+        - sourceFiles
+        - generatedAt
+        - timelines
+
+    ProtocolTimeline:
+      type: object
+      description: 單一協定時間軸
+      properties:
+        id:
+          type: string
+          description: 唯一識別碼（包含索引後綴避免重複）
+          example: "tcp-192.168.1.100-54321-8.8.8.8-443-0"
+        protocolType:
+          type: string
+          enum:
+            - tcp-handshake
+            - dns-query
+            - http-request
+            - https-request
+            - udp-transfer
+            - timeout
+          description: 協定動畫類型
+          example: "tcp-handshake"
+        protocol:
+          type: string
+          enum:
+            - tcp
+            - udp
+          description: 傳輸層協定
+          example: "tcp"
+        startEpochMs:
+          type: integer
+          format: int64
+          description: 開始時間（epoch 毫秒）
+          example: 1700123400000
+        endEpochMs:
+          type: integer
+          format: int64
+          description: 結束時間（epoch 毫秒）
+          example: 1700123402400
+        stages:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnimationStage'
+          minItems: 1
+        metrics:
+          type: object
+          properties:
+            rttMs:
+              type: number
+              format: float
+              description: 往返時間（毫秒）
+              example: 12.5
+            packetCount:
+              type: integer
+              description: 封包數量
+              example: 3
+          additionalProperties: true
+      required:
+        - id
+        - protocolType
+        - protocol
+        - startEpochMs
+        - endEpochMs
+        - stages
+        - metrics
+
+    AnimationStage:
+      type: object
+      description: 動畫階段
+      properties:
+        key:
+          type: string
+          description: 階段鍵值
+          example: "syn"
+        label:
+          type: string
+          description: 階段顯示名稱（繁體中文或英文）
+          example: "SYN Sent"
+        direction:
+          type: string
+          enum:
+            - forward
+            - backward
+            - both
+            - wait
+            - none
+          description: 封包方向
+          example: "forward"
+        durationMs:
+          type: integer
+          description: 階段持續時間（毫秒），最少 600ms
+          minimum: 600
+          example: 800
+        packetRefs:
+          type: array
+          items:
+            type: integer
+          description: 封包索引參考
+          example: [0]
+      required:
+        - key
+        - label
+        - direction
+        - durationMs
+        - packetRefs
+
+  responses:
+    Unauthorized:
+      description: 未授權（未登入或會話過期）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            notLoggedIn:
+              value:
+                detail: "Please login first"
+            sessionExpired:
+              value:
+                detail: "Session expired, please login again"
+      headers:
+        WWW-Authenticate:
+          schema:
+            type: string
+            example: "Session"
+          description: 驗證方式提示

@@ -1,0 +1,97 @@
+{
+  "url": "https://react.dev/reference/react/hooks",
+  "title": "Built-in React Hooks",
+  "content": "Hooks let you use different React features from your components. You can either use the built-in Hooks or combine them to build your own. This page lists all built-in Hooks in React.\n\nState lets a component “remember” information like user input. For example, a form component can use state to store the input value, while an image gallery component can use state to store the selected image index.\n\nTo add state to a component, use one of these Hooks:\n\nContext lets a component receive information from distant parents without passing it as props. For example, your app’s top-level component can pass the current UI theme to all components below, no matter how deep.\n\nRefs let a component hold some information that isn’t used for rendering, like a DOM node or a timeout ID. Unlike with state, updating a ref does not re-render your component. Refs are an “escape hatch” from the React paradigm. They are useful when you need to work with non-React systems, such as the built-in browser APIs.\n\nEffects let a component connect to and synchronize with external systems. This includes dealing with network, browser DOM, animations, widgets written using a different UI library, and other non-React code.\n\nEffects are an “escape hatch” from the React paradigm. Don’t use Effects to orchestrate the data flow of your application. If you’re not interacting with an external system, you might not need an Effect.\n\nThere are two rarely used variations of useEffect with differences in timing:\n\nA common way to optimize re-rendering performance is to skip unnecessary work. For example, you can tell React to reuse a cached calculation or to skip a re-render if the data has not changed since the previous render.\n\nTo skip calculations and unnecessary re-rendering, use one of these Hooks:\n\nSometimes, you can’t skip re-rendering because the screen actually needs to update. In that case, you can improve performance by separating blocking updates that must be synchronous (like typing into an input) from non-blocking updates which don’t need to block the user interface (like updating a chart).\n\nTo prioritize rendering, use one of these Hooks:\n\nThese Hooks are mostly useful to library authors and aren’t commonly used in the application code.\n\nYou can also define your own custom Hooks as JavaScript functions.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Built-in React Hooks",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "State Hooks",
+      "id": "state-hooks"
+    },
+    {
+      "level": "h2",
+      "text": "Context Hooks",
+      "id": "context-hooks"
+    },
+    {
+      "level": "h2",
+      "text": "Ref Hooks",
+      "id": "ref-hooks"
+    },
+    {
+      "level": "h2",
+      "text": "Effect Hooks",
+      "id": "effect-hooks"
+    },
+    {
+      "level": "h2",
+      "text": "Performance Hooks",
+      "id": "performance-hooks"
+    },
+    {
+      "level": "h2",
+      "text": "Other Hooks",
+      "id": "other-hooks"
+    },
+    {
+      "level": "h2",
+      "text": "Your own Hooks",
+      "id": "your-own-hooks"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "function ImageGallery() {  const [index, setIndex] = useState(0);  // ...",
+      "language": "javascript"
+    },
+    {
+      "code": "function Button() {  const theme = useContext(ThemeContext);  // ...",
+      "language": "javascript"
+    },
+    {
+      "code": "function Form() {  const inputRef = useRef(null);  // ...",
+      "language": "javascript"
+    },
+    {
+      "code": "function ChatRoom({ roomId }) {  useEffect(() => {    const connection = createConnection(roomId);    connection.connect();    return () => connection.disconnect();  }, [roomId]);  // ...",
+      "language": "javascript"
+    },
+    {
+      "code": "function TodoList({ todos, tab, theme }) {  const visibleTodos = useMemo(() => filterTodos(todos, tab), [todos, tab]);  // ...}",
+      "language": "javascript"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://react.dev/reference/react",
+    "https://react.dev/reference/react/hooks",
+    "https://react.dev/learn/state-a-components-memory",
+    "https://react.dev/reference/react/useState",
+    "https://react.dev/reference/react/useReducer",
+    "https://react.dev/learn/extracting-state-logic-into-a-reducer",
+    "https://react.dev/learn/passing-props-to-a-component",
+    "https://react.dev/reference/react/useContext",
+    "https://react.dev/learn/referencing-values-with-refs",
+    "https://react.dev/reference/react/useRef",
+    "https://react.dev/reference/react/useImperativeHandle",
+    "https://react.dev/learn/synchronizing-with-effects",
+    "https://react.dev/reference/react/useEffect",
+    "https://react.dev/learn/you-might-not-need-an-effect",
+    "https://react.dev/reference/react/useLayoutEffect",
+    "https://react.dev/reference/react/useInsertionEffect",
+    "https://react.dev/reference/react/useMemo",
+    "https://react.dev/reference/react/useCallback",
+    "https://react.dev/reference/react/useTransition",
+    "https://react.dev/reference/react/useDeferredValue",
+    "https://react.dev/reference/react/useDebugValue",
+    "https://react.dev/reference/react/useId",
+    "https://react.dev/reference/react/useSyncExternalStore",
+    "https://react.dev/reference/react/useActionState",
+    "https://react.dev/learn/reusing-logic-with-custom-hooks"
+  ]
+}

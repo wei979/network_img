@@ -1,0 +1,90 @@
+{
+  "url": "https://react.dev/reference/react-compiler/compiling-libraries",
+  "title": "Compiling Libraries",
+  "content": "This guide helps library authors understand how to use React Compiler to ship optimized library code to their users.\n\nAs a library author, you can compile your library code before publishing to npm. This provides several benefits:\n\nAdd React Compiler to your library’s build process:\n\nConfigure your build tool to compile your library. For example, with Babel:\n\nIf your library supports React versions below 19, you’ll need additional configuration:\n\nWe recommend installing react-compiler-runtime as a direct dependency:\n\nSet the minimum React version your library supports:\n\nTest your library both with and without compilation to ensure compatibility. Run your existing test suite against the compiled code, and also create a separate test configuration that bypasses the compiler. This helps catch any issues that might arise from the compilation process and ensures your library works correctly in all scenarios.\n\nIf your compiled library throws errors in React 17 or 18:\n\nSome Babel plugins may conflict with React Compiler:\n\nIf users see “Cannot find module ‘react-compiler-runtime’“:",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Compiling Libraries",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Why Ship Compiled Code?",
+      "id": "why-ship-compiled-code"
+    },
+    {
+      "level": "h2",
+      "text": "Setting Up Compilation",
+      "id": "setting-up-compilation"
+    },
+    {
+      "level": "h2",
+      "text": "Backwards Compatibility",
+      "id": "backwards-compatibility"
+    },
+    {
+      "level": "h3",
+      "text": "1. Install the runtime package",
+      "id": "install-runtime-package"
+    },
+    {
+      "level": "h3",
+      "text": "2. Configure the target version",
+      "id": "configure-target-version"
+    },
+    {
+      "level": "h2",
+      "text": "Testing Strategy",
+      "id": "testing-strategy"
+    },
+    {
+      "level": "h2",
+      "text": "Troubleshooting",
+      "id": "troubleshooting"
+    },
+    {
+      "level": "h3",
+      "text": "Library doesn’t work with older React versions",
+      "id": "library-doesnt-work-with-older-react-versions"
+    },
+    {
+      "level": "h3",
+      "text": "Compilation conflicts with other Babel plugins",
+      "id": "compilation-conflicts-with-other-babel-plugins"
+    },
+    {
+      "level": "h3",
+      "text": "Runtime module not found",
+      "id": "runtime-module-not-found"
+    },
+    {
+      "level": "h2",
+      "text": "Next Steps",
+      "id": "next-steps"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "// babel.config.jsmodule.exports = {  plugins: [    'babel-plugin-react-compiler',  ],  // ... other config};",
+      "language": "unknown"
+    },
+    {
+      "code": "{  \"dependencies\": {    \"react-compiler-runtime\": \"^1.0.0\"  },  \"peerDependencies\": {    \"react\": \"^17.0.0 || ^18.0.0 || ^19.0.0\"  }}",
+      "language": "unknown"
+    },
+    {
+      "code": "{  target: '17', // Minimum supported React version}",
+      "language": "unknown"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://react.dev/reference/react",
+    "https://react.dev/reference/react-compiler/compiling-libraries",
+    "https://react.dev/learn/react-compiler/debugging",
+    "https://react.dev/reference/react-compiler/configuration",
+    "https://react.dev/reference/react-compiler/compilationMode",
+    "https://react.dev/reference/react-compiler/directives/use-no-memo"
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "url": "https://fastapi.tiangolo.com/fastapi-people/",
+  "title": "FastAPI People¶",
+  "content": "FastAPI has an amazing community that welcomes people from all backgrounds.\n\nI'm the creator of FastAPI. You can read more about that in Help FastAPI - Get Help - Connect with the author.\n\n...But here I want to show you the community.\n\nFastAPI receives a lot of support from the community. And I want to highlight their contributions.\n\nThese are the people that:\n\nAll these tasks help maintain the repository.\n\nA round of applause to them. 👏 🙇\n\nThis is the current list of team members. 😎\n\nThey have different levels of involvement and permissions, they can perform repository management tasks and together we manage the FastAPI repository.\n\nAlthough the team members have the permissions to perform privileged tasks, all the help from others maintaining FastAPI is very much appreciated! 🙇‍♂️\n\nThese are the users that have been helping others the most with questions in GitHub. 🙇\n\nThey have proven to be FastAPI Experts by helping many others. ✨\n\nYou could become an official FastAPI Expert too!\n\nJust help others with questions in GitHub. 🤓\n\nYou can see the FastAPI Experts for:\n\nThese are the users that have been helping others the most with questions in GitHub during the last month. 🤓\n\nThese are the users that have been helping others the most with questions in GitHub during the last 3 months. 😎\n\nThese are the users that have been helping others the most with questions in GitHub during the last 6 months. 🧐\n\nThese are the users that have been helping others the most with questions in GitHub during the last year. 🧑‍🔬\n\nHere are the all time FastAPI Experts. 🤓🤯\n\nThese are the users that have helped others the most with questions in GitHub through all time. 🧙\n\nHere are the Top Contributors. 👷\n\nThese users have created the most Pull Requests that have been merged.\n\nThey have contributed source code, documentation, etc. 📦\n\nThere are hundreds of other contributors, you can see them all in the FastAPI GitHub Contributors page. 👷\n\nThese are the Top Translators. 🌐\n\nThese users have created the most Pull Requests with translations to other languages that have been merged.\n\nThese users are the Top Translation Reviewers. 🕵️\n\nI only speak a few languages (and not very well 😅). So, the reviewers are the ones that have the power to approve translations of the documentation. Without them, there wouldn't be documentation in several other languages.\n\nThese are the Sponsors. 😎\n\nThey are supporting my work with FastAPI (and others), mainly through GitHub Sponsors.\n\nThe main intention of this page is to highlight the effort of the community to help others.\n\nEspecially including efforts that are normally less visible, and in many cases more arduous, like helping others with questions and reviewing Pull Requests with translations.\n\nThe data is calculated each month, you can read the source code here.\n\nHere I'm also highlighting contributions from sponsors.\n\nI also reserve the right to update the algorithm, sections, thresholds, etc (just in case 🤷).",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "FastAPI People¶",
+      "id": "fastapi-people"
+    },
+    {
+      "level": "h2",
+      "text": "Creator¶",
+      "id": "creator"
+    },
+    {
+      "level": "h2",
+      "text": "Team¶",
+      "id": "team"
+    },
+    {
+      "level": "h2",
+      "text": "FastAPI Experts¶",
+      "id": "fastapi-experts"
+    },
+    {
+      "level": "h3",
+      "text": "FastAPI Experts - Last Month¶",
+      "id": "fastapi-experts-last-month"
+    },
+    {
+      "level": "h3",
+      "text": "FastAPI Experts - 3 Months¶",
+      "id": "fastapi-experts-3-months"
+    },
+    {
+      "level": "h3",
+      "text": "FastAPI Experts - 6 Months¶",
+      "id": "fastapi-experts-6-months"
+    },
+    {
+      "level": "h3",
+      "text": "FastAPI Experts - 1 Year¶",
+      "id": "fastapi-experts-1-year"
+    },
+    {
+      "level": "h3",
+      "text": "FastAPI Experts - All Time¶",
+      "id": "fastapi-experts-all-time"
+    },
+    {
+      "level": "h2",
+      "text": "Top Contributors¶",
+      "id": "top-contributors"
+    },
+    {
+      "level": "h2",
+      "text": "Top Translators¶",
+      "id": "top-translators"
+    },
+    {
+      "level": "h2",
+      "text": "Top Translation Reviewers¶",
+      "id": "top-translation-reviewers"
+    },
+    {
+      "level": "h2",
+      "text": "Sponsors¶",
+      "id": "sponsors"
+    },
+    {
+      "level": "h3",
+      "text": "Gold Sponsors¶",
+      "id": "gold-sponsors"
+    },
+    {
+      "level": "h3",
+      "text": "Silver Sponsors¶",
+      "id": "silver-sponsors"
+    },
+    {
+      "level": "h3",
+      "text": "Bronze Sponsors¶",
+      "id": "bronze-sponsors"
+    },
+    {
+      "level": "h3",
+      "text": "Individual Sponsors¶",
+      "id": "individual-sponsors"
+    },
+    {
+      "level": "h2",
+      "text": "About the data - technical details¶",
+      "id": "about-the-data-technical-details"
+    }
+  ],
+  "code_samples": [],
+  "patterns": [],
+  "links": [
+    "https://fastapi.tiangolo.com/fastapi-people/",
+    "https://fastapi.tiangolo.com/help-fastapi/",
+    "https://fastapi.tiangolo.com/contributing/",
+    "https://fastapi.tiangolo.com/management-tasks/",
+    "https://fastapi.tiangolo.com/management/"
+  ]
+}

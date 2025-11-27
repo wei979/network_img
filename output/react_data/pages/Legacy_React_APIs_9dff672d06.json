@@ -1,0 +1,38 @@
+{
+  "url": "https://react.dev/reference/react/legacy",
+  "title": "Legacy React APIs",
+  "content": "These APIs are exported from the react package, but they are not recommended for use in newly written code. See the linked individual API pages for the suggested alternatives.\n\nThese APIs were removed in React 19:",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Legacy React APIs",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Legacy APIs",
+      "id": "legacy-apis"
+    },
+    {
+      "level": "h2",
+      "text": "Removed APIs",
+      "id": "removed-apis"
+    }
+  ],
+  "code_samples": [],
+  "patterns": [],
+  "links": [
+    "https://react.dev/reference/react",
+    "https://react.dev/reference/react/legacy",
+    "https://react.dev/reference/react/Children",
+    "https://react.dev/reference/react/cloneElement",
+    "https://react.dev/reference/react/Component",
+    "https://react.dev/reference/react/createElement",
+    "https://react.dev/reference/react/createRef",
+    "https://react.dev/reference/react/forwardRef",
+    "https://react.dev/learn/manipulating-the-dom-with-refs",
+    "https://react.dev/reference/react/isValidElement",
+    "https://react.dev/reference/react/PureComponent",
+    "https://react.dev/reference/react/createContext"
+  ]
+}

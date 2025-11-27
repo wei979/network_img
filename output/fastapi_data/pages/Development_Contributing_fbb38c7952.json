@@ -1,0 +1,193 @@
+{
+  "url": "https://fastapi.tiangolo.com/contributing/",
+  "title": "Development - Contributing¶",
+  "content": "First, you might want to see the basic ways to help FastAPI and get help.\n\nIf you already cloned the fastapi repository and you want to deep dive in the code, here are some guidelines to set up your environment.\n\nFollow the instructions to create and activate a virtual environment for the internal code of fastapi.\n\nAfter activating the environment, install the required packages:\n\nIt will install all the dependencies and your local FastAPI in your local environment.\n\nIf you create a Python file that imports and uses FastAPI, and run it with the Python from your local environment, it will use your cloned local FastAPI source code.\n\nAnd if you update that local FastAPI source code when you run that Python file again, it will use the fresh version of FastAPI you just edited.\n\nThat way, you don't have to \"install\" your local version to be able to test every change.\n\nThis only happens when you install using this included requirements.txt instead of running pip install fastapi directly.\n\nThat is because inside the requirements.txt file, the local version of FastAPI is marked to be installed in \"editable\" mode, with the -e option.\n\nThere is a script that you can run that will format and clean all your code:\n\nIt will also auto-sort all your imports.\n\nThere is a script that you can run locally to test all the code and generate coverage reports in HTML:\n\nThis command generates a directory ./htmlcov/, if you open the file ./htmlcov/index.html in your browser, you can explore interactively the regions of code that are covered by the tests, and notice if there is any region missing.\n\nFirst, make sure you set up your environment as described above, that will install all the requirements.\n\nDuring local development, there is a script that builds the site and checks for any changes, live-reloading:\n\nIt will serve the documentation on http://127.0.0.1:8008.\n\nThat way, you can edit the documentation/source files and see the changes live.\n\nAlternatively, you can perform the same steps that scripts does manually.\n\nGo into the language directory, for the main docs in English it's at docs/en/:\n\nThen run mkdocs in that directory:\n\nThe instructions here show you how to use the script at ./scripts/docs.py with the python program directly.\n\nBut you can also use Typer CLI, and you will get autocompletion in your terminal for the commands after installing completion.\n\nIf you install Typer CLI, you can install completion with:\n\nThe documentation uses MkDocs.\n\nAnd there are extra tools/scripts in place to handle translations in ./scripts/docs.py.\n\nYou don't need to see the code in ./scripts/docs.py, you just use it in the command line.\n\nAll the documentation is in Markdown format in the directory ./docs/en/.\n\nMany of the tutorials have blocks of code.\n\nIn most of the cases, these blocks of code are actual complete applications that can be run as is.\n\nIn fact, those blocks of code are not written inside the Markdown, they are Python files in the ./docs_src/ directory.\n\nAnd those Python files are included/injected in the documentation when generating the site.\n\nMost of the tests actually run against the example source files in the documentation.\n\nThis helps to make sure that:\n\nIf you run the examples with, e.g.:\n\nas Uvicorn by default will use the port 8000, the documentation on port 8008 won't clash.\n\nUpdate on Translations\n\nWe're updating the way we handle documentation translations.\n\nUntil now, we invited community members to translate pages via pull requests, which were then reviewed by at least two native speakers. While this has helped bring FastAPI to many more users, we’ve also run into several challenges - some languages have only a few translated pages, others are outdated and hard to maintain over time. To improve this, we’re working on automation tools 🤖 to manage translations more efficiently. Once ready, documentation will be machine-translated and still reviewed by at least two native speakers ✅ before publishing. This will allow us to keep translations up-to-date while reducing the review burden on maintainers.\n\n🚫 We’re no longer accepting new community-submitted translation PRs.\n\n⏳ Existing open PRs will be reviewed and can still be merged if completed within the next 3 weeks (since July 11 2025).\n\n🌐 In the future, we will only support languages where at least three active native speakers are available to review and maintain translations.\n\nThis transition will help us keep translations more consistent and timely while better supporting our contributors 🙌. Thank you to everyone who has contributed so far — your help has been invaluable! 💖\n\nHelp with translations is VERY MUCH appreciated! And it can't be done without the help from the community. 🌎 🚀\n\nHere are the steps to help with translations.\n\nCheck the currently existing pull requests for your language. You can filter the pull requests by the ones with the label for your language. For example, for Spanish, the label is lang-es.\n\nReview those pull requests, requesting changes or approving them. For the languages I don't speak, I'll wait for several others to review the translation before merging.\n\nYou can add comments with change suggestions to existing pull requests.\n\nCheck the docs about adding a pull request review to approve it or request changes.\n\nCheck if there's a GitHub Discussion to coordinate translations for your language. You can subscribe to it, and when there's a new pull request to review, an automatic comment will be added to the discussion.\n\nIf you translate pages, add a single pull request per page translated. That will make it much easier for others to review it.\n\nTo check the 2-letter code for the language you want to translate, you can use the table List of ISO 639-1 codes.\n\nLet's say you want to translate a page for a language that already has translations for some pages, like Spanish.\n\nIn the case of Spanish, the 2-letter code is es. So, the directory for Spanish translations is located at docs/es/.\n\nThe main (\"official\") language is English, located at docs/en/.\n\nNow run the live server for the docs in Spanish:\n\nAlternatively, you can perform the same steps that scripts does manually.\n\nGo into the language directory, for the Spanish translations it's at docs/es/:\n\nThen run mkdocs in that directory:\n\nNow you can go to http://127.0.0.1:8008 and see your changes live.\n\nYou will see that every language has all the pages. But some pages are not translated and have an info box at the top, about the missing translation.\n\nNow let's say that you want to add a translation for the section Features.\n\nNotice that the only change in the path and file name is the language code, from en to es.\n\nIf you go to your browser you will see that now the docs show your new section (the info box at the top is gone). 🎉\n\nNow you can translate it all and see how it looks as you save the file.\n\nSome of these files are updated very frequently and a translation would always be behind, or they include the main content from English source files, etc.\n\nLet's say that you want to request translations for a language that is not yet translated, not even some pages. For example, Latin.\n\nIf there is no discussion for that language, you can start by requesting the new language. For that, you can follow these steps:\n\nOnce there are several people in the discussion, the FastAPI team can evaluate it and can make it an official translation.\n\nThen the docs will be automatically translated using AI, and the team of native speakers can review the translation, and help tweak the AI prompts.\n\nOnce there's a new translation, for example if docs are updated or there's a new section, there will be a comment in the same discussion with the link to the new translation to review.\n\nThese steps will be performed by the FastAPI team.\n\nChecking the link from above (List of ISO 639-1 codes), you can see that the 2-letter code for Latin is la.\n\nNow you can create a new directory for the new language, running the following script:\n\nNow you can check in your code editor the newly created directory docs/la/.\n\nThat command created a file docs/la/mkdocs.yml with a simple config that inherits everything from the en version:\n\nYou could also simply create that file with those contents manually.\n\nThat command also created a dummy file docs/la/index.md for the main page, you can start by translating that one.\n\nYou can continue with the previous instructions for an \"Existing Language\" for that process.\n\nYou can make the first pull request with those two files, docs/la/mkdocs.yml and docs/la/index.md. 🎉\n\nAs already mentioned above, you can use the ./scripts/docs.py with the live command to preview the results (or mkdocs serve).\n\nOnce you are done, you can also test it all as it would look online, including all the other languages.\n\nTo do that, first build all the docs:\n\nThis builds all those independent MkDocs sites for each language, combines them, and generates the final output at ./site/.\n\nThen you can serve that with the command serve:\n\nTranslate only the Markdown documents (.md). Do not translate the code examples at ./docs_src.\n\nIn code blocks within the Markdown document, translate comments (# a comment), but leave the rest unchanged.\n\nDo not change anything enclosed in \"``\" (inline code).\n\nIn lines starting with /// translate only the text part after |. Leave the rest unchanged.\n\nYou can translate info boxes like /// warning with for example /// warning | Achtung. But do not change the word immediately after the ///, it determines the color of the info box.\n\nDo not change the paths in links to images, code files, Markdown documents.\n\nHowever, when a Markdown document is translated, the #hash-parts in links to its headings may change. Update these links if possible.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Development - Contributing¶",
+      "id": "development-contributing"
+    },
+    {
+      "level": "h2",
+      "text": "Developing¶",
+      "id": "developing"
+    },
+    {
+      "level": "h3",
+      "text": "Virtual environment¶",
+      "id": "virtual-environment"
+    },
+    {
+      "level": "h3",
+      "text": "Install requirements¶",
+      "id": "install-requirements"
+    },
+    {
+      "level": "h3",
+      "text": "Using your local FastAPI¶",
+      "id": "using-your-local-fastapi"
+    },
+    {
+      "level": "h3",
+      "text": "Format the code¶",
+      "id": "format-the-code"
+    },
+    {
+      "level": "h2",
+      "text": "Tests¶",
+      "id": "tests"
+    },
+    {
+      "level": "h2",
+      "text": "Docs¶",
+      "id": "docs"
+    },
+    {
+      "level": "h3",
+      "text": "Docs live¶",
+      "id": "docs-live"
+    },
+    {
+      "level": "h4",
+      "text": "Typer CLI (optional)¶",
+      "id": "typer-cli-optional"
+    },
+    {
+      "level": "h3",
+      "text": "Docs Structure¶",
+      "id": "docs-structure"
+    },
+    {
+      "level": "h3",
+      "text": "Docs for tests¶",
+      "id": "docs-for-tests"
+    },
+    {
+      "level": "h4",
+      "text": "Apps and docs at the same time¶",
+      "id": "apps-and-docs-at-the-same-time"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations"
+    },
+    {
+      "level": "h4",
+      "text": "Tips and guidelines¶",
+      "id": "tips-and-guidelines"
+    },
+    {
+      "level": "h4",
+      "text": "Existing language¶",
+      "id": "existing-language"
+    },
+    {
+      "level": "h4",
+      "text": "Don't Translate these Pages¶",
+      "id": "dont-translate-these-pages"
+    },
+    {
+      "level": "h4",
+      "text": "Request a New Language¶",
+      "id": "request-a-new-language"
+    },
+    {
+      "level": "h4",
+      "text": "New Language¶",
+      "id": "new-language"
+    },
+    {
+      "level": "h4",
+      "text": "Preview the result¶",
+      "id": "preview-the-result"
+    },
+    {
+      "level": "h4",
+      "text": "Translation specific tips and guidelines¶",
+      "id": "translation-specific-tips-and-guidelines"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "$ pip install -r requirements.txt\n\n---> 100%",
+      "language": "unknown"
+    },
+    {
+      "code": "$ uv pip install -r requirements.txt\n\n---> 100%",
+      "language": "unknown"
+    },
+    {
+      "code": "$ bash scripts/format.sh",
+      "language": "unknown"
+    },
+    {
+      "code": "$ bash scripts/test-cov-html.sh",
+      "language": "unknown"
+    },
+    {
+      "code": "$ python ./scripts/docs.py live\n\n<span style=\"color: green;\">[INFO]</span> Serving on http://127.0.0.1:8008\n<span style=\"color: green;\">[INFO]</span> Start watching changes\n<span style=\"color: green;\">[INFO]</span> Start detecting changes",
+      "language": "unknown"
+    },
+    {
+      "code": "$ cd docs/en/",
+      "language": "unknown"
+    },
+    {
+      "code": "$ mkdocs serve --dev-addr 127.0.0.1:8008",
+      "language": "unknown"
+    },
+    {
+      "code": "$ typer --install-completion\n\nzsh completion installed in /home/user/.bashrc.\nCompletion will take effect once you restart the terminal.",
+      "language": "unknown"
+    },
+    {
+      "code": "$ fastapi dev tutorial001.py\n\n<span style=\"color: green;\">INFO</span>:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)",
+      "language": "unknown"
+    },
+    {
+      "code": "// Use the command \"live\" and pass the language code as a CLI argument\n$ python ./scripts/docs.py live es\n\n<span style=\"color: green;\">[INFO]</span> Serving on http://127.0.0.1:8008\n<span style=\"color: green;\">[INFO]</span> Start watching changes\n<span style=\"color: green;\">[INFO]</span> Start detecting changes",
+      "language": "unknown"
+    },
+    {
+      "code": "$ cd docs/es/",
+      "language": "unknown"
+    },
+    {
+      "code": "$ mkdocs serve --dev-addr 127.0.0.1:8008",
+      "language": "unknown"
+    },
+    {
+      "code": "docs/en/docs/features.md",
+      "language": "unknown"
+    },
+    {
+      "code": "docs/es/docs/features.md",
+      "language": "unknown"
+    },
+    {
+      "code": "// Use the command new-lang, pass the language code as a CLI argument\n$ python ./scripts/docs.py new-lang la\n\nSuccessfully initialized: docs/la",
+      "language": "unknown"
+    },
+    {
+      "code": "INHERIT: ../en/mkdocs.yml",
+      "language": "unknown"
+    },
+    {
+      "code": "// Use the command \"build-all\", this will take a bit\n$ python ./scripts/docs.py build-all\n\nBuilding docs for: en\nBuilding docs for: es\nSuccessfully built docs for: es",
+      "language": "unknown"
+    },
+    {
+      "code": "// Use the command \"serve\" after running \"build-all\"\n$ python ./scripts/docs.py serve\n\nWarning: this is a very simple server. For development, use mkdocs serve instead.\nThis is here only to preview a site with translations already built.\nMake sure you run the build-all command first.\nServing at: http://127.0.0.1:8008",
+      "language": "unknown"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://fastapi.tiangolo.com/contributing/",
+    "https://fastapi.tiangolo.com/help-fastapi/",
+    "https://fastapi.tiangolo.com/virtual-environments/",
+    "https://fastapi.tiangolo.com/features/"
+  ]
+}

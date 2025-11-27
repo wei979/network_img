@@ -1,0 +1,19 @@
+{
+  "url": "https://react.dev/blog/2020/12/21/data-fetching-with-react-server-components",
+  "title": "Introducing Zero-Bundle-Size React Server Components",
+  "content": "December 21, 2020 by Dan Abramov, Lauren Tan, Joseph Savona, and Sebastian Markbåge\n\n2020 has been a long year. As it comes to an end we wanted to share a special Holiday Update on our research into zero-bundle-size React Server Components.\n\nTo introduce React Server Components, we have prepared a talk and a demo. If you want, you can check them out during the holidays, or later when work picks back up in the new year.\n\nReact Server Components are still in research and development. We are sharing this work in the spirit of transparency and to get initial feedback from the React community. There will be plenty of time for that, so don’t feel like you have to catch up right now!\n\nIf you want to check them out, we recommend going in the following order:\n\nWatch the talk to learn about React Server Components and see the demo.\n\nClone the demo to play with React Server Components on your computer.\n\nRead the RFC (with FAQ at the end) for a deeper technical breakdown and to provide feedback.\n\nWe are excited to hear from you on the RFC or in replies to the @reactjs Twitter handle. Happy holidays, stay safe, and see you next year!",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Introducing Zero-Bundle-Size React Server Components",
+      "id": ""
+    }
+  ],
+  "code_samples": [],
+  "patterns": [],
+  "links": [
+    "https://react.dev/blog",
+    "https://react.dev/blog/2020/12/21/data-fetching-with-react-server-components",
+    "https://react.dev/blog/2021/06/08/the-plan-for-react-18"
+  ]
+}

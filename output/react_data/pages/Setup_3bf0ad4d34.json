@@ -1,0 +1,48 @@
+{
+  "url": "https://react.dev/learn/setup",
+  "title": "Setup",
+  "content": "React integrates with tools like editors, TypeScript, browser extensions, and compilers. This section will help you get your environment set up.\n\nSee our recommended editors and learn how to set them up to work with React.\n\nTypeScript is a popular way to add type definitions to JavaScript codebases. Learn how to integrate TypeScript into your React projects.\n\nReact Developer Tools is a browser extension that can inspect React components, edit props and state, and identify performance problems. Learn how to install it here.\n\nReact Compiler is a tool that automatically optimizes your React app. Learn more.\n\nHead to the Quick Start guide for a tour of the most important React concepts you will encounter every day.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Setup",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Editor Setup",
+      "id": "editor-setup"
+    },
+    {
+      "level": "h2",
+      "text": "Using TypeScript",
+      "id": "using-typescript"
+    },
+    {
+      "level": "h2",
+      "text": "React Developer Tools",
+      "id": "react-developer-tools"
+    },
+    {
+      "level": "h2",
+      "text": "React Compiler",
+      "id": "react-compiler"
+    },
+    {
+      "level": "h2",
+      "text": "Next steps",
+      "id": "next-steps"
+    }
+  ],
+  "code_samples": [],
+  "patterns": [],
+  "links": [
+    "https://react.dev/learn",
+    "https://react.dev/learn/setup",
+    "https://react.dev/learn/editor-setup",
+    "https://react.dev/learn/typescript",
+    "https://react.dev/learn/react-developer-tools",
+    "https://react.dev/learn/react-compiler",
+    "https://react.dev/learn/add-react-to-an-existing-project"
+  ]
+}

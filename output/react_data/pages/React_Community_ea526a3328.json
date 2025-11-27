@@ -1,0 +1,39 @@
+{
+  "url": "https://react.dev/community",
+  "title": "React Community",
+  "content": "React has a community of millions of developers. On this page we’ve listed some React-related communities that you can be a part of; see the other pages in this section for additional online and in-person learning materials.\n\nBefore participating in React’s communities, please read our Code of Conduct. We have adopted the Contributor Covenant and we expect that all community members adhere to the guidelines within.\n\nStack Overflow is a popular forum to ask code-level questions or if you’re stuck with a specific error. Read through the existing questions tagged with reactjs or ask your own!\n\nThere are many online forums which are a great place for discussion about best practices and application architecture as well as the future of React. If you have an answerable code-level question, Stack Overflow is usually a better fit.\n\nEach community consists of many thousands of React users.\n\nFor the latest news about React, follow @reactjs on Twitter, @react.dev on Bluesky and the official React blog on this website.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "React Community",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Code of Conduct",
+      "id": "code-of-conduct"
+    },
+    {
+      "level": "h2",
+      "text": "Stack Overflow",
+      "id": "stack-overflow"
+    },
+    {
+      "level": "h2",
+      "text": "Popular Discussion Forums",
+      "id": "popular-discussion-forums"
+    },
+    {
+      "level": "h2",
+      "text": "News",
+      "id": "news"
+    }
+  ],
+  "code_samples": [],
+  "patterns": [],
+  "links": [
+    "https://react.dev/community",
+    "https://react.dev/blog",
+    "https://react.dev/community/conferences"
+  ]
+}

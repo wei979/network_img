@@ -1,0 +1,163 @@
+{
+  "url": "https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/",
+  "title": "Dependencies with yield¶",
+  "content": "FastAPI supports dependencies that do some extra steps after finishing.\n\nTo do this, use yield instead of return, and write the extra steps (code) after.\n\nMake sure to use yield one single time per dependency.\n\nAny function that is valid to use with:\n\nwould be valid to use as a FastAPI dependency.\n\nIn fact, FastAPI uses those two decorators internally.\n\nFor example, you could use this to create a database session and close it after finishing.\n\nOnly the code prior to and including the yield statement is executed before creating a response:\n\nThe yielded value is what is injected into path operations and other dependencies:\n\nThe code following the yield statement is executed after the response:\n\nYou can use async or regular functions.\n\nFastAPI will do the right thing with each, the same as with normal dependencies.\n\nIf you use a try block in a dependency with yield, you'll receive any exception that was thrown when using the dependency.\n\nFor example, if some code at some point in the middle, in another dependency or in a path operation, made a database transaction \"rollback\" or created any other exception, you would receive the exception in your dependency.\n\nSo, you can look for that specific exception inside the dependency with except SomeException.\n\nIn the same way, you can use finally to make sure the exit steps are executed, no matter if there was an exception or not.\n\nYou can have sub-dependencies and \"trees\" of sub-dependencies of any size and shape, and any or all of them can use yield.\n\nFastAPI will make sure that the \"exit code\" in each dependency with yield is run in the correct order.\n\nFor example, dependency_c can have a dependency on dependency_b, and dependency_b on dependency_a:\n\nPrefer to use the Annotated version if possible.\n\nAnd all of them can use yield.\n\nIn this case dependency_c, to execute its exit code, needs the value from dependency_b (here named dep_b) to still be available.\n\nAnd, in turn, dependency_b needs the value from dependency_a (here named dep_a) to be available for its exit code.\n\nPrefer to use the Annotated version if possible.\n\nThe same way, you could have some dependencies with yield and some other dependencies with return, and have some of those depend on some of the others.\n\nAnd you could have a single dependency that requires several other dependencies with yield, etc.\n\nYou can have any combinations of dependencies that you want.\n\nFastAPI will make sure everything is run in the correct order.\n\nThis works thanks to Python's Context Managers.\n\nFastAPI uses them internally to achieve this.\n\nYou saw that you can use dependencies with yield and have try blocks that try to execute some code and then run some exit code after finally.\n\nYou can also use except to catch the exception that was raised and do something with it.\n\nFor example, you can raise a different exception, like HTTPException.\n\nThis is a somewhat advanced technique, and in most of the cases you won't really need it, as you can raise exceptions (including HTTPException) from inside of the rest of your application code, for example, in the path operation function.\n\nBut it's there for you if you need it. 🤓\n\nPrefer to use the Annotated version if possible.\n\nIf you want to catch exceptions and create a custom response based on that, create a Custom Exception Handler.\n\nIf you catch an exception using except in a dependency with yield and you don't raise it again (or raise a new exception), FastAPI won't be able to notice there was an exception, the same way that would happen with regular Python:\n\nPrefer to use the Annotated version if possible.\n\nIn this case, the client will see an HTTP 500 Internal Server Error response as it should, given that we are not raising an HTTPException or similar, but the server will not have any logs or any other indication of what was the error. 😱\n\nIf you catch an exception in a dependency with yield, unless you are raising another HTTPException or similar, you should re-raise the original exception.\n\nYou can re-raise the same exception using raise:\n\nPrefer to use the Annotated version if possible.\n\nNow the client will get the same HTTP 500 Internal Server Error response, but the server will have our custom InternalError in the logs. 😎\n\nThe sequence of execution is more or less like this diagram. Time flows from top to bottom. And each column is one of the parts interacting or executing code.\n\nOnly one response will be sent to the client. It might be one of the error responses or it will be the response from the path operation.\n\nAfter one of those responses is sent, no other response can be sent.\n\nIf you raise any exception in the code from the path operation function, it will be passed to the dependencies with yield, including HTTPException. In most cases you will want to re-raise that same exception or a new one from the dependency with yield to make sure it's properly handled.\n\nDependencies with yield have evolved over time to cover different use cases and fix some issues.\n\nIf you want to see what has changed in different versions of FastAPI, you can read more about it in the advanced guide, in Advanced Dependencies - Dependencies with yield, HTTPException, except and Background Tasks.\n\n\"Context Managers\" are any of those Python objects that you can use in a with statement.\n\nFor example, you can use with to read a file:\n\nUnderneath, the open(\"./somefile.txt\") creates an object that is called a \"Context Manager\".\n\nWhen the with block finishes, it makes sure to close the file, even if there were exceptions.\n\nWhen you create a dependency with yield, FastAPI will internally create a context manager for it, and combine it with some other related tools.\n\nThis is, more or less, an \"advanced\" idea.\n\nIf you are just starting with FastAPI you might want to skip it for now.\n\nIn Python, you can create Context Managers by creating a class with two methods: __enter__() and __exit__().\n\nYou can also use them inside of FastAPI dependencies with yield by using with or async with statements inside of the dependency function:\n\nAnother way to create a context manager is with:\n\nusing them to decorate a function with a single yield.\n\nThat's what FastAPI uses internally for dependencies with yield.\n\nBut you don't have to use the decorators for FastAPI dependencies (and you shouldn't).\n\nFastAPI will do it for you internally.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Dependencies with yield¶",
+      "id": "dependencies-with-yield"
+    },
+    {
+      "level": "h2",
+      "text": "A database dependency with yield¶",
+      "id": "a-database-dependency-with-yield"
+    },
+    {
+      "level": "h2",
+      "text": "A dependency with yield and try¶",
+      "id": "a-dependency-with-yield-and-try"
+    },
+    {
+      "level": "h2",
+      "text": "Sub-dependencies with yield¶",
+      "id": "sub-dependencies-with-yield"
+    },
+    {
+      "level": "h2",
+      "text": "Dependencies with yield and HTTPException¶",
+      "id": "dependencies-with-yield-and-httpexception"
+    },
+    {
+      "level": "h2",
+      "text": "Dependencies with yield and except¶",
+      "id": "dependencies-with-yield-and-except"
+    },
+    {
+      "level": "h3",
+      "text": "Always raise in Dependencies with yield and except¶",
+      "id": "always-raise-in-dependencies-with-yield-and-except"
+    },
+    {
+      "level": "h2",
+      "text": "Execution of dependencies with yield¶",
+      "id": "execution-of-dependencies-with-yield"
+    },
+    {
+      "level": "h2",
+      "text": "Dependencies with yield, HTTPException, except and Background Tasks¶",
+      "id": "dependencies-with-yield-httpexception-except-and-background-tasks"
+    },
+    {
+      "level": "h2",
+      "text": "Context Managers¶",
+      "id": "context-managers"
+    },
+    {
+      "level": "h3",
+      "text": "What are \"Context Managers\"¶",
+      "id": "what-are-context-managers"
+    },
+    {
+      "level": "h3",
+      "text": "Using context managers in dependencies with yield¶",
+      "id": "using-context-managers-in-dependencies-with-yield"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "async def get_db():\n    db = DBSession()\n    try:\n        yield db\n    finally:\n        db.close()",
+      "language": "python"
+    },
+    {
+      "code": "async def get_db():\n    db = DBSession()\n    try:\n        yield db\n    finally:\n        db.close()",
+      "language": "python"
+    },
+    {
+      "code": "async def get_db():\n    db = DBSession()\n    try:\n        yield db\n    finally:\n        db.close()",
+      "language": "python"
+    },
+    {
+      "code": "async def get_db():\n    db = DBSession()\n    try:\n        yield db\n    finally:\n        db.close()",
+      "language": "python"
+    },
+    {
+      "code": "from typing import Annotated\n\nfrom fastapi import Depends\n\n\nasync def dependency_a():\n    dep_a = generate_dep_a()\n    try:\n        yield dep_a\n    finally:\n        dep_a.close()\n\n\nasync def dependency_b(dep_a: Annotated[DepA, Depends(dependency_a)]):\n    dep_b = generate_dep_b()\n    try:\n        yield dep_b\n    finally:\n        dep_b.close(dep_a)\n\n\nasync def dependency_c(dep_b: Annotated[DepB, Depends(dependency_b)]):\n    dep_c = generate_dep_c()\n    try:\n        yield dep_c\n    finally:\n        dep_c.close(dep_b)",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import Depends\nfrom typing_extensions import Annotated\n\n\nasync def dependency_a():\n    dep_a = generate_dep_a()\n    try:\n        yield dep_a\n    finally:\n        dep_a.close()\n\n\nasync def dependency_b(dep_a: Annotated[DepA, Depends(dependency_a)]):\n    dep_b = generate_dep_b()\n    try:\n        yield dep_b\n    finally:\n        dep_b.close(dep_a)\n\n\nasync def dependency_c(dep_b: Annotated[DepB, Depends(dependency_b)]):\n    dep_c = generate_dep_c()\n    try:\n        yield dep_c\n    finally:\n        dep_c.close(dep_b)",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import Depends\n\n\nasync def dependency_a():\n    dep_a = generate_dep_a()\n    try:\n        yield dep_a\n    finally:\n        dep_a.close()\n\n\nasync def dependency_b(dep_a=Depends(dependency_a)):\n    dep_b = generate_dep_b()\n    try:\n        yield dep_b\n    finally:\n        dep_b.close(dep_a)\n\n\nasync def dependency_c(dep_b=Depends(dependency_b)):\n    dep_c = generate_dep_c()\n    try:\n        yield dep_c\n    finally:\n        dep_c.close(dep_b)",
+      "language": "python"
+    },
+    {
+      "code": "from typing import Annotated\n\nfrom fastapi import Depends\n\n\nasync def dependency_a():\n    dep_a = generate_dep_a()\n    try:\n        yield dep_a\n    finally:\n        dep_a.close()\n\n\nasync def dependency_b(dep_a: Annotated[DepA, Depends(dependency_a)]):\n    dep_b = generate_dep_b()\n    try:\n        yield dep_b\n    finally:\n        dep_b.close(dep_a)\n\n\nasync def dependency_c(dep_b: Annotated[DepB, Depends(dependency_b)]):\n    dep_c = generate_dep_c()\n    try:\n        yield dep_c\n    finally:\n        dep_c.close(dep_b)",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import Depends\nfrom typing_extensions import Annotated\n\n\nasync def dependency_a():\n    dep_a = generate_dep_a()\n    try:\n        yield dep_a\n    finally:\n        dep_a.close()\n\n\nasync def dependency_b(dep_a: Annotated[DepA, Depends(dependency_a)]):\n    dep_b = generate_dep_b()\n    try:\n        yield dep_b\n    finally:\n        dep_b.close(dep_a)\n\n\nasync def dependency_c(dep_b: Annotated[DepB, Depends(dependency_b)]):\n    dep_c = generate_dep_c()\n    try:\n        yield dep_c\n    finally:\n        dep_c.close(dep_b)",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import Depends\n\n\nasync def dependency_a():\n    dep_a = generate_dep_a()\n    try:\n        yield dep_a\n    finally:\n        dep_a.close()\n\n\nasync def dependency_b(dep_a=Depends(dependency_a)):\n    dep_b = generate_dep_b()\n    try:\n        yield dep_b\n    finally:\n        dep_b.close(dep_a)\n\n\nasync def dependency_c(dep_b=Depends(dependency_b)):\n    dep_c = generate_dep_c()\n    try:\n        yield dep_c\n    finally:\n        dep_c.close(dep_b)",
+      "language": "python"
+    },
+    {
+      "code": "from typing import Annotated\n\nfrom fastapi import Depends, FastAPI, HTTPException\n\napp = FastAPI()\n\n\ndata = {\n    \"plumbus\": {\"description\": \"Freshly pickled plumbus\", \"owner\": \"Morty\"},\n    \"portal-gun\": {\"description\": \"Gun to create portals\", \"owner\": \"Rick\"},\n}\n\n\nclass OwnerError(Exception):\n    pass\n\n\ndef get_username():\n    try:\n        yield \"Rick\"\n    except OwnerError as e:\n        raise HTTPException(status_code=400, detail=f\"Owner error: {e}\")\n\n\n@app.get(\"/items/{item_id}\")\ndef get_item(item_id: str, username: Annotated[str, Depends(get_username)]):\n    if item_id not in data:\n        raise HTTPException(status_code=404, detail=\"Item not found\")\n    item = data[item_id]\n    if item[\"owner\"] != username:\n        raise OwnerError(username)\n    return item",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import Depends, FastAPI, HTTPException\nfrom typing_extensions import Annotated\n\napp = FastAPI()\n\n\ndata = {\n    \"plumbus\": {\"description\": \"Freshly pickled plumbus\", \"owner\": \"Morty\"},\n    \"portal-gun\": {\"description\": \"Gun to create portals\", \"owner\": \"Rick\"},\n}\n\n\nclass OwnerError(Exception):\n    pass\n\n\ndef get_username():\n    try:\n        yield \"Rick\"\n    except OwnerError as e:\n        raise HTTPException(status_code=400, detail=f\"Owner error: {e}\")\n\n\n@app.get(\"/items/{item_id}\")\ndef get_item(item_id: str, username: Annotated[str, Depends(get_username)]):\n    if item_id not in data:\n        raise HTTPException(status_code=404, detail=\"Item not found\")\n    item = data[item_id]\n    if item[\"owner\"] != username:\n        raise OwnerError(username)\n    return item",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import Depends, FastAPI, HTTPException\n\napp = FastAPI()\n\n\ndata = {\n    \"plumbus\": {\"description\": \"Freshly pickled plumbus\", \"owner\": \"Morty\"},\n    \"portal-gun\": {\"description\": \"Gun to create portals\", \"owner\": \"Rick\"},\n}\n\n\nclass OwnerError(Exception):\n    pass\n\n\ndef get_username():\n    try:\n        yield \"Rick\"\n    except OwnerError as e:\n        raise HTTPException(status_code=400, detail=f\"Owner error: {e}\")\n\n\n@app.get(\"/items/{item_id}\")\ndef get_item(item_id: str, username: str = Depends(get_username)):\n    if item_id not in data:\n        raise HTTPException(status_code=404, detail=\"Item not found\")\n    item = data[item_id]\n    if item[\"owner\"] != username:\n        raise OwnerError(username)\n    return item",
+      "language": "python"
+    },
+    {
+      "code": "from typing import Annotated\n\nfrom fastapi import Depends, FastAPI, HTTPException\n\napp = FastAPI()\n\n\nclass InternalError(Exception):\n    pass\n\n\ndef get_username():\n    try:\n        yield \"Rick\"\n    except InternalError:\n        print(\"Oops, we didn't raise again, Britney 😱\")\n\n\n@app.get(\"/items/{item_id}\")\ndef get_item(item_id: str, username: Annotated[str, Depends(get_username)]):\n    if item_id == \"portal-gun\":\n        raise InternalError(\n            f\"The portal gun is too dangerous to be owned by {username}\"\n        )\n    if item_id != \"plumbus\":\n        raise HTTPException(\n            status_code=404, detail=\"Item not found, there's only a plumbus here\"\n        )\n    return item_id",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import Depends, FastAPI, HTTPException\nfrom typing_extensions import Annotated\n\napp = FastAPI()\n\n\nclass InternalError(Exception):\n    pass\n\n\ndef get_username():\n    try:\n        yield \"Rick\"\n    except InternalError:\n        print(\"Oops, we didn't raise again, Britney 😱\")\n\n\n@app.get(\"/items/{item_id}\")\ndef get_item(item_id: str, username: Annotated[str, Depends(get_username)]):\n    if item_id == \"portal-gun\":\n        raise InternalError(\n            f\"The portal gun is too dangerous to be owned by {username}\"\n        )\n    if item_id != \"plumbus\":\n        raise HTTPException(\n            status_code=404, detail=\"Item not found, there's only a plumbus here\"\n        )\n    return item_id",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import Depends, FastAPI, HTTPException\n\napp = FastAPI()\n\n\nclass InternalError(Exception):\n    pass\n\n\ndef get_username():\n    try:\n        yield \"Rick\"\n    except InternalError:\n        print(\"Oops, we didn't raise again, Britney 😱\")\n\n\n@app.get(\"/items/{item_id}\")\ndef get_item(item_id: str, username: str = Depends(get_username)):\n    if item_id == \"portal-gun\":\n        raise InternalError(\n            f\"The portal gun is too dangerous to be owned by {username}\"\n        )\n    if item_id != \"plumbus\":\n        raise HTTPException(\n            status_code=404, detail=\"Item not found, there's only a plumbus here\"\n        )\n    return item_id",
+      "language": "python"
+    },
+    {
+      "code": "from typing import Annotated\n\nfrom fastapi import Depends, FastAPI, HTTPException\n\napp = FastAPI()\n\n\nclass InternalError(Exception):\n    pass\n\n\ndef get_username():\n    try:\n        yield \"Rick\"\n    except InternalError:\n        print(\"We don't swallow the internal error here, we raise again 😎\")\n        raise\n\n\n@app.get(\"/items/{item_id}\")\ndef get_item(item_id: str, username: Annotated[str, Depends(get_username)]):\n    if item_id == \"portal-gun\":\n        raise InternalError(\n            f\"The portal gun is too dangerous to be owned by {username}\"\n        )\n    if item_id != \"plumbus\":\n        raise HTTPException(\n            status_code=404, detail=\"Item not found, there's only a plumbus here\"\n        )\n    return item_id",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import Depends, FastAPI, HTTPException\nfrom typing_extensions import Annotated\n\napp = FastAPI()\n\n\nclass InternalError(Exception):\n    pass\n\n\ndef get_username():\n    try:\n        yield \"Rick\"\n    except InternalError:\n        print(\"We don't swallow the internal error here, we raise again 😎\")\n        raise\n\n\n@app.get(\"/items/{item_id}\")\ndef get_item(item_id: str, username: Annotated[str, Depends(get_username)]):\n    if item_id == \"portal-gun\":\n        raise InternalError(\n            f\"The portal gun is too dangerous to be owned by {username}\"\n        )\n    if item_id != \"plumbus\":\n        raise HTTPException(\n            status_code=404, detail=\"Item not found, there's only a plumbus here\"\n        )\n    return item_id",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import Depends, FastAPI, HTTPException\n\napp = FastAPI()\n\n\nclass InternalError(Exception):\n    pass\n\n\ndef get_username():\n    try:\n        yield \"Rick\"\n    except InternalError:\n        print(\"We don't swallow the internal error here, we raise again 😎\")\n        raise\n\n\n@app.get(\"/items/{item_id}\")\ndef get_item(item_id: str, username: str = Depends(get_username)):\n    if item_id == \"portal-gun\":\n        raise InternalError(\n            f\"The portal gun is too dangerous to be owned by {username}\"\n        )\n    if item_id != \"plumbus\":\n        raise HTTPException(\n            status_code=404, detail=\"Item not found, there's only a plumbus here\"\n        )\n    return item_id",
+      "language": "python"
+    },
+    {
+      "code": "sequenceDiagram\n\nparticipant client as Client\nparticipant handler as Exception handler\nparticipant dep as Dep with yield\nparticipant operation as Path Operation\nparticipant tasks as Background tasks\n\n    Note over client,operation: Can raise exceptions, including HTTPException\n    client ->> dep: Start request\n    Note over dep: Run code up to yield\n    opt raise Exception\n        dep -->> handler: Raise Exception\n        handler -->> client: HTTP error response\n    end\n    dep ->> operation: Run dependency, e.g. DB session\n    opt raise\n        operation -->> dep: Raise Exception (e.g. HTTPException)\n        opt handle\n            dep -->> dep: Can catch exception, raise a new HTTPException, raise other exception\n        end\n        handler -->> client: HTTP error response\n    end\n\n    operation ->> client: Return response to client\n    Note over client,operation: Response is already sent, can't change it anymore\n    opt Tasks\n        operation -->> tasks: Send background tasks\n    end\n    opt Raise other exception\n        tasks -->> tasks: Handle exceptions in the background task code\n    end",
+      "language": "unknown"
+    },
+    {
+      "code": "with open(\"./somefile.txt\") as f:\n    contents = f.read()\n    print(contents)",
+      "language": "unknown"
+    },
+    {
+      "code": "class MySuperContextManager:\n    def __init__(self):\n        self.db = DBSession()\n\n    def __enter__(self):\n        return self.db\n\n    def __exit__(self, exc_type, exc_value, traceback):\n        self.db.close()\n\n\nasync def get_db():\n    with MySuperContextManager() as db:\n        yield db",
+      "language": "python"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/",
+    "https://fastapi.tiangolo.com/tutorial/handling-errors/",
+    "https://fastapi.tiangolo.com/advanced/advanced-dependencies/"
+  ]
+}

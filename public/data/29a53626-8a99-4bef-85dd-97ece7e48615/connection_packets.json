@@ -1,0 +1,1054 @@
+{
+  "flood-10.0.0.2-10.128.0.2-80": [
+    {
+      "index": 0,
+      "timestamp": 1541492732.789275,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2977,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 1893686098,
+          "ack": 19856607,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2977-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.000s"
+    },
+    {
+      "index": 1,
+      "timestamp": 1541492732.797708,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2978,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 196711645,
+          "ack": 2027938803,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2978-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.008s"
+    },
+    {
+      "index": 2,
+      "timestamp": 1541492732.806167,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2979,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 857610715,
+          "ack": 235016311,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2979-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.017s"
+    },
+    {
+      "index": 3,
+      "timestamp": 1541492732.814668,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2980,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 1244102895,
+          "ack": 364121453,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2980-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.025s"
+    },
+    {
+      "index": 4,
+      "timestamp": 1541492732.823121,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2981,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 532143666,
+          "ack": 1675155557,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2981-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.034s"
+    },
+    {
+      "index": 5,
+      "timestamp": 1541492732.831713,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2982,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 169985702,
+          "ack": 853519549,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2982-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.042s"
+    },
+    {
+      "index": 6,
+      "timestamp": 1541492732.84018,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2983,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 1020899266,
+          "ack": 1135005811,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2983-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.051s"
+    },
+    {
+      "index": 7,
+      "timestamp": 1541492732.84862,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2984,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 852336017,
+          "ack": 1351049965,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2984-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.059s"
+    },
+    {
+      "index": 8,
+      "timestamp": 1541492732.85707,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2985,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 1946850652,
+          "ack": 333883264,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2985-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.068s"
+    },
+    {
+      "index": 9,
+      "timestamp": 1541492732.865496,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2986,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 206125297,
+          "ack": 721883074,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2986-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.076s"
+    },
+    {
+      "index": 10,
+      "timestamp": 1541492732.873965,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2987,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 1551295579,
+          "ack": 468085525,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2987-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.085s"
+    },
+    {
+      "index": 11,
+      "timestamp": 1541492732.882379,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2988,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 2058169849,
+          "ack": 664797170,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2988-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.093s"
+    },
+    {
+      "index": 12,
+      "timestamp": 1541492732.890792,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2989,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 242398877,
+          "ack": 1522407885,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2989-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.102s"
+    },
+    {
+      "index": 13,
+      "timestamp": 1541492732.899239,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2990,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 2020121091,
+          "ack": 619027132,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2990-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.110s"
+    },
+    {
+      "index": 14,
+      "timestamp": 1541492732.907668,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2991,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 1787212964,
+          "ack": 1151170798,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2991-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.118s"
+    },
+    {
+      "index": 15,
+      "timestamp": 1541492732.916101,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2992,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 1048605225,
+          "ack": 1321156501,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2992-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.127s"
+    },
+    {
+      "index": 16,
+      "timestamp": 1541492732.924638,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2993,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 712325276,
+          "ack": 194572119,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2993-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.135s"
+    },
+    {
+      "index": 17,
+      "timestamp": 1541492732.933084,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2994,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 1871425560,
+          "ack": 1046908137,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2994-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.144s"
+    },
+    {
+      "index": 18,
+      "timestamp": 1541492732.941554,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2995,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 260532214,
+          "ack": 846275141,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2995-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.152s"
+    },
+    {
+      "index": 19,
+      "timestamp": 1541492732.949978,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2996,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 1385331774,
+          "ack": 1052400439,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2996-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.161s"
+    },
+    {
+      "index": 20,
+      "timestamp": 1541492732.958387,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2997,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 1657557221,
+          "ack": 456212370,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2997-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.169s"
+    },
+    {
+      "index": 21,
+      "timestamp": 1541492732.966809,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2998,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 1949639275,
+          "ack": 366898571,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2998-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.178s"
+    },
+    {
+      "index": 22,
+      "timestamp": 1541492732.975245,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 2999,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 2122176485,
+          "ack": 609297449,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:2999-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.186s"
+    },
+    {
+      "index": 23,
+      "timestamp": 1541492732.983657,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 3000,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 382246358,
+          "ack": 481934892,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:3000-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.194s"
+    },
+    {
+      "index": 24,
+      "timestamp": 1541492732.992085,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 3001,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 1153921332,
+          "ack": 121664208,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:3001-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.203s"
+    },
+    {
+      "index": 25,
+      "timestamp": 1541492733.000501,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 3002,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 1453268215,
+          "ack": 1170269433,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:3002-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.211s"
+    },
+    {
+      "index": 26,
+      "timestamp": 1541492733.008925,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 3003,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 458650999,
+          "ack": 1882594710,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:3003-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.220s"
+    },
+    {
+      "index": 27,
+      "timestamp": 1541492733.017348,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 3004,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 599039594,
+          "ack": 1606536622,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:3004-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.228s"
+    },
+    {
+      "index": 28,
+      "timestamp": 1541492733.025771,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 3005,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 2090478154,
+          "ack": 1867068836,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:3005-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.236s"
+    },
+    {
+      "index": 29,
+      "timestamp": 1541492733.034227,
+      "length": 54,
+      "fiveTuple": {
+        "srcIp": "10.0.0.2",
+        "dstIp": "10.128.0.2",
+        "srcPort": 3006,
+        "dstPort": 80,
+        "protocol": "TCP"
+      },
+      "headers": {
+        "ip": {
+          "version": 4,
+          "ttl": 64,
+          "protocol": 6
+        },
+        "tcp": {
+          "flags": "PSH",
+          "seq": 1768316331,
+          "ack": 1104916962,
+          "window": 512,
+          "dataOffset": 5,
+          "options": null
+        }
+      },
+      "payload": {
+        "length": 0,
+        "preview": ""
+      },
+      "streamId": "tcp-10.0.0.2:3006-10.128.0.2:80",
+      "errorType": null,
+      "http": null,
+      "relativeTime": "0.245s"
+    }
+  ]
+}

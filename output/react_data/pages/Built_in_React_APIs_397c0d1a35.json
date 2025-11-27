@@ -1,0 +1,42 @@
+{
+  "url": "https://react.dev/reference/react/apis",
+  "title": "Built-in React APIs",
+  "content": "In addition to Hooks and Components, the react package exports a few other APIs that are useful for defining components. This page lists all the remaining modern React APIs.\n\nResources can be accessed by a component without having them as part of their state. For example, a component can read a message from a Promise or read styling information from a context.\n\nTo read a value from a resource, use this API:",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Built-in React APIs",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Resource APIs",
+      "id": "resource-apis"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "function MessageComponent({ messagePromise }) {  const message = use(messagePromise);  const theme = use(ThemeContext);  // ...}",
+      "language": "javascript"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://react.dev/reference/react",
+    "https://react.dev/reference/react/apis",
+    "https://react.dev/reference/react/hooks",
+    "https://react.dev/reference/react/components",
+    "https://react.dev/reference/react/createContext",
+    "https://react.dev/reference/react/useContext",
+    "https://react.dev/reference/react/lazy",
+    "https://react.dev/reference/react/memo",
+    "https://react.dev/reference/react/useMemo",
+    "https://react.dev/reference/react/useCallback",
+    "https://react.dev/reference/react/startTransition",
+    "https://react.dev/reference/react/useTransition",
+    "https://react.dev/reference/react/act",
+    "https://react.dev/reference/react/use",
+    "https://react.dev/learn/passing-data-deeply-with-context",
+    "https://react.dev/reference/react/ViewTransition"
+  ]
+}

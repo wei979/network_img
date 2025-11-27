@@ -1,0 +1,189 @@
+{
+  "url": "https://react.dev/blog/2022/03/29/react-v18",
+  "title": "React v18.0",
+  "content": "March 29, 2022 by The React Team\n\nReact 18 is now available on npm! In our last post, we shared step-by-step instructions for upgrading your app to React 18. In this post, we’ll give an overview of what’s new in React 18, and what it means for the future.\n\nOur latest major version includes out-of-the-box improvements like automatic batching, new APIs like startTransition, and streaming server-side rendering with support for Suspense.\n\nMany of the features in React 18 are built on top of our new concurrent renderer, a behind-the-scenes change that unlocks powerful new capabilities. Concurrent React is opt-in — it’s only enabled when you use a concurrent feature — but we think it will have a big impact on the way people build applications.\n\nWe’ve spent years researching and developing support for concurrency in React, and we’ve taken extra care to provide a gradual adoption path for existing users. Last summer, we formed the React 18 Working Group to gather feedback from experts in the community and ensure a smooth upgrade experience for the entire React ecosystem.\n\nIn case you missed it, we shared a lot of this vision at React Conf 2021:\n\nBelow is a full overview of what to expect in this release, starting with Concurrent Rendering.\n\nFor React Native users, React 18 will ship in React Native with the New React Native Architecture. For more information, see the React Conf keynote here.\n\nThe most important addition in React 18 is something we hope you never have to think about: concurrency. We think this is largely true for application developers, though the story may be a bit more complicated for library maintainers.\n\nConcurrency is not a feature, per se. It’s a new behind-the-scenes mechanism that enables React to prepare multiple versions of your UI at the same time. You can think of concurrency as an implementation detail — it’s valuable because of the features that it unlocks. React uses sophisticated techniques in its internal implementation, like priority queues and multiple buffering. But you won’t see those concepts anywhere in our public APIs.\n\nWhen we design APIs, we try to hide implementation details from developers. As a React developer, you focus on what you want the user experience to look like, and React handles how to deliver that experience. So we don’t expect React developers to know how concurrency works under the hood.\n\nHowever, Concurrent React is more important than a typical implementation detail — it’s a foundational update to React’s core rendering model. So while it’s not super important to know how concurrency works, it may be worth knowing what it is at a high level.\n\nA key property of Concurrent React is that rendering is interruptible. When you first upgrade to React 18, before adding any concurrent features, updates are rendered the same as in previous versions of React — in a single, uninterrupted, synchronous transaction. With synchronous rendering, once an update starts rendering, nothing can interrupt it until the user can see the result on screen.\n\nIn a concurrent render, this is not always the case. React may start rendering an update, pause in the middle, then continue later. It may even abandon an in-progress render altogether. React guarantees that the UI will appear consistent even if a render is interrupted. To do this, it waits to perform DOM mutations until the end, once the entire tree has been evaluated. With this capability, React can prepare new screens in the background without blocking the main thread. This means the UI can respond immediately to user input even if it’s in the middle of a large rendering task, creating a fluid user experience.\n\nAnother example is reusable state. Concurrent React can remove sections of the UI from the screen, then add them back later while reusing the previous state. For example, when a user tabs away from a screen and back, React should be able to restore the previous screen in the same state it was in before. In an upcoming minor, we’re planning to add a new component called <Offscreen> that implements this pattern. Similarly, you’ll be able to use Offscreen to prepare new UI in the background so that it’s ready before the user reveals it.\n\nConcurrent rendering is a powerful new tool in React and most of our new features are built to take advantage of it, including Suspense, transitions, and streaming server rendering. But React 18 is just the beginning of what we aim to build on this new foundation.\n\nTechnically, concurrent rendering is a breaking change. Because concurrent rendering is interruptible, components behave slightly differently when it is enabled.\n\nIn our testing, we’ve upgraded thousands of components to React 18. What we’ve found is that nearly all existing components “just work” with concurrent rendering, without any changes. However, some of them may require some additional migration effort. Although the changes are usually small, you’ll still have the ability to make them at your own pace. The new rendering behavior in React 18 is only enabled in the parts of your app that use new features.\n\nThe overall upgrade strategy is to get your application running on React 18 without breaking existing code. Then you can gradually start adding concurrent features at your own pace. You can use <StrictMode> to help surface concurrency-related bugs during development. Strict Mode doesn’t affect production behavior, but during development it will log extra warnings and double-invoke functions that are expected to be idempotent. It won’t catch everything, but it’s effective at preventing the most common types of mistakes.\n\nAfter you upgrade to React 18, you’ll be able to start using concurrent features immediately. For example, you can use startTransition to navigate between screens without blocking user input. Or useDeferredValue to throttle expensive re-renders.\n\nHowever, long term, we expect the main way you’ll add concurrency to your app is by using a concurrent-enabled library or framework. In most cases, you won’t interact with concurrent APIs directly. For example, instead of developers calling startTransition whenever they navigate to a new screen, router libraries will automatically wrap navigations in startTransition.\n\nIt may take some time for libraries to upgrade to be concurrent compatible. We’ve provided new APIs to make it easier for libraries to take advantage of concurrent features. In the meantime, please be patient with maintainers as we work to gradually migrate the React ecosystem.\n\nFor more info, see our previous post: How to upgrade to React 18.\n\nIn React 18, you can start using Suspense for data fetching in opinionated frameworks like Relay, Next.js, Hydrogen, or Remix. Ad hoc data fetching with Suspense is technically possible, but still not recommended as a general strategy.\n\nIn the future, we may expose additional primitives that could make it easier to access your data with Suspense, perhaps without the use of an opinionated framework. However, Suspense works best when it’s deeply integrated into your application’s architecture: your router, your data layer, and your server rendering environment. So even long term, we expect that libraries and frameworks will play a crucial role in the React ecosystem.\n\nAs in previous versions of React, you can also use Suspense for code splitting on the client with React.lazy. But our vision for Suspense has always been about much more than loading code — the goal is to extend support for Suspense so that eventually, the same declarative Suspense fallback can handle any asynchronous operation (loading code, data, images, etc).\n\nServer Components is an upcoming feature that allows developers to build apps that span the server and client, combining the rich interactivity of client-side apps with the improved performance of traditional server rendering. Server Components is not inherently coupled to Concurrent React, but it’s designed to work best with concurrent features like Suspense and streaming server rendering.\n\nServer Components is still experimental, but we expect to release an initial version in a minor 18.x release. In the meantime, we’re working with frameworks like Next.js, Hydrogen, and Remix to advance the proposal and get it ready for broad adoption.\n\nBatching is when React groups multiple state updates into a single re-render for better performance. Without automatic batching, we only batched updates inside React event handlers. Updates inside of promises, setTimeout, native event handlers, or any other event were not batched in React by default. With automatic batching, these updates will be batched automatically:\n\nFor more info, see this post for Automatic batching for fewer renders in React 18.\n\nA transition is a new concept in React to distinguish between urgent and non-urgent updates.\n\nUrgent updates like typing, clicking, or pressing, need immediate response to match our intuitions about how physical objects behave. Otherwise they feel “wrong”. However, transitions are different because the user doesn’t expect to see every intermediate value on screen.\n\nFor example, when you select a filter in a dropdown, you expect the filter button itself to respond immediately when you click. However, the actual results may transition separately. A small delay would be imperceptible and often expected. And if you change the filter again before the results are done rendering, you only care to see the latest results.\n\nTypically, for the best user experience, a single user input should result in both an urgent update and a non-urgent one. You can use startTransition API inside an input event to inform React which updates are urgent and which are “transitions”:\n\nUpdates wrapped in startTransition are handled as non-urgent and will be interrupted if more urgent updates like clicks or key presses come in. If a transition gets interrupted by the user (for example, by typing multiple characters in a row), React will throw out the stale rendering work that wasn’t finished and render only the latest update.\n\nTransitions will opt in to concurrent rendering, which allows the update to be interrupted. If the content re-suspends, transitions also tell React to continue showing the current content while rendering the transition content in the background (see the Suspense RFC for more info).\n\nSee docs for transitions here.\n\nSuspense lets you declaratively specify the loading state for a part of the component tree if it’s not yet ready to be displayed:\n\nSuspense makes the “UI loading state” a first-class declarative concept in the React programming model. This lets us build higher-level features on top of it.\n\nWe introduced a limited version of Suspense several years ago. However, the only supported use case was code splitting with React.lazy, and it wasn’t supported at all when rendering on the server.\n\nIn React 18, we’ve added support for Suspense on the server and expanded its capabilities using concurrent rendering features.\n\nSuspense in React 18 works best when combined with the transition API. If you suspend during a transition, React will prevent already-visible content from being replaced by a fallback. Instead, React will delay the render until enough data has loaded to prevent a bad loading state.\n\nFor more, see the RFC for Suspense in React 18.\n\nIn this release we took the opportunity to redesign the APIs we expose for rendering on the client and server. These changes allow users to continue using the old APIs in React 17 mode while they upgrade to the new APIs in React 18.\n\nThese new APIs are now exported from react-dom/client:\n\nBoth createRoot and hydrateRoot accept a new option called onRecoverableError in case you want to be notified when React recovers from errors during rendering or hydration for logging. By default, React will use reportError, or console.error in the older browsers.\n\nSee docs for React DOM Client here.\n\nThese new APIs are now exported from react-dom/server and have full support for streaming Suspense on the server:\n\nThe existing renderToString method keeps working but is discouraged.\n\nSee docs for React DOM Server here.\n\nIn the future, we’d like to add a feature that allows React to add and remove sections of the UI while preserving state. For example, when a user tabs away from a screen and back, React should be able to immediately show the previous screen. To do this, React would unmount and remount trees using the same component state as before.\n\nThis feature will give React apps better performance out-of-the-box, but requires components to be resilient to effects being mounted and destroyed multiple times. Most effects will work without any changes, but some effects assume they are only mounted or destroyed once.\n\nTo help surface these issues, React 18 introduces a new development-only check to Strict Mode. This new check will automatically unmount and remount every component, whenever a component mounts for the first time, restoring the previous state on the second mount.\n\nBefore this change, React would mount the component and create the effects:\n\nWith Strict Mode in React 18, React will simulate unmounting and remounting the component in development mode:\n\nSee docs for ensuring reusable state here.\n\nuseId is a new Hook for generating unique IDs on both the client and server, while avoiding hydration mismatches. It is primarily useful for component libraries integrating with accessibility APIs that require unique IDs. This solves an issue that already exists in React 17 and below, but it’s even more important in React 18 because of how the new streaming server renderer delivers HTML out-of-order. See docs here.\n\nuseId is not for generating keys in a list. Keys should be generated from your data.\n\nuseTransition and startTransition let you mark some state updates as not urgent. Other state updates are considered urgent by default. React will allow urgent state updates (for example, updating a text input) to interrupt non-urgent state updates (for example, rendering a list of search results). See docs here.\n\nuseDeferredValue lets you defer re-rendering a non-urgent part of the tree. It is similar to debouncing, but has a few advantages compared to it. There is no fixed time delay, so React will attempt the deferred render right after the first render is reflected on the screen. The deferred render is interruptible and doesn’t block user input. See docs here.\n\nuseSyncExternalStore is a new Hook that allows external stores to support concurrent reads by forcing updates to the store to be synchronous. It removes the need for useEffect when implementing subscriptions to external data sources, and is recommended for any library that integrates with state external to React. See docs here.\n\nuseSyncExternalStore is intended to be used by libraries, not application code.\n\nuseInsertionEffect is a new Hook that allows CSS-in-JS libraries to address performance issues of injecting styles in render. Unless you’ve already built a CSS-in-JS library we don’t expect you to ever use this. This Hook will run after the DOM is mutated, but before layout effects read the new layout. This solves an issue that already exists in React 17 and below, but is even more important in React 18 because React yields to the browser during concurrent rendering, giving it a chance to recalculate layout. See docs here.\n\nuseInsertionEffect is intended to be used by libraries, not application code.\n\nSee How to Upgrade to React 18 for step-by-step instructions and a full list of breaking and notable changes.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "React v18.0",
+      "id": ""
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "What is Concurrent React?",
+      "id": "what-is-concurrent-react"
+    },
+    {
+      "level": "h2",
+      "text": "Gradually Adopting Concurrent Features",
+      "id": "gradually-adopting-concurrent-features"
+    },
+    {
+      "level": "h2",
+      "text": "Suspense in Data Frameworks",
+      "id": "suspense-in-data-frameworks"
+    },
+    {
+      "level": "h2",
+      "text": "Server Components is Still in Development",
+      "id": "server-components-is-still-in-development"
+    },
+    {
+      "level": "h2",
+      "text": "What’s New in React 18",
+      "id": "whats-new-in-react-18"
+    },
+    {
+      "level": "h3",
+      "text": "New Feature: Automatic Batching",
+      "id": "new-feature-automatic-batching"
+    },
+    {
+      "level": "h3",
+      "text": "New Feature: Transitions",
+      "id": "new-feature-transitions"
+    },
+    {
+      "level": "h3",
+      "text": "New Suspense Features",
+      "id": "new-suspense-features"
+    },
+    {
+      "level": "h3",
+      "text": "New Client and Server Rendering APIs",
+      "id": "new-client-and-server-rendering-apis"
+    },
+    {
+      "level": "h4",
+      "text": "React DOM Client",
+      "id": "react-dom-client"
+    },
+    {
+      "level": "h4",
+      "text": "React DOM Server",
+      "id": "react-dom-server"
+    },
+    {
+      "level": "h3",
+      "text": "New Strict Mode Behaviors",
+      "id": "new-strict-mode-behaviors"
+    },
+    {
+      "level": "h3",
+      "text": "New Hooks",
+      "id": "new-hooks"
+    },
+    {
+      "level": "h4",
+      "text": "useId",
+      "id": "useid"
+    },
+    {
+      "level": "h4",
+      "text": "useTransition",
+      "id": "usetransition"
+    },
+    {
+      "level": "h4",
+      "text": "useDeferredValue",
+      "id": "usedeferredvalue"
+    },
+    {
+      "level": "h4",
+      "text": "useSyncExternalStore",
+      "id": "usesyncexternalstore"
+    },
+    {
+      "level": "h4",
+      "text": "useInsertionEffect",
+      "id": "useinsertioneffect"
+    },
+    {
+      "level": "h2",
+      "text": "How to Upgrade",
+      "id": "how-to-upgrade"
+    },
+    {
+      "level": "h2",
+      "text": "Changelog",
+      "id": "changelog"
+    },
+    {
+      "level": "h3",
+      "text": "React",
+      "id": "react"
+    },
+    {
+      "level": "h3",
+      "text": "React DOM",
+      "id": "react-dom"
+    },
+    {
+      "level": "h3",
+      "text": "React DOM Server",
+      "id": "react-dom-server-1"
+    },
+    {
+      "level": "h3",
+      "text": "React DOM Test Utils",
+      "id": "react-dom-test-utils"
+    },
+    {
+      "level": "h3",
+      "text": "React Refresh",
+      "id": "react-refresh"
+    },
+    {
+      "level": "h3",
+      "text": "Server Components (Experimental)",
+      "id": "server-components-experimental"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "// Before: only React events were batched.setTimeout(() => {  setCount(c => c + 1);  setFlag(f => !f);  // React will render twice, once for each state update (no batching)}, 1000);// After: updates inside of timeouts, promises,// native event handlers or any other event are batched.setTimeout(() => {  setCount(c => c + 1);  setFlag(f => !f);  // React will only re-render once at the end (that's batching!)}, 1000);",
+      "language": "javascript"
+    },
+    {
+      "code": "import { startTransition } from 'react';// Urgent: Show what was typedsetInputValue(input);// Mark any state updates inside as transitionsstartTransition(() => {  // Transition: Show the results  setSearchQuery(input);});",
+      "language": "python"
+    },
+    {
+      "code": "<Suspense fallback={<Spinner />}>  <Comments /></Suspense>",
+      "language": "unknown"
+    },
+    {
+      "code": "* React mounts the component.  * Layout effects are created.  * Effects are created.",
+      "language": "unknown"
+    },
+    {
+      "code": "* React mounts the component.  * Layout effects are created.  * Effects are created.* React simulates unmounting the component.  * Layout effects are destroyed.  * Effects are destroyed.* React simulates mounting the component with the previous state.  * Layout effects are created.  * Effects are created.",
+      "language": "unknown"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://react.dev/blog",
+    "https://react.dev/blog/2022/03/29/react-v18",
+    "https://react.dev/community/team",
+    "https://react.dev/blog/2022/03/08/react-18-upgrade-guide",
+    "https://react.dev/blog/2021/06/08/the-plan-for-react-18",
+    "https://react.dev/reference/react/StrictMode",
+    "https://react.dev/reference/react/Suspense",
+    "https://react.dev/blog/2020/12/21/data-fetching-with-react-server-components",
+    "https://react.dev/reference/react/useTransition",
+    "https://react.dev/reference/react-dom/client",
+    "https://react.dev/reference/react-dom/server",
+    "https://react.dev/reference/react/useId",
+    "https://react.dev/learn/rendering-lists",
+    "https://react.dev/reference/react/useDeferredValue",
+    "https://react.dev/reference/react/useSyncExternalStore",
+    "https://react.dev/reference/react/useInsertionEffect",
+    "https://react.dev/blog/2022/06/15/react-labs-what-we-have-been-working-on-june-2022"
+  ]
+}

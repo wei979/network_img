@@ -1,0 +1,75 @@
+{
+  "url": "https://react.dev/blog/2021/12/17/react-conf-2021-recap",
+  "title": "React Conf 2021 Recap",
+  "content": "December 17, 2021 by Jesslyn Tannady and Rick Hanlon\n\nLast week we hosted our 6th React Conf. In previous years, we’ve used the React Conf stage to deliver industry changing announcements such as React Native and React Hooks. This year, we shared our multi-platform vision for React, starting with the release of React 18 and gradual adoption of concurrent features.\n\nThis was the first time React Conf was hosted online, and it was streamed for free, translated to 8 different languages. Participants from all over the world joined our conference Discord and the replay event for accessibility in all timezones. Over 50,000 people registered, with over 60,000 views of 19 talks, and 5,000 participants in Discord across both events.\n\nAll the talks are available to stream online.\n\nHere’s a summary of what was shared on stage:\n\nIn the keynote, we shared our vision for the future of React starting with React 18.\n\nReact 18 adds the long-awaited concurrent renderer and updates to Suspense without any major breaking changes. Apps can upgrade to React 18 and begin gradually adopting concurrent features with the amount of effort on par with any other major release.\n\nThis means there is no concurrent mode, only concurrent features.\n\nIn the keynote, we also shared our vision for Suspense, Server Components, new React working groups, and our long-term many-platform vision for React Native.\n\nWatch the full keynote from Andrew Clark, Juan Tejada, Lauren Tan, and Rick Hanlon here:\n\nIn the keynote, we also announced that the React 18 RC is available to try now. Pending further feedback, this is the exact version of React that we will publish to stable early next year.\n\nTo try the React 18 RC, upgrade your dependencies:\n\nand switch to the new createRoot API:\n\nFor a demo of upgrading to React 18, see Shruti Kapoor’s talk here:\n\nReact 18 also includes improvements to server-side rendering performance using Suspense.\n\nStreaming server rendering lets you generate HTML from React components on the server, and stream that HTML to your users. In React 18, you can use Suspense to break down your app into smaller independent units which can be streamed independently of each other without blocking the rest of the app. This means users will see your content sooner and be able to start interacting with it much faster.\n\nFor a deep dive, see Shaundai Person’s talk here:\n\nFor React 18, we created our first Working Group to collaborate with a panel of experts, developers, library maintainers, and educators. Together we worked to create our gradual adoption strategy and refine new APIs such as useId, useSyncExternalStore, and useInsertionEffect.\n\nFor an overview of this work, see Aakansha’ Doshi’s talk:\n\nTo support the new features in this release, we also announced the newly formed React DevTools team and a new Timeline Profiler to help developers debug their React apps.\n\nFor more information and a demo of new DevTools features, see Brian Vaughn’s talk:\n\nLooking further into the future, Xuan Huang (黄玄) shared an update from our React Labs research into an auto-memoizing compiler. Check out this talk for more information and a demo of the compiler prototype:\n\nRachel Nabors kicked off a section of talks about learning and designing with React with a keynote about our investment in React’s new docs (now shipped as react.dev):\n\nWe also heard talks on learning and designing with React:\n\nTalks from the Relay, React Native, and PyTorch teams:\n\nAnd talks from the community on accessibility, tooling, and Server Components:\n\nThis was our first year planning a conference ourselves, and we have a lot of people to thank.\n\nFirst, thanks to all of our speakers Aakansha Doshi, Andrew Clark, Brian Vaughn, Daishi Kato, Debbie O’Brien, Delba de Oliveira, Diego Haz, Eric Rozell, Helen Lin, Juan Tejada, Lauren Tan, Linton Ye, Lyle Troxell, Rachel Nabors, Rick Hanlon, Robert Balicki, Roman Rädle, Sarah Rainsberger, Shaundai Person, Shruti Kapoor, Steven Moyes, Tafu Nakazaki, and Xuan Huang (黄玄).\n\nThanks to everyone who helped provide feedback on talks including Andrew Clark, Dan Abramov, Dave McCabe, Eli White, Joe Savona, Lauren Tan, Rachel Nabors, and Tim Yung.\n\nThanks to Lauren Tan for setting up the conference Discord and serving as our Discord admin.\n\nThanks to Seth Webster for feedback on overall direction and making sure we were focused on diversity and inclusion.\n\nThanks to Rachel Nabors for spearheading our moderation effort, and Aisha Blake for creating our moderation guide, leading our moderation team, training the translators and moderators, and helping to moderate both events.\n\nThanks to our moderators Jesslyn Tannady, Suzie Grange, Becca Bailey, Luna Wei, Joe Previte, Nicola Corti, Gijs Weterings, Claudio Procida, Julia Neumann, Mengdi Chen, Jean Zhang, Ricky Li, and Xuan Huang (黄玄).\n\nThanks to Manjula Dube, Sahil Mhapsekar, and Vihang Patel from React India, and Jasmine Xie, QiChang Li, and YanLun Li from React China for helping moderate our replay event and keep it engaging for the community.\n\nThanks to Vercel for publishing their Virtual Event Starter Kit, which the conference website was built on, and to Lee Robinson and Delba de Oliveira for sharing their experience running Next.js Conf.\n\nThanks to Leah Silber for sharing her experience running conferences, learnings from running RustConf, and for her book Event Driven and the advice it contains for running conferences.\n\nThanks to Kevin Lewis and Rachel Nabors for sharing their experience running Women of React Conf.\n\nThanks to Aakansha Doshi, Laurie Barth, Michael Chan, and Shaundai Person for their advice and ideas throughout planning.\n\nThanks to Dan Lebowitz for help designing and building the conference website and tickets.\n\nThanks to Laura Podolak Waddell, Desmond Osei-Acheampong, Mark Rossi, Josh Toberman and others on the Facebook Video Productions team for recording the videos for the Keynote and Meta employee talks.\n\nThanks to our partner HitPlay for helping to organize the conference, editing all the videos in the stream, translating all the talks, and moderating the Discord in multiple languages.\n\nFinally, thanks to all of our participants for making this a great React Conf!",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "React Conf 2021 Recap",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "React 18 and concurrent features",
+      "id": "react-18-and-concurrent-features"
+    },
+    {
+      "level": "h2",
+      "text": "React 18 for Application Developers",
+      "id": "react-18-for-application-developers"
+    },
+    {
+      "level": "h2",
+      "text": "Streaming Server Rendering with Suspense",
+      "id": "streaming-server-rendering-with-suspense"
+    },
+    {
+      "level": "h2",
+      "text": "The first React working group",
+      "id": "the-first-react-working-group"
+    },
+    {
+      "level": "h2",
+      "text": "React Developer Tooling",
+      "id": "react-developer-tooling"
+    },
+    {
+      "level": "h2",
+      "text": "React without memo",
+      "id": "react-without-memo"
+    },
+    {
+      "level": "h2",
+      "text": "React docs keynote",
+      "id": "react-docs-keynote"
+    },
+    {
+      "level": "h2",
+      "text": "And more…",
+      "id": "and-more"
+    },
+    {
+      "level": "h2",
+      "text": "Thank you",
+      "id": "thank-you"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "npm install react@rc react-dom@rc",
+      "language": "unknown"
+    },
+    {
+      "code": "// beforeconst container = document.getElementById('root');ReactDOM.render(<App />, container);// afterconst container = document.getElementById('root');const root = ReactDOM.createRoot(container);root.render(<App/>);",
+      "language": "javascript"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://react.dev/blog",
+    "https://react.dev/blog/2021/12/17/react-conf-2021-recap",
+    "https://react.dev/blog/2023/03/16/introducing-react-dev",
+    "https://react.dev/blog/2022/03/08/react-18-upgrade-guide",
+    "https://react.dev/blog/2021/06/08/the-plan-for-react-18"
+  ]
+}

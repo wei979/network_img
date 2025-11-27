@@ -1,0 +1,98 @@
+{
+  "url": "https://fastapi.tiangolo.com/environment-variables/",
+  "title": "Environment Variables¶",
+  "content": "If you already know what \"environment variables\" are and how to use them, feel free to skip this.\n\nAn environment variable (also known as \"env var\") is a variable that lives outside of the Python code, in the operating system, and could be read by your Python code (or by other programs as well).\n\nEnvironment variables could be useful for handling application settings, as part of the installation of Python, etc.\n\nYou can create and use environment variables in the shell (terminal), without needing Python:\n\nYou could also create environment variables outside of Python, in the terminal (or with any other method), and then read them in Python.\n\nFor example you could have a file main.py with:\n\nThe second argument to os.getenv() is the default value to return.\n\nIf not provided, it's None by default, here we provide \"World\" as the default value to use.\n\nThen you could call that Python program:\n\nAs environment variables can be set outside of the code, but can be read by the code, and don't have to be stored (committed to git) with the rest of the files, it's common to use them for configurations or settings.\n\nYou can also create an environment variable only for a specific program invocation, that is only available to that program, and only for its duration.\n\nTo do that, create it right before the program itself, on the same line:\n\nYou can read more about it at The Twelve-Factor App: Config.\n\nThese environment variables can only handle text strings, as they are external to Python and have to be compatible with other programs and the rest of the system (and even with different operating systems, as Linux, Windows, macOS).\n\nThat means that any value read in Python from an environment variable will be a str, and any conversion to a different type or any validation has to be done in code.\n\nYou will learn more about using environment variables for handling application settings in the Advanced User Guide - Settings and Environment Variables.\n\nThere is a special environment variable called PATH that is used by the operating systems (Linux, macOS, Windows) to find programs to run.\n\nThe value of the variable PATH is a long string that is made of directories separated by a colon : on Linux and macOS, and by a semicolon ; on Windows.\n\nFor example, the PATH environment variable could look like this:\n\nThis means that the system should look for programs in the directories:\n\nThis means that the system should look for programs in the directories:\n\nWhen you type a command in the terminal, the operating system looks for the program in each of those directories listed in the PATH environment variable.\n\nFor example, when you type python in the terminal, the operating system looks for a program called python in the first directory in that list.\n\nIf it finds it, then it will use it. Otherwise it keeps looking in the other directories.\n\nWhen you install Python, you might be asked if you want to update the PATH environment variable.\n\nLet's say you install Python and it ends up in a directory /opt/custompython/bin.\n\nIf you say yes to update the PATH environment variable, then the installer will add /opt/custompython/bin to the PATH environment variable.\n\nIt could look like this:\n\nThis way, when you type python in the terminal, the system will find the Python program in /opt/custompython/bin (the last directory) and use that one.\n\nLet's say you install Python and it ends up in a directory C:\\opt\\custompython\\bin.\n\nIf you say yes to update the PATH environment variable, then the installer will add C:\\opt\\custompython\\bin to the PATH environment variable.\n\nThis way, when you type python in the terminal, the system will find the Python program in C:\\opt\\custompython\\bin (the last directory) and use that one.\n\nThe system will find the python program in /opt/custompython/bin and run it.\n\nIt would be roughly equivalent to typing:\n\nThe system will find the python program in C:\\opt\\custompython\\bin\\python and run it.\n\nIt would be roughly equivalent to typing:\n\nThis information will be useful when learning about Virtual Environments.\n\nWith this you should have a basic understanding of what environment variables are and how to use them in Python.\n\nYou can also read more about them in the Wikipedia for Environment Variable.\n\nIn many cases it's not very obvious how environment variables would be useful and applicable right away. But they keep showing up in many different scenarios when you are developing, so it's good to know about them.\n\nFor example, you will need this information in the next section, about Virtual Environments.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Environment Variables¶",
+      "id": "environment-variables"
+    },
+    {
+      "level": "h2",
+      "text": "Create and Use Env Vars¶",
+      "id": "create-and-use-env-vars"
+    },
+    {
+      "level": "h2",
+      "text": "Read env vars in Python¶",
+      "id": "read-env-vars-in-python"
+    },
+    {
+      "level": "h2",
+      "text": "Types and Validation¶",
+      "id": "types-and-validation"
+    },
+    {
+      "level": "h2",
+      "text": "PATH Environment Variable¶",
+      "id": "path-environment-variable"
+    },
+    {
+      "level": "h3",
+      "text": "Installing Python and Updating the PATH¶",
+      "id": "installing-python-and-updating-the-path"
+    },
+    {
+      "level": "h2",
+      "text": "Conclusion¶",
+      "id": "conclusion"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "// You could create an env var MY_NAME with\n$ export MY_NAME=\"Wade Wilson\"\n\n// Then you could use it with other programs, like\n$ echo \"Hello $MY_NAME\"\n\nHello Wade Wilson",
+      "language": "unknown"
+    },
+    {
+      "code": "// Create an env var MY_NAME\n$ $Env:MY_NAME = \"Wade Wilson\"\n\n// Use it with other programs, like\n$ echo \"Hello $Env:MY_NAME\"\n\nHello Wade Wilson",
+      "language": "unknown"
+    },
+    {
+      "code": "import os\n\nname = os.getenv(\"MY_NAME\", \"World\")\nprint(f\"Hello {name} from Python\")",
+      "language": "python"
+    },
+    {
+      "code": "// Here we don't set the env var yet\n$ python main.py\n\n// As we didn't set the env var, we get the default value\n\nHello World from Python\n\n// But if we create an environment variable first\n$ export MY_NAME=\"Wade Wilson\"\n\n// And then call the program again\n$ python main.py\n\n// Now it can read the environment variable\n\nHello Wade Wilson from Python",
+      "language": "unknown"
+    },
+    {
+      "code": "// Here we don't set the env var yet\n$ python main.py\n\n// As we didn't set the env var, we get the default value\n\nHello World from Python\n\n// But if we create an environment variable first\n$ $Env:MY_NAME = \"Wade Wilson\"\n\n// And then call the program again\n$ python main.py\n\n// Now it can read the environment variable\n\nHello Wade Wilson from Python",
+      "language": "unknown"
+    },
+    {
+      "code": "// Create an env var MY_NAME in line for this program call\n$ MY_NAME=\"Wade Wilson\" python main.py\n\n// Now it can read the environment variable\n\nHello Wade Wilson from Python\n\n// The env var no longer exists afterwards\n$ python main.py\n\nHello World from Python",
+      "language": "unknown"
+    },
+    {
+      "code": "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+      "language": "unknown"
+    },
+    {
+      "code": "C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Windows\\System32",
+      "language": "unknown"
+    },
+    {
+      "code": "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/custompython/bin",
+      "language": "unknown"
+    },
+    {
+      "code": "C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Windows\\System32;C:\\opt\\custompython\\bin",
+      "language": "unknown"
+    },
+    {
+      "code": "$ /opt/custompython/bin/python",
+      "language": "unknown"
+    },
+    {
+      "code": "$ C:\\opt\\custompython\\bin\\python",
+      "language": "unknown"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://fastapi.tiangolo.com/environment-variables/",
+    "https://fastapi.tiangolo.com/advanced/settings/",
+    "https://fastapi.tiangolo.com/virtual-environments/"
+  ]
+}

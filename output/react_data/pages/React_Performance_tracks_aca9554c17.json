@@ -1,0 +1,91 @@
+{
+  "url": "https://react.dev/reference/dev-tools/react-performance-tracks",
+  "title": "React Performance tracks",
+  "content": "React Performance tracks are specialized custom entries that appear on the Performance panel’s timeline in your browser developer tools.\n\nThese tracks are designed to provide developers with comprehensive insights into their React application’s performance by visualizing React-specific events and metrics alongside other critical data sources such as network requests, JavaScript execution, and event loop activity, all synchronized on a unified timeline within the Performance panel for a complete understanding of application behavior.\n\nReact Performance tracks are only available in development and profiling builds of React:\n\nIf enabled, tracks should appear automatically in the traces you record with the Performance panel of browsers that provide extensibility APIs.\n\nThe profiling instrumentation that powers React Performance tracks adds some additional overhead, so it is disabled in production builds by default. Server Components and Server Requests tracks are only available in development builds.\n\nIn addition to production and development builds, React also includes a special profiling build. To use profiling builds, you have to use react-dom/profiling instead of react-dom/client. We recommend that you alias react-dom/client to react-dom/profiling at build time via bundler aliases instead of manually updating each react-dom/client import. Your framework might have built-in support for enabling React’s profiling build.\n\nThe Scheduler is an internal React concept used for managing tasks with different priorities. This track consists of 4 subtracks, each representing work of a specific priority:\n\nEvery render pass consists of multiple phases that you can see on a timeline:\n\nLearn more about renders and commits.\n\nCascading updates is one of the patterns for performance regressions. If an update was scheduled during a render pass, React could discard completed work and start a new pass.\n\nIn development builds, React can show you which Component scheduled a new update. This includes both general updates and cascading ones. You can see the enhanced stack trace by clicking on the “Cascading update” entry, which should also display the name of the method that scheduled an update.\n\nLearn more about Effects.\n\nThe Components track visualizes the durations of React components. They are displayed as a flamegraph, where each entry represents the duration of the corresponding component render and all its descendant children components.\n\nSimilar to render durations, effect durations are also represented as a flamegraph, but with a different color scheme that aligns with the corresponding phase on the Scheduler track.\n\nUnlike renders, not all effects are shown on the Components track by default.\n\nTo maintain performance and prevent UI clutter, React will only display those effects, which had a duration of 0.05ms or longer, or triggered an update.\n\nAdditional events may be displayed during the render and effects phases:\n\nIn development builds, when you click on a component render entry, you can inspect potential changes in props. You can use this information to identify unnecessary renders.\n\nThe Server Requests track visualized all Promises that eventually end up in a React Server Component. This includes any async operations like calling fetch or async Node.js file operations.\n\nReact will try to combine Promises that are started from inside third-party code into a single span representing the the duration of the entire operation blocking 1st party code. For example, a third party library method called getUser that calls fetch internally multiple times will be represented as a single span called getUser, instead of showing multiple fetch spans.\n\nClicking on spans will show you a stack trace of where the Promise was created as well as a view of the value that the Promise resolved to, if available.\n\nRejected Promises are displayed as red with their rejected value.\n\nThe Server Components tracks visualize the durations of React Server Components Promises they awaited. Timings are displayed as a flamegraph, where each entry represents the duration of the corresponding component render and all its descendant children components.\n\nIf you await a Promise, React will display duration of that Promise. To see all I/O operations, use the Server Requests track.\n\nDifferent colors are used to indicate the duration of the component render. The darker the color, the longer the duration.\n\nThe Server Components track group will always contain a “Primary” track. If React is able to render Server Components concurrently, it will display addititional “Parallel” tracks. If more than 8 Server Components are rendered concurrently, React will associate them with the last “Parallel” track instead of adding more tracks.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "React Performance tracks",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Usage",
+      "id": "usage"
+    },
+    {
+      "level": "h3",
+      "text": "Pitfall",
+      "id": ""
+    },
+    {
+      "level": "h3",
+      "text": "Using profiling builds",
+      "id": "using-profiling-builds"
+    },
+    {
+      "level": "h2",
+      "text": "Tracks",
+      "id": "tracks"
+    },
+    {
+      "level": "h3",
+      "text": "Scheduler",
+      "id": "scheduler"
+    },
+    {
+      "level": "h4",
+      "text": "Renders",
+      "id": "renders"
+    },
+    {
+      "level": "h4",
+      "text": "Cascading updates",
+      "id": "cascading-updates"
+    },
+    {
+      "level": "h3",
+      "text": "Components",
+      "id": "components"
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h4",
+      "text": "Changed props",
+      "id": "changed-props"
+    },
+    {
+      "level": "h3",
+      "text": "Server",
+      "id": "server"
+    },
+    {
+      "level": "h4",
+      "text": "Server Requests",
+      "id": "server-requests"
+    },
+    {
+      "level": "h4",
+      "text": "Server Components",
+      "id": "server-components"
+    }
+  ],
+  "code_samples": [],
+  "patterns": [],
+  "links": [
+    "https://react.dev/reference/react",
+    "https://react.dev/reference/dev-tools/react-performance-tracks",
+    "https://react.dev/reference/react/Profiler",
+    "https://react.dev/learn/react-developer-tools",
+    "https://react.dev/reference/react/startTransition",
+    "https://react.dev/reference/react/useLayoutEffect",
+    "https://react.dev/reference/react/useEffect",
+    "https://react.dev/learn/render-and-commit",
+    "https://react.dev/learn/you-might-not-need-an-effect",
+    "https://react.dev/reference/react/Activity"
+  ]
+}

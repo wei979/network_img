@@ -1,0 +1,3504 @@
+{
+  "url": "https://fastapi.tiangolo.com/release-notes/",
+  "title": "Release Notes¶",
+  "content": "There are no major nor breaking changes in this release. ☕️\n\nThe internal reference documentation now uses annotated_doc.Doc instead of typing_extensions.Doc, this adds a new (very small) dependency on annotated-doc, a package made just to provide that Doc documentation utility class.\n\nI would expect typing_extensions.Doc to be deprecated and then removed at some point from typing_extensions, for that reason there's the new annotated-doc micro-package. If you are curious about this, you can read more in the repo for annotated-doc.\n\nThis new version 0.120.0 only contains that transition to the new home package for that utility class Doc.\n\nFastAPI now (temporarily) supports both Pydantic v2 models and pydantic.v1 models at the same time in the same app, to make it easier for any FastAPI apps still using Pydantic v1 to gradually but quickly migrate to Pydantic v2.\n\nAdding this feature was a big effort with the main objective of making it easier for the few applications still stuck in Pydantic v1 to migrate to Pydantic v2.\n\nAnd with this, support for Pydantic v1 is now deprecated and will be removed from FastAPI in a future version soon.\n\nNote: have in mind that the Pydantic team already stopped supporting Pydantic v1 for recent versions of Python, starting with Python 3.14.\n\nYou can read in the docs more about how to Migrate from Pydantic v1 to Pydantic v2.\n\nBefore FastAPI 0.118.0, if you used a dependency with yield, it would run the exit code after the path operation function returned but right before sending the response.\n\nThis change also meant that if you returned a StreamingResponse, the exit code of the dependency with yield would have been already run.\n\nFor example, if you had a database session in a dependency with yield, the StreamingResponse would not be able to use that session while streaming data because the session would have already been closed in the exit code after yield.\n\nThis behavior was reverted in 0.118.0, to make the exit code after yield be executed after the response is sent.\n\nYou can read more about it in the docs for Advanced Dependencies - Dependencies with yield, HTTPException, except and Background Tasks. Including what you could do if you wanted to close a database session earlier, before returning the response to the client.\n\nInstalling fastapi[standard] now includes fastapi-cloud-cli.\n\nThis will allow you to deploy to FastAPI Cloud with the fastapi deploy command.\n\nIf you want to install fastapi with the standard dependencies but without fastapi-cloud-cli, you can install instead fastapi[standard-no-fastapi-cloud-cli].\n\nNow you can declare Query, Header, and Cookie parameters with Pydantic models. 🎉\n\nUse Pydantic models for Query parameters:\n\nRead the new docs: Query Parameter Models.\n\nUse Pydantic models for Header parameters:\n\nRead the new docs: Header Parameter Models.\n\nUse Pydantic models for Cookie parameters:\n\nRead the new docs: Cookie Parameter Models.\n\nUse Pydantic models to restrict extra values for Query parameters (also applies to Header and Cookie parameters).\n\nTo achieve it, use Pydantic's model_config = {\"extra\": \"forbid\"}:\n\nThis applies to Query, Header, and Cookie parameters, read the new docs:\n\nYou can restrict form fields to only include those declared in a Pydantic model and forbid any extra field sent in the request using Pydantic's model_config = {\"extra\": \"forbid\"}:\n\nRead the new docs: Form Models - Forbid Extra Form Fields.\n\nNow you can declare form fields with Pydantic models:\n\nRead the new docs: Form Models.\n\nThis release is mainly a big internal refactor to enable adding support for Pydantic models for Form fields, but that feature comes in the next release.\n\nThis release shouldn't affect apps using FastAPI in any way. You don't even have to upgrade to this version yet. It's just a checkpoint. 🤓\n\nThis release is mainly internal refactors, it shouldn't affect apps using FastAPI in any way. You don't even have to upgrade to this version yet. There are a few bigger releases coming right after. 🚀\n\nBefore this, fastapi would include the standard dependencies, with Uvicorn and the fastapi-cli, etc.\n\nAnd fastapi-slim would not include those standard dependencies.\n\nNow fastapi doesn't include those standard dependencies unless you install with pip install \"fastapi[standard]\".\n\nBefore, you would install pip install fastapi, now you should include the standard optional dependencies (unless you want to exclude one of those): pip install \"fastapi[standard]\".\n\nThis change is because having the standard optional dependencies installed by default was being inconvenient to several users, and having to install instead fastapi-slim was not being a feasible solution.\n\nDiscussed here: #11522 and here: #11525\n\nIn short, if you had dependencies that looked like:\n\nNow you need to make sure you raise again after except, just as you would in regular Python:\n\nRead more in the advisory: Content-Type Header ReDoS.\n\nUsing resources from dependencies with yield in background tasks is no longer supported.\n\nThis change is what supports the new features, read below. 🤓\n\nDependencies with yield now can raise HTTPException and other exceptions after yield. 🎉\n\nRead the new docs here: Dependencies with yield and HTTPException.\n\nBefore FastAPI 0.106.0, raising exceptions after yield was not possible, the exit code in dependencies with yield was executed after the response was sent, so Exception Handlers would have already run.\n\nThis was designed this way mainly to allow using the same objects \"yielded\" by dependencies inside of background tasks, because the exit code would be executed after the background tasks were finished.\n\nNevertheless, as this would mean waiting for the response to travel through the network while unnecessarily holding a resource in a dependency with yield (for example a database connection), this was changed in FastAPI 0.106.0.\n\nAdditionally, a background task is normally an independent set of logic that should be handled separately, with its own resources (e.g. its own database connection).\n\nIf you used to rely on this behavior, now you should create the resources for background tasks inside the background task itself, and use internally only data that doesn't depend on the resources of dependencies with yield.\n\nFor example, instead of using the same database session, you would create a new database session inside of the background task, and you would obtain the objects from the database using this new session. And then instead of passing the object from the database as a parameter to the background task function, you would pass the ID of that object and then obtain the object again inside the background task function.\n\nThe sequence of execution before FastAPI 0.106.0 was like this diagram:\n\nTime flows from top to bottom. And each column is one of the parts interacting or executing code.\n\nThe new execution flow can be found in the docs: Execution of dependencies with yield.\n\n✨ Support for Pydantic v2 ✨\n\nPydantic version 2 has the core re-written in Rust and includes a lot of improvements and features, for example:\n\n...all this while keeping the same Python API. In most of the cases, for simple models, you can simply upgrade the Pydantic version and get all the benefits. 🚀\n\nIn some cases, for pure data validation and processing, you can get performance improvements of 20x or more. This means 2,000% or more. 🤯\n\nWhen you use FastAPI, there's a lot more going on, processing the request and response, handling dependencies, executing your own code, and particularly, waiting for the network. But you will probably still get some nice performance improvements just from the upgrade.\n\nThe focus of this release is compatibility with Pydantic v1 and v2, to make sure your current apps keep working. Later there will be more focus on refactors, correctness, code improvements, and then performance improvements. Some third-party early beta testers that ran benchmarks on the beta releases of FastAPI reported improvements of 2x - 3x. Which is not bad for just doing pip install --upgrade fastapi pydantic. This was not an official benchmark and I didn't check it myself, but it's a good sign.\n\nCheck out the Pydantic migration guide.\n\nFor the things that need changes in your Pydantic models, the Pydantic team built bump-pydantic.\n\nA command line tool that will process your code and update most of the things automatically for you. Make sure you have your code in git first, and review each of the changes to make sure everything is correct before committing the changes.\n\nThis version of FastAPI still supports Pydantic v1. And although Pydantic v1 will be deprecated at some point, it will still be supported for a while.\n\nThis means that you can install the new Pydantic v2, and if something fails, you can install Pydantic v1 while you fix any problems you might have, but having the latest FastAPI.\n\nThere are tests for both Pydantic v1 and v2, and test coverage is kept at 100%.\n\nThere are new parameter fields supported by Pydantic Field() for:\n\nThe new parameter fields are:\n\n...you can read about them in the Pydantic docs.\n\nNow Pydantic Settings is an additional optional package (included in \"fastapi[all]\"). To use settings you should now import from pydantic_settings import BaseSettings instead of importing from pydantic directly.\n\nPR #9816 by @tiangolo, included all the work done (in multiple PRs) on the beta branch (main-pv2).\n\n✨ Add support for OpenAPI 3.1.0. PR #9770 by @tiangolo.\n\n✨ Add support for deque objects and children in jsonable_encoder. PR #9433 by @cranium.\n\nThis release adds support for dependencies and parameters using Annotated and recommends its usage. ✨\n\nThis has several benefits, one of the main ones is that now the parameters of your functions with Annotated would not be affected at all.\n\nIf you call those functions in other places in your code, the actual default values will be kept, your editor will help you notice missing required arguments, Python will require you to pass required arguments at runtime, you will be able to use the same functions for different things and with different libraries (e.g. Typer will soon support Annotated too, then you could use the same function for an API and a CLI), etc.\n\nBecause Annotated is standard Python, you still get all the benefits from editors and tools, like autocompletion, inline errors, etc.\n\nOne of the biggest benefits is that now you can create Annotated dependencies that are then shared by multiple path operation functions, this will allow you to reduce a lot of code duplication in your codebase, while keeping all the support from editors and tools.\n\nFor example, you could have code like this:\n\nThere's a bit of code duplication for the dependency:\n\n...the bigger the codebase, the more noticeable it is.\n\nNow you can create an annotated dependency once, like this:\n\nAnd then you can reuse this Annotated dependency:\n\n...and CurrentUser has all the typing information as User, so your editor will work as expected (autocompletion and everything), and FastAPI will be able to understand the dependency defined in Annotated. 😎\n\nRoughly all the docs have been rewritten to use Annotated as the main way to declare parameters and dependencies. All the examples in the docs now include a version with Annotated and a version without it, for each of the specific Python versions (when there are small differences/improvements in more recent versions). There were around 23K new lines added between docs, examples, and tests. 🚀\n\nThe key updated docs are:\n\nSpecial thanks to @nzig for the core implementation and to @adriangb for the inspiration and idea with Xpresso! 🚀\n\nNow, instead of using independent startup and shutdown events, you can define that logic in a single function with yield decorated with @asynccontextmanager (an async context manager).\n\nNote: This is the recommended way going forward, instead of using startup and shutdown events.\n\nRead more about it in the new docs: Advanced User Guide: Lifespan Events.\n\n🚨 This is a security fix. Please upgrade as soon as possible.\n\nNow you can declare the return type / response_model in the function return type annotation:\n\nFastAPI will use the return type annotation to perform:\n\nBefore this version it was only supported via the response_model parameter.\n\nRead more about it in the new docs: Response Model - Return Type.\n\nHighlights of this release:\n\nThis version of FastAPI drops support for Python 3.6. 🔥 Please upgrade to a supported version of Python (3.7 or above), Python 3.6 reached the end-of-life a long time ago. 😅☠\n\n🚨 This is probably the last release (or one of the last releases) to support Python 3.6. 🔥\n\nPython 3.6 reached the end-of-life and is no longer supported by Python since around a year ago.\n\nYou hopefully updated to a supported version of Python a while ago. If you haven't, you really should.\n\n🚨 This is probably the last release (or one of the last releases) to support Python 3.6. 🔥\n\nPython 3.6 reached the end-of-life and is no longer supported by Python since around a year ago.\n\nYou hopefully updated to a supported version of Python a while ago. If you haven't, you really should.\n\nIf you are using response_model with some type that doesn't include None but the function is returning None, it will now raise an internal server error, because you are returning invalid data that violates the contract in response_model. Before this release it would allow breaking that contract returning None.\n\nFor example, if you have an app like this:\n\n...calling the path /items/invalidnone will raise an error, because None is not a valid type for the response_model declared with Item.\n\nYou could also be implicitly returning None without realizing, for example:\n\nIf you have path operations using response_model that need to be allowed to return None, make it explicit in response_model using Union[Something, None]:\n\nThis way the data will be correctly validated, you won't have an internal server error, and the documentation will also reflect that this path operation could return None (or null in JSON).\n\n✨ Add support for omitting ... as default value when declaring required parameters with:\n\nNew docs at Tutorial - Query Parameters and String Validations - Make it required. PR #4906 by @tiangolo.\n\nUp to now, declaring a required parameter while adding additional validation or metadata needed using ... (Ellipsis).\n\n...all these parameters are required because the default value is ... (Ellipsis).\n\nBut now it's possible and supported to just omit the default value, as would be done with Pydantic fields, and the parameters would still be required.\n\n✨ For example, this is now supported:\n\nTo declare parameters as optional (not required), you can set a default value as always, for example using None:\n\nThis release includes upgrades to third-party packages that handle security issues. Although there's a chance these issues don't affect you in particular, please upgrade as soon as possible.\n\nDependencies with yield can now catch HTTPException and custom exceptions. For example:\n\nAfter the dependency with yield handles the exception (or not) the exception is raised again. So that any exception handlers can catch it, or ultimately the default internal ServerErrorMiddleware.\n\nIf you depended on exceptions not being received by dependencies with yield, and receiving an exception breaks the code after yield, you can use a block with try and finally:\n\n...that way the finally block is run regardless of any exception that might happen.\n\nThis means that now, if you set a value in a context variable before yield, the value would still be available after yield (as you would intuitively expect). And it also means that you can reset the context variable with a token afterwards.\n\nFor example, this works correctly now:\n\n...before this change it would raise an error when resetting the context variable, because the contextvars context was different, because of the way it was implemented.\n\nNote: You probably don't need contextvars, and you should probably avoid using them. But they are powerful and useful in some advanced scenarios, for example, migrating from code that used Flask's g semi-global variable.\n\nTechnical Details: If you want to know more of the technical details you can check out the PR description #4575.\n\nThere's nothing interesting in this particular FastAPI release. It is mainly to enable/unblock the release of the next version of Pydantic that comes packed with features and improvements. 🤩\n\nThis release just upgrades Starlette to the latest version, 0.16.0, which includes several bug fixes and some small breaking changes.\n\nThese last three consecutive releases are independent so that you can migrate gradually:\n\nThis way, in case there was a breaking change for your code in one of the releases, you can still benefit from the previous upgrades. ✨\n\nAlso upgrades the ranges of optional dependencies:\n\nThis release adds support for Trio. ✨\n\nIt upgrades the version of Starlette to 0.15.0, now based on AnyIO, and the internal async components in FastAPI are now based on AnyIO as well, making it compatible with both asyncio and Trio.\n\nYou can read the docs about running FastAPI with Trio using Hypercorn.\n\nThis release also removes graphene as an optional dependency for GraphQL. If you need to work with GraphQL, the recommended library now is Strawberry. You can read the new FastAPI with GraphQL docs.\n\nThis release has no breaking changes. 🎉\n\nIt upgrades the version ranges of sub-dependencies to allow applications using FastAPI to easily upgrade them.\n\nSoon there will be a new FastAPI release upgrading Starlette to take advantage of recent improvements, but as that has a higher chance of having breaking changes, it will be in a separate release.\n\nThis change fixes a CSRF security vulnerability when using cookies for authentication in path operations with JSON payloads sent by browsers.\n\nIn versions lower than 0.65.2, FastAPI would try to read the request payload as JSON even if the content-type header sent was not set to application/json or a compatible JSON media type (e.g. application/geo+json).\n\nSo, a request with a content type of text/plain containing JSON data would be accepted and the JSON data would be extracted.\n\nBut requests with content type text/plain are exempt from CORS preflights, for being considered Simple requests. So, the browser would execute them right away including cookies, and the text content could be a JSON string that would be parsed and accepted by the FastAPI application.\n\nSee CVE-2021-32677 for more details.\n\nThanks to Dima Boger for the security report! 🙇🔒\n\nUp to now, for several options, the only way to apply them to a group of path operations was in include_router. That works well, but the call to app.include_router() or router.include_router() is normally done in another file.\n\nThat means that, for example, to apply authentication to all the path operations in a router it would end up being done in a different file, instead of keeping related logic together.\n\nSetting options in include_router still makes sense in some cases, for example, to override or increase configurations from a third party router included in an app. But in a router that is part of a bigger application, it would probably make more sense to add those settings when creating the APIRouter.\n\nThis allows setting the (mostly new) parameters (additionally to the already existing parameters):\n\nThis allows setting the (mostly new) parameters (additionally to the already existing parameters):\n\nMost of these settings are now supported in APIRouter, which normally lives closer to the related code, so it is recommended to use APIRouter when possible.\n\nBut include_router is still useful to, for example, adding options (like dependencies, prefix, and tags) when including a third party router, or a generic router that is shared between several projects.\n\nThis PR allows setting the (mostly new) parameters (additionally to the already existing parameters):\n\nNote: all the previous parameters are still there, so it's still possible to declare dependencies in include_router.\n\nPR #2434 (above) includes new or updated docs:\n\n📝 Add FastAPI monitoring blog post to External Links. PR #2324 by @louisguitton.\n\nUpgrade Starlette supported range to include the latest 0.12.7. The new range is 0.11.1,<=0.12.7. PR #367 by @dedsm.\n\nAdd test for OpenAPI schema with duplicate models from PR #333 by @dmontagu. PR #385.\n\nFix typo in docs for features. PR #380 by @MartinoMensio.\n\nFix source code limit for example in Query Parameters. PR #366 by @Smashman.\n\nUpdate wording in docs about OAuth2 scopes. PR #371 by @cjw296.\n\nUpdate docs for Enums to inherit from str and improve Swagger UI rendering. PR #351.\n\nFix regression, add Swagger UI deep linking again. PR #350.\n\nAdd test for having path templates in prefix of .include_router. PR #349.\n\nAdd note to docs: Include the same router multiple times with different prefix. PR #348.\n\nFix OpenAPI/JSON Schema generation for two functions with the same name (in different modules) with the same composite bodies.\n\nAdd section in docs about External Links and Articles. PR #341.\n\nRemove Pipfile.lock from the repository as it is only used by FastAPI contributors (developers of FastAPI itself). See the PR for more details. PR #340.\n\nUpdate section about Help FastAPI - Get Help. PR #339.\n\nRefine internal type declarations to improve/remove Mypy errors in users' code. PR #338.\n\nUpdate and clarify SQL tutorial with SQLAlchemy. PR #331 by @mariacamilagl.\n\nAdd SQLite online viewers to the docs. PR #330 by @cyrilbois.\n\nAdd support for Pydantic's ORM mode:\n\nRemove/clean unused RegEx code in routing. PR #314 by @dmontagu.\n\nUse default response status code descriptions for additional responses. PR #313 by @duxiaoyao.\n\nUpgrade Pydantic support to 0.28. PR #320 by @jekirl.\n\nFix handling an empty-body request with a required body param. PR #311.\n\nFix broken link in docs: Return a Response directly. PR #306 by @dmontagu.\n\nFix docs discrepancy in docs for Response Model. PR #288 by @awiddersheim.\n\nImplement dependency cache per request.\n\nImplement dependency overrides for testing.\n\nFix auto_error=False handling in HTTPBearer security scheme. Do not raise when there's an incorrect Authorization header if auto_error=False. PR #282.\n\nFix type declaration of HTTPException. PR #279.\n\nFix broken link in docs about OAuth 2.0 with scopes. PR #275 by @dmontagu.\n\nRefactor param extraction using Pydantic Field:\n\nSeparate error handling for validation errors.\n\nFix support for paths in path parameters without needing explicit Path(...).\n\nUpdate docs for testing FastAPI. Include using POST, sending JSON, testing headers, etc. New documentation: Testing. PR #271.\n\nFix type declaration of response_model to allow generic Python types as List[Model]. Mainly to fix mypy for users. PR #266.\n\nAdd support for Pydantic's include, exclude, by_alias.\n\nAdd CONTRIBUTING.md file to GitHub, to help new contributors. PR #255 by @wshayes.\n\nAdd support for Pydantic's skip_defaults:\n\nAdd support for WebSockets with dependencies and parameters.\n\nUpgrade the compatible version of Pydantic to 0.26.0.\n\nUpgrade the compatible version of Starlette to 0.12.0.\n\nAdd OAuth2 redirect page for Swagger UI. This allows having delegated authentication in the Swagger UI docs. For this to work, you need to add {your_origin}/docs/oauth2-redirect to the allowed callbacks in your OAuth2 provider (in Auth0, Facebook, Google, etc).\n\nMake Swagger UI and ReDoc route handlers (path operations) be async functions instead of lambdas to improve performance. PR #241 by @Trim21.\n\nMake Swagger UI and ReDoc URLs parameterizable, allowing to host and serve local versions of them and have offline docs. PR #112 by @euri10.\n\nAdd support for dependencies parameter:\n\nFix OpenAPI documentation of Starlette URL convertors. Specially useful when using path convertors, to take a whole path as a parameter, like /some/url/{p:path}. PR #234 by @euri10.\n\nMake default parameter utilities exported from fastapi be functions instead of classes (the new functions return instances of those classes). To be able to override the return types and fix mypy errors in FastAPI's users' code. Applies to Path, Query, Header, Cookie, Body, Form, File, Depends, and Security. PR #226 and PR #231.\n\nSeparate development scripts test.sh, lint.sh, and format.sh. PR #232.\n\nRe-enable black formatting checks for Python 3.7. PR #229 by @zamiramir.\n\nOn body parsing errors, raise from previous exception, to allow better introspection in logging code. PR #192 by @ricardomomm.\n\nUse Python logger named \"fastapi\" instead of root logger. PR #222 by @euri10.\n\nUpgrade Pydantic to version 0.25. PR #225 by @euri10.\n\nFix typo in routing. PR #221 by @djlambert.\n\nAdd typing information to package including file py.typed. PR #209 by @meadsteve.\n\nAdd FastAPI bot for Gitter. To automatically announce new releases. PR #189.\n\nInclude Hypercorn as an alternative ASGI server in the docs. PR #187.\n\nAdd docs for Static Files and Templates. PR #186.\n\nAdd docs for handling Response Cookies and Response Headers. PR #185.\n\nFix typos in docs. PR #176 by @chdsbd.\n\nRename path operation decorator parameter content_type to response_class. PR #183.\n\nAdd docs for HTTP Basic Auth. PR #177.\n\nUpgrade HTTP Basic Auth handling with automatic headers (automatic browser login prompt). PR #175.\n\nUpdate dependencies for security. PR #174.\n\nAdd docs for Middleware. PR #173.\n\nMake Flit publish from CI. PR #170.\n\nAdd documentation about handling CORS (Cross-Origin Resource Sharing). PR #169.\n\nBy default, encode by alias. This allows using Pydantic alias parameters working by default. PR #168.\n\nUpgrade path operation docstring parsing to support proper Markdown descriptions. New documentation at Path Operation Configuration. PR #163.\n\nRefactor internal usage of Pydantic to use correct data types. PR #164.\n\nUpgrade Pydantic to version 0.23. PR #160 by @euri10.\n\nFix typo in Tutorial about Extra Models. PR #159 by @danielmichaels.\n\nFix Query Parameters URL examples in docs. PR #157 by @hayata-yamamoto.\n\nAdd support for multiple file uploads (as a single form field). New docs at: Multiple file uploads. PR #158.\n\nAdd docs for: Additional Status Codes. PR #156.\n\nImprove automatically generated names of path operations in OpenAPI (in API docs). A function read_items instead of having a generated name \"Read Items Get\" will have \"Read Items\". PR #155.\n\nAdd docs for: Testing FastAPI. PR #151.\n\nUpdate /docs Swagger UI to enable deep linking. This allows sharing the URL pointing directly to the path operation documentation in the docs. PR #148 by @wshayes.\n\nUpdate development dependencies, Pipfile.lock. PR #150.\n\nInclude Falcon and Hug in: Alternatives, Inspiration and Comparisons.\n\nFix bug: handling additional responses in APIRouter.include_router(). PR #140.\n\nFix typo in SQL tutorial. PR #138 by @mostaphaRoudsari.\n\nFix typos in section about nested models and OAuth2 with JWT. PR #127 by @mmcloud.\n\nAdd auto_error parameter to security utility functions. Allowing them to be optional. Also allowing to have multiple alternative security schemes that are then checked in a single dependency instead of each one verifying and returning the error to the client automatically when not satisfied. PR #134.\n\nUpdate SQL Tutorial to close database sessions even when there are exceptions. PR #89 by @alexiri.\n\nFix duplicate dependency in pyproject.toml. PR #128 by @zxalif.\n\nAdd Gitter chat, badge, links, etc. https://gitter.im/tiangolo/fastapi . PR #117.\n\nAdd docs about Extending OpenAPI. PR #126.\n\nMake Travis run Ubuntu Xenial (newer version) and Python 3.7 instead of Python 3.7-dev. PR #92 by @blueyed.\n\nFix duplicated param variable creation. PR #123 by @yihuang.\n\nAdd note in Response Model docs about why using a function parameter instead of a function return type annotation. PR #109 by @JHSaunders.\n\nFix event docs (startup/shutdown) function name. PR #105 by @stratosgear.\n\nFix OpenAPI (JSON Schema) for declarations of Python Union (JSON Schema additionalProperties). PR #121.\n\nUpdate Background Tasks with a note on Celery.\n\nDocument response models using unions and lists, updated at: Extra Models. PR #108.\n\nAdd support for Background Tasks in path operation functions and dependencies. New documentation about Background Tasks is here. PR #103.\n\nAdd support for .websocket_route() in APIRouter. PR #100 by @euri10.\n\nNew docs section about Events: startup - shutdown. PR #99.\n\nUpgrade compatible Pydantic version to 0.21.0. PR #90.\n\nAdd documentation for: Application Configuration.\n\nFix typo in docs. PR #76 by @matthewhegarty.\n\nFix link in \"Deployment\" to \"Bigger Applications\".\n\nMake development scripts executable. PR #76 by @euri10.\n\nAdd support for adding tags in app.include_router(). PR #55 by @euri10. Documentation updated in the section: Bigger Applications.\n\nUpdate docs related to Uvicorn to use new --reload option from version 0.5.x. PR #74.\n\nUpdate isort imports and scripts to be compatible with newer versions. PR #75.\n\nUpdate technical details about async def handling with respect to previous frameworks. PR #64 by @haizaar.\n\nAdd deployment documentation for Docker in Raspberry Pi and other architectures.\n\nTrigger Docker images build on Travis CI automatically. PR #65.\n\nAdd technical details about async def handling to docs. PR #61.\n\nAdd docs for Debugging FastAPI applications in editors.\n\nClarify Bigger Applications deployed with Docker.\n\nAdd section about History, Design and Future.\n\nAdd docs for using WebSockets with FastAPI. PR #62.\n\nIntroduce new project generator based on FastAPI and PostgreSQL: https://github.com/tiangolo/full-stack-fastapi-postgresql. PR #52.\n\nUpdate SQL tutorial with SQLAlchemy, using Depends to improve editor support and reduce code repetition. PR #52.\n\nImprove middleware naming in tutorial for SQL with SQLAlchemy https://fastapi.tiangolo.com/tutorial/sql-databases/.\n\nUpdate SQL with SQLAlchemy tutorial at https://fastapi.tiangolo.com/tutorial/sql-databases/ using the new official request.state. PR #45.\n\nUpgrade Starlette to version 0.11.1 and add required compatibility changes. PR #44.\n\nAdd section about helping and getting help with FastAPI.\n\nAdd note about path operations order in docs.\n\nUpdate section about error handling with more information and make relation with Starlette error handling utilities more explicit. PR #41.\n\nAdd Development - Contributing section to the docs. PR #42.\n\nAdd new HTTPException with support for custom headers. With new documentation for handling errors at: https://fastapi.tiangolo.com/tutorial/handling-errors/. PR #35.\n\nAdd documentation to use Starlette Request object directly. Check #25 by @euri10.\n\nAdd issue templates to simplify reporting bugs, getting help, etc: #34.\n\nUpdate example for the SQLAlchemy tutorial at https://fastapi.tiangolo.com/tutorial/sql-databases/ using middleware and database session attached to request.\n\nAdd openapi_prefix, support for reverse proxy and mounting sub-applications. See the docs at https://fastapi.tiangolo.com/advanced/sub-applications-proxy/: #26 by @kabirkhan.\n\nUpdate docs/tutorial for SQLAlchemy including note about DB Browser for SQLite.\n\nFix typos in Security section: #24 by @kkinder.\n\nAdd support for Pydantic custom JSON encoders: #21 by @euri10.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Release Notes¶",
+      "id": "release-notes"
+    },
+    {
+      "level": "h2",
+      "text": "Latest Changes¶",
+      "id": "latest-changes"
+    },
+    {
+      "level": "h2",
+      "text": "0.120.4¶",
+      "id": "01204"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes"
+    },
+    {
+      "level": "h2",
+      "text": "0.120.3¶",
+      "id": "01203"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs"
+    },
+    {
+      "level": "h2",
+      "text": "0.120.2¶",
+      "id": "01202"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_1"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal"
+    },
+    {
+      "level": "h2",
+      "text": "0.120.1¶",
+      "id": "01201"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_1"
+    },
+    {
+      "level": "h2",
+      "text": "0.120.0¶",
+      "id": "01200"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_2"
+    },
+    {
+      "level": "h2",
+      "text": "0.119.1¶",
+      "id": "01191"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_2"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_1"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_3"
+    },
+    {
+      "level": "h2",
+      "text": "0.119.0¶",
+      "id": "01190"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features"
+    },
+    {
+      "level": "h2",
+      "text": "0.118.3¶",
+      "id": "01183"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_1"
+    },
+    {
+      "level": "h2",
+      "text": "0.118.2¶",
+      "id": "01182"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_3"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_4"
+    },
+    {
+      "level": "h2",
+      "text": "0.118.1¶",
+      "id": "01181"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_2"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_2"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_1"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_5"
+    },
+    {
+      "level": "h2",
+      "text": "0.118.0¶",
+      "id": "01180"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_4"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_3"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_2"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_6"
+    },
+    {
+      "level": "h2",
+      "text": "0.117.1¶",
+      "id": "01171"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_5"
+    },
+    {
+      "level": "h2",
+      "text": "0.117.0¶",
+      "id": "01170"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_1"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_6"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_1"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_4"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_3"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_7"
+    },
+    {
+      "level": "h2",
+      "text": "0.116.2¶",
+      "id": "01162"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_3"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_5"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_4"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_8"
+    },
+    {
+      "level": "h2",
+      "text": "0.116.1¶",
+      "id": "01161"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_4"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_6"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_9"
+    },
+    {
+      "level": "h2",
+      "text": "0.116.0¶",
+      "id": "01160"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_2"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_5"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_10"
+    },
+    {
+      "level": "h2",
+      "text": "0.115.14¶",
+      "id": "011514"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_7"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_7"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_6"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_11"
+    },
+    {
+      "level": "h2",
+      "text": "0.115.13¶",
+      "id": "011513"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_8"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_2"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_5"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_8"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_7"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_12"
+    },
+    {
+      "level": "h2",
+      "text": "0.115.12¶",
+      "id": "011512"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_9"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_9"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_8"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_13"
+    },
+    {
+      "level": "h2",
+      "text": "0.115.11¶",
+      "id": "011511"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_10"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_9"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_14"
+    },
+    {
+      "level": "h2",
+      "text": "0.115.10¶",
+      "id": "011510"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_11"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_6"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_10"
+    },
+    {
+      "level": "h2",
+      "text": "0.115.9¶",
+      "id": "01159"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_12"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_3"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_10"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_11"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_15"
+    },
+    {
+      "level": "h2",
+      "text": "0.115.8¶",
+      "id": "01158"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_13"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_4"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_11"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_12"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_16"
+    },
+    {
+      "level": "h2",
+      "text": "0.115.7¶",
+      "id": "01157"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_7"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_5"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_12"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_13"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_17"
+    },
+    {
+      "level": "h2",
+      "text": "0.115.6¶",
+      "id": "01156"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_14"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_6"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_13"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_14"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_18"
+    },
+    {
+      "level": "h2",
+      "text": "0.115.5¶",
+      "id": "01155"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_7"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_14"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_15"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_19"
+    },
+    {
+      "level": "h2",
+      "text": "0.115.4¶",
+      "id": "01154"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_8"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_15"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_16"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_20"
+    },
+    {
+      "level": "h2",
+      "text": "0.115.3¶",
+      "id": "01153"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_8"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_16"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_17"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_21"
+    },
+    {
+      "level": "h2",
+      "text": "0.115.2¶",
+      "id": "01152"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_9"
+    },
+    {
+      "level": "h2",
+      "text": "0.115.1¶",
+      "id": "01151"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_15"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_9"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_17"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_18"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_22"
+    },
+    {
+      "level": "h2",
+      "text": "0.115.0¶",
+      "id": "01150"
+    },
+    {
+      "level": "h3",
+      "text": "Highlights¶",
+      "id": "highlights"
+    },
+    {
+      "level": "h4",
+      "text": "Query Parameter Models¶",
+      "id": "query-parameter-models"
+    },
+    {
+      "level": "h4",
+      "text": "Header Parameter Models¶",
+      "id": "header-parameter-models"
+    },
+    {
+      "level": "h4",
+      "text": "Cookie Parameter Models¶",
+      "id": "cookie-parameter-models"
+    },
+    {
+      "level": "h4",
+      "text": "Forbid Extra Query (Cookie, Header) Parameters¶",
+      "id": "forbid-extra-query-cookie-header-parameters"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_3"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_19"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_23"
+    },
+    {
+      "level": "h2",
+      "text": "0.114.2¶",
+      "id": "01142"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_16"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_20"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_24"
+    },
+    {
+      "level": "h2",
+      "text": "0.114.1¶",
+      "id": "01141"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_10"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_18"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_21"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_25"
+    },
+    {
+      "level": "h2",
+      "text": "0.114.0¶",
+      "id": "01140"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_4"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_19"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_26"
+    },
+    {
+      "level": "h2",
+      "text": "0.113.0¶",
+      "id": "01130"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_5"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_27"
+    },
+    {
+      "level": "h2",
+      "text": "0.112.4¶",
+      "id": "01124"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_11"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_28"
+    },
+    {
+      "level": "h2",
+      "text": "0.112.3¶",
+      "id": "01123"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_12"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_20"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_22"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_29"
+    },
+    {
+      "level": "h2",
+      "text": "0.112.2¶",
+      "id": "01122"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_17"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_13"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_21"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_23"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_30"
+    },
+    {
+      "level": "h2",
+      "text": "0.112.1¶",
+      "id": "01121"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_10"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_22"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_24"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_31"
+    },
+    {
+      "level": "h2",
+      "text": "0.112.0¶",
+      "id": "01120"
+    },
+    {
+      "level": "h3",
+      "text": "Breaking Changes¶",
+      "id": "breaking-changes"
+    },
+    {
+      "level": "h4",
+      "text": "Summary¶",
+      "id": "summary"
+    },
+    {
+      "level": "h4",
+      "text": "Other Changes¶",
+      "id": "other-changes"
+    },
+    {
+      "level": "h4",
+      "text": "Technical Details¶",
+      "id": "technical-details"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_23"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_25"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_32"
+    },
+    {
+      "level": "h2",
+      "text": "0.111.1¶",
+      "id": "01111"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_11"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_24"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_26"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_33"
+    },
+    {
+      "level": "h2",
+      "text": "0.111.0¶",
+      "id": "01110"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_6"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_14"
+    },
+    {
+      "level": "h2",
+      "text": "0.110.3¶",
+      "id": "01103"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_25"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_27"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_34"
+    },
+    {
+      "level": "h2",
+      "text": "0.110.2¶",
+      "id": "01102"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_18"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_15"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_26"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_28"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_35"
+    },
+    {
+      "level": "h2",
+      "text": "0.110.1¶",
+      "id": "01101"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_19"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_16"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_12"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_27"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_29"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_36"
+    },
+    {
+      "level": "h2",
+      "text": "0.110.0¶",
+      "id": "01100"
+    },
+    {
+      "level": "h3",
+      "text": "Breaking Changes¶",
+      "id": "breaking-changes_1"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_28"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_30"
+    },
+    {
+      "level": "h2",
+      "text": "0.109.2¶",
+      "id": "01092"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_13"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_31"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_37"
+    },
+    {
+      "level": "h2",
+      "text": "0.109.1¶",
+      "id": "01091"
+    },
+    {
+      "level": "h3",
+      "text": "Security fixes¶",
+      "id": "security-fixes"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_7"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_17"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_29"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_32"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_38"
+    },
+    {
+      "level": "h2",
+      "text": "0.109.0¶",
+      "id": "01090"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_8"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_14"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_30"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_33"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_39"
+    },
+    {
+      "level": "h2",
+      "text": "0.108.0¶",
+      "id": "01080"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_15"
+    },
+    {
+      "level": "h2",
+      "text": "0.107.0¶",
+      "id": "01070"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_16"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_31"
+    },
+    {
+      "level": "h2",
+      "text": "0.106.0¶",
+      "id": "01060"
+    },
+    {
+      "level": "h3",
+      "text": "Breaking Changes¶",
+      "id": "breaking-changes_2"
+    },
+    {
+      "level": "h3",
+      "text": "Dependencies with yield, HTTPException and Background Tasks¶",
+      "id": "dependencies-with-yield-httpexception-and-background-tasks"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_9"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_40"
+    },
+    {
+      "level": "h2",
+      "text": "0.105.0¶",
+      "id": "01050"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_10"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_18"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_32"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_41"
+    },
+    {
+      "level": "h2",
+      "text": "0.104.1¶",
+      "id": "01041"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_20"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_33"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_42"
+    },
+    {
+      "level": "h2",
+      "text": "0.104.0¶",
+      "id": "01040"
+    },
+    {
+      "level": "h2",
+      "text": "Features¶",
+      "id": "features_11"
+    },
+    {
+      "level": "h2",
+      "text": "Upgrades¶",
+      "id": "upgrades_17"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_43"
+    },
+    {
+      "level": "h2",
+      "text": "0.103.2¶",
+      "id": "01032"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_19"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_34"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_44"
+    },
+    {
+      "level": "h2",
+      "text": "0.103.1¶",
+      "id": "01031"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_21"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_34"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_35"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_20"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_45"
+    },
+    {
+      "level": "h2",
+      "text": "0.103.0¶",
+      "id": "01030"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_12"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_35"
+    },
+    {
+      "level": "h2",
+      "text": "0.102.0¶",
+      "id": "01020"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_13"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_21"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_36"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_46"
+    },
+    {
+      "level": "h2",
+      "text": "0.101.1¶",
+      "id": "01011"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_22"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_22"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_37"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_36"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_47"
+    },
+    {
+      "level": "h2",
+      "text": "0.101.0¶",
+      "id": "01010"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_14"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_23"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_18"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_37"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_48"
+    },
+    {
+      "level": "h2",
+      "text": "0.100.1¶",
+      "id": "01001"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_23"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_38"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_38"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_49"
+    },
+    {
+      "level": "h2",
+      "text": "0.100.0¶",
+      "id": "01000"
+    },
+    {
+      "level": "h3",
+      "text": "Migration¶",
+      "id": "migration"
+    },
+    {
+      "level": "h3",
+      "text": "Pydantic v1¶",
+      "id": "pydantic-v1"
+    },
+    {
+      "level": "h3",
+      "text": "Changes¶",
+      "id": "changes"
+    },
+    {
+      "level": "h2",
+      "text": "0.99.1¶",
+      "id": "0991"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_24"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_39"
+    },
+    {
+      "level": "h2",
+      "text": "0.99.0¶",
+      "id": "0990"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_15"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_40"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_39"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_50"
+    },
+    {
+      "level": "h2",
+      "text": "0.98.0¶",
+      "id": "0980"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_16"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_41"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_40"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_51"
+    },
+    {
+      "level": "h2",
+      "text": "0.97.0¶",
+      "id": "0970"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_17"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_24"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_19"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_52"
+    },
+    {
+      "level": "h2",
+      "text": "0.96.1¶",
+      "id": "0961"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_25"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_20"
+    },
+    {
+      "level": "h3",
+      "text": "Refactors¶",
+      "id": "refactors_25"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_42"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_41"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_53"
+    },
+    {
+      "level": "h2",
+      "text": "0.96.0¶",
+      "id": "0960"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_18"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_43"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_42"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_54"
+    },
+    {
+      "level": "h2",
+      "text": "0.95.2¶",
+      "id": "0952"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_43"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_55"
+    },
+    {
+      "level": "h2",
+      "text": "0.95.1¶",
+      "id": "0951"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_26"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_44"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_44"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_56"
+    },
+    {
+      "level": "h2",
+      "text": "0.95.0¶",
+      "id": "0950"
+    },
+    {
+      "level": "h3",
+      "text": "Highlights¶",
+      "id": "highlights_1"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_19"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_45"
+    },
+    {
+      "level": "h2",
+      "text": "0.94.1¶",
+      "id": "0941"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_27"
+    },
+    {
+      "level": "h2",
+      "text": "0.94.0¶",
+      "id": "0940"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_21"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_46"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_45"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_57"
+    },
+    {
+      "level": "h2",
+      "text": "0.93.0¶",
+      "id": "0930"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_20"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_47"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_46"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_58"
+    },
+    {
+      "level": "h2",
+      "text": "0.92.0¶",
+      "id": "0920"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_22"
+    },
+    {
+      "level": "h2",
+      "text": "0.91.0¶",
+      "id": "0910"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_23"
+    },
+    {
+      "level": "h2",
+      "text": "0.90.1¶",
+      "id": "0901"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_24"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_48"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_47"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_59"
+    },
+    {
+      "level": "h2",
+      "text": "0.90.0¶",
+      "id": "0900"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_25"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_49"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_48"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_60"
+    },
+    {
+      "level": "h2",
+      "text": "0.89.1¶",
+      "id": "0891"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_28"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_50"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_49"
+    },
+    {
+      "level": "h2",
+      "text": "0.89.0¶",
+      "id": "0890"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_21"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_51"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_50"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_61"
+    },
+    {
+      "level": "h2",
+      "text": "0.88.0¶",
+      "id": "0880"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_26"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_52"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_51"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_62"
+    },
+    {
+      "level": "h2",
+      "text": "0.87.0¶",
+      "id": "0870"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_22"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_53"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_52"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_63"
+    },
+    {
+      "level": "h2",
+      "text": "0.86.0¶",
+      "id": "0860"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_23"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_29"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_54"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_53"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_64"
+    },
+    {
+      "level": "h2",
+      "text": "0.85.2¶",
+      "id": "0852"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_55"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_54"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_65"
+    },
+    {
+      "level": "h2",
+      "text": "0.85.1¶",
+      "id": "0851"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_30"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_56"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_66"
+    },
+    {
+      "level": "h2",
+      "text": "0.85.0¶",
+      "id": "0850"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_24"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_67"
+    },
+    {
+      "level": "h2",
+      "text": "0.84.0¶",
+      "id": "0840"
+    },
+    {
+      "level": "h3",
+      "text": "Breaking Changes¶",
+      "id": "breaking-changes_3"
+    },
+    {
+      "level": "h2",
+      "text": "0.83.0¶",
+      "id": "0830"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_25"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_31"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_57"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_68"
+    },
+    {
+      "level": "h2",
+      "text": "0.82.0¶",
+      "id": "0820"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_26"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_32"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_58"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_55"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_69"
+    },
+    {
+      "level": "h2",
+      "text": "0.81.0¶",
+      "id": "0810"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_27"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_33"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_59"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_56"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_70"
+    },
+    {
+      "level": "h2",
+      "text": "0.80.0¶",
+      "id": "0800"
+    },
+    {
+      "level": "h3",
+      "text": "Breaking Changes - Fixes¶",
+      "id": "breaking-changes-fixes"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_34"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_57"
+    },
+    {
+      "level": "h2",
+      "text": "0.79.1¶",
+      "id": "0791"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_35"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_60"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_58"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_71"
+    },
+    {
+      "level": "h2",
+      "text": "0.79.0¶",
+      "id": "0790"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes - Breaking Changes¶",
+      "id": "fixes-breaking-changes"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_59"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_72"
+    },
+    {
+      "level": "h2",
+      "text": "0.78.0¶",
+      "id": "0780"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_28"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_61"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_60"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_73"
+    },
+    {
+      "level": "h2",
+      "text": "0.77.1¶",
+      "id": "0771"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_27"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_62"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_61"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_74"
+    },
+    {
+      "level": "h2",
+      "text": "0.77.0¶",
+      "id": "0770"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_28"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_63"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_62"
+    },
+    {
+      "level": "h2",
+      "text": "0.76.0¶",
+      "id": "0760"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_29"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_75"
+    },
+    {
+      "level": "h2",
+      "text": "0.75.2¶",
+      "id": "0752"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_36"
+    },
+    {
+      "level": "h3",
+      "text": "Upgrades¶",
+      "id": "upgrades_30"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_76"
+    },
+    {
+      "level": "h2",
+      "text": "0.75.1¶",
+      "id": "0751"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_63"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_77"
+    },
+    {
+      "level": "h2",
+      "text": "0.75.0¶",
+      "id": "0750"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_29"
+    },
+    {
+      "level": "h2",
+      "text": "0.74.1¶",
+      "id": "0741"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_30"
+    },
+    {
+      "level": "h2",
+      "text": "0.74.0¶",
+      "id": "0740"
+    },
+    {
+      "level": "h3",
+      "text": "Breaking Changes¶",
+      "id": "breaking-changes_4"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_31"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_78"
+    },
+    {
+      "level": "h2",
+      "text": "0.73.0¶",
+      "id": "0730"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_32"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_64"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_37"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_79"
+    },
+    {
+      "level": "h2",
+      "text": "0.72.0¶",
+      "id": "0720"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_33"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_65"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_64"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_80"
+    },
+    {
+      "level": "h2",
+      "text": "0.71.0¶",
+      "id": "0710"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_34"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_81"
+    },
+    {
+      "level": "h2",
+      "text": "0.70.1¶",
+      "id": "0701"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_38"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_65"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_82"
+    },
+    {
+      "level": "h2",
+      "text": "0.70.0¶",
+      "id": "0700"
+    },
+    {
+      "level": "h3",
+      "text": "Breaking Changes - Upgrade¶",
+      "id": "breaking-changes-upgrade"
+    },
+    {
+      "level": "h2",
+      "text": "0.69.0¶",
+      "id": "0690"
+    },
+    {
+      "level": "h3",
+      "text": "Breaking Changes - Upgrade¶",
+      "id": "breaking-changes-upgrade_1"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_35"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_66"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_66"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_83"
+    },
+    {
+      "level": "h2",
+      "text": "0.68.2¶",
+      "id": "0682"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_36"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_67"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_67"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_84"
+    },
+    {
+      "level": "h2",
+      "text": "0.68.1¶",
+      "id": "0681"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_68"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_85"
+    },
+    {
+      "level": "h2",
+      "text": "0.68.0¶",
+      "id": "0680"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_37"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_68"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_69"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_86"
+    },
+    {
+      "level": "h2",
+      "text": "0.67.0¶",
+      "id": "0670"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_38"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_69"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_87"
+    },
+    {
+      "level": "h2",
+      "text": "0.66.1¶",
+      "id": "0661"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_70"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_88"
+    },
+    {
+      "level": "h2",
+      "text": "0.66.0¶",
+      "id": "0660"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_39"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_39"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_71"
+    },
+    {
+      "level": "h2",
+      "text": "0.65.3¶",
+      "id": "0653"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_40"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_72"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_89"
+    },
+    {
+      "level": "h2",
+      "text": "0.65.2¶",
+      "id": "0652"
+    },
+    {
+      "level": "h3",
+      "text": "Security fixes¶",
+      "id": "security-fixes_1"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_90"
+    },
+    {
+      "level": "h2",
+      "text": "0.65.1¶",
+      "id": "0651"
+    },
+    {
+      "level": "h3",
+      "text": "Security fixes¶",
+      "id": "security-fixes_2"
+    },
+    {
+      "level": "h2",
+      "text": "0.65.0¶",
+      "id": "0650"
+    },
+    {
+      "level": "h3",
+      "text": "Breaking Changes - Upgrade¶",
+      "id": "breaking-changes-upgrade_2"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_73"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_91"
+    },
+    {
+      "level": "h2",
+      "text": "0.64.0¶",
+      "id": "0640"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_40"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_41"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_70"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_74"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_92"
+    },
+    {
+      "level": "h2",
+      "text": "0.63.0¶",
+      "id": "0630"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_41"
+    },
+    {
+      "level": "h3",
+      "text": "Breaking changes¶",
+      "id": "breaking-changes_5"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_42"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_71"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_75"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_93"
+    },
+    {
+      "level": "h2",
+      "text": "0.62.0¶",
+      "id": "0620"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_42"
+    },
+    {
+      "level": "h3",
+      "text": "Breaking Changes¶",
+      "id": "breaking-changes_6"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_72"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_76"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_94"
+    },
+    {
+      "level": "h2",
+      "text": "0.61.2¶",
+      "id": "0612"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_43"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_73"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_77"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_95"
+    },
+    {
+      "level": "h2",
+      "text": "0.61.1¶",
+      "id": "0611"
+    },
+    {
+      "level": "h3",
+      "text": "Fixes¶",
+      "id": "fixes_44"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_74"
+    },
+    {
+      "level": "h3",
+      "text": "Translations¶",
+      "id": "translations_78"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_96"
+    },
+    {
+      "level": "h2",
+      "text": "0.61.0¶",
+      "id": "0610"
+    },
+    {
+      "level": "h3",
+      "text": "Features¶",
+      "id": "features_43"
+    },
+    {
+      "level": "h3",
+      "text": "Breaking Changes¶",
+      "id": "breaking-changes_7"
+    },
+    {
+      "level": "h3",
+      "text": "Docs¶",
+      "id": "docs_75"
+    },
+    {
+      "level": "h3",
+      "text": "Internal¶",
+      "id": "internal_97"
+    },
+    {
+      "level": "h2",
+      "text": "0.60.2¶",
+      "id": "0602"
+    },
+    {
+      "level": "h2",
+      "text": "0.60.1¶",
+      "id": "0601"
+    },
+    {
+      "level": "h2",
+      "text": "0.60.0¶",
+      "id": "0600"
+    },
+    {
+      "level": "h2",
+      "text": "0.59.0¶",
+      "id": "0590"
+    },
+    {
+      "level": "h2",
+      "text": "0.58.1¶",
+      "id": "0581"
+    },
+    {
+      "level": "h2",
+      "text": "0.58.0¶",
+      "id": "0580"
+    },
+    {
+      "level": "h2",
+      "text": "0.57.0¶",
+      "id": "0570"
+    },
+    {
+      "level": "h2",
+      "text": "0.56.1¶",
+      "id": "0561"
+    },
+    {
+      "level": "h2",
+      "text": "0.56.0¶",
+      "id": "0560"
+    },
+    {
+      "level": "h2",
+      "text": "0.55.1¶",
+      "id": "0551"
+    },
+    {
+      "level": "h2",
+      "text": "0.55.0¶",
+      "id": "0550"
+    },
+    {
+      "level": "h2",
+      "text": "0.54.2¶",
+      "id": "0542"
+    },
+    {
+      "level": "h2",
+      "text": "0.54.1¶",
+      "id": "0541"
+    },
+    {
+      "level": "h2",
+      "text": "0.54.0¶",
+      "id": "0540"
+    },
+    {
+      "level": "h2",
+      "text": "0.53.2¶",
+      "id": "0532"
+    },
+    {
+      "level": "h2",
+      "text": "0.53.1¶",
+      "id": "0531"
+    },
+    {
+      "level": "h2",
+      "text": "0.53.0¶",
+      "id": "0530"
+    },
+    {
+      "level": "h2",
+      "text": "0.52.0¶",
+      "id": "0520"
+    },
+    {
+      "level": "h2",
+      "text": "0.51.0¶",
+      "id": "0510"
+    },
+    {
+      "level": "h2",
+      "text": "0.50.0¶",
+      "id": "0500"
+    },
+    {
+      "level": "h2",
+      "text": "0.49.2¶",
+      "id": "0492"
+    },
+    {
+      "level": "h2",
+      "text": "0.49.1¶",
+      "id": "0491"
+    },
+    {
+      "level": "h2",
+      "text": "0.49.0¶",
+      "id": "0490"
+    },
+    {
+      "level": "h2",
+      "text": "0.48.0¶",
+      "id": "0480"
+    },
+    {
+      "level": "h2",
+      "text": "0.47.1¶",
+      "id": "0471"
+    },
+    {
+      "level": "h2",
+      "text": "0.47.0¶",
+      "id": "0470"
+    },
+    {
+      "level": "h2",
+      "text": "0.46.0¶",
+      "id": "0460"
+    },
+    {
+      "level": "h2",
+      "text": "0.45.0¶",
+      "id": "0450"
+    },
+    {
+      "level": "h2",
+      "text": "0.44.1¶",
+      "id": "0441"
+    },
+    {
+      "level": "h2",
+      "text": "0.44.0¶",
+      "id": "0440"
+    },
+    {
+      "level": "h2",
+      "text": "0.43.0¶",
+      "id": "0430"
+    },
+    {
+      "level": "h2",
+      "text": "0.42.0¶",
+      "id": "0420"
+    },
+    {
+      "level": "h2",
+      "text": "0.41.0¶",
+      "id": "0410"
+    },
+    {
+      "level": "h2",
+      "text": "0.40.0¶",
+      "id": "0400"
+    },
+    {
+      "level": "h2",
+      "text": "0.39.0¶",
+      "id": "0390"
+    },
+    {
+      "level": "h2",
+      "text": "0.38.1¶",
+      "id": "0381"
+    },
+    {
+      "level": "h2",
+      "text": "0.38.0¶",
+      "id": "0380"
+    },
+    {
+      "level": "h2",
+      "text": "0.37.0¶",
+      "id": "0370"
+    },
+    {
+      "level": "h2",
+      "text": "0.36.0¶",
+      "id": "0360"
+    },
+    {
+      "level": "h2",
+      "text": "0.35.0¶",
+      "id": "0350"
+    },
+    {
+      "level": "h2",
+      "text": "0.34.0¶",
+      "id": "0340"
+    },
+    {
+      "level": "h2",
+      "text": "0.33.0¶",
+      "id": "0330"
+    },
+    {
+      "level": "h2",
+      "text": "0.32.0¶",
+      "id": "0320"
+    },
+    {
+      "level": "h2",
+      "text": "0.31.0¶",
+      "id": "0310"
+    },
+    {
+      "level": "h2",
+      "text": "0.30.1¶",
+      "id": "0301"
+    },
+    {
+      "level": "h2",
+      "text": "0.30.0¶",
+      "id": "0300"
+    },
+    {
+      "level": "h2",
+      "text": "0.29.1¶",
+      "id": "0291"
+    },
+    {
+      "level": "h2",
+      "text": "0.29.0¶",
+      "id": "0290"
+    },
+    {
+      "level": "h2",
+      "text": "0.28.0¶",
+      "id": "0280"
+    },
+    {
+      "level": "h2",
+      "text": "0.27.2¶",
+      "id": "0272"
+    },
+    {
+      "level": "h2",
+      "text": "0.27.1¶",
+      "id": "0271"
+    },
+    {
+      "level": "h2",
+      "text": "0.27.0¶",
+      "id": "0270"
+    },
+    {
+      "level": "h2",
+      "text": "0.26.0¶",
+      "id": "0260"
+    },
+    {
+      "level": "h2",
+      "text": "0.25.0¶",
+      "id": "0250"
+    },
+    {
+      "level": "h2",
+      "text": "0.24.0¶",
+      "id": "0240"
+    },
+    {
+      "level": "h2",
+      "text": "0.23.0¶",
+      "id": "0230"
+    },
+    {
+      "level": "h2",
+      "text": "0.22.0¶",
+      "id": "0220"
+    },
+    {
+      "level": "h2",
+      "text": "0.21.0¶",
+      "id": "0210"
+    },
+    {
+      "level": "h2",
+      "text": "0.20.1¶",
+      "id": "0201"
+    },
+    {
+      "level": "h2",
+      "text": "0.20.0¶",
+      "id": "0200"
+    },
+    {
+      "level": "h2",
+      "text": "0.19.0¶",
+      "id": "0190"
+    },
+    {
+      "level": "h2",
+      "text": "0.18.0¶",
+      "id": "0180"
+    },
+    {
+      "level": "h2",
+      "text": "0.17.0¶",
+      "id": "0170"
+    },
+    {
+      "level": "h2",
+      "text": "0.16.0¶",
+      "id": "0160"
+    },
+    {
+      "level": "h2",
+      "text": "0.15.0¶",
+      "id": "0150"
+    },
+    {
+      "level": "h2",
+      "text": "0.14.0¶",
+      "id": "0140"
+    },
+    {
+      "level": "h2",
+      "text": "0.13.0¶",
+      "id": "0130"
+    },
+    {
+      "level": "h2",
+      "text": "0.12.1¶",
+      "id": "0121"
+    },
+    {
+      "level": "h2",
+      "text": "0.12.0¶",
+      "id": "0120"
+    },
+    {
+      "level": "h2",
+      "text": "0.11.0¶",
+      "id": "0110"
+    },
+    {
+      "level": "h2",
+      "text": "0.10.3¶",
+      "id": "0103"
+    },
+    {
+      "level": "h2",
+      "text": "0.10.2¶",
+      "id": "0102"
+    },
+    {
+      "level": "h2",
+      "text": "0.10.1¶",
+      "id": "0101"
+    },
+    {
+      "level": "h2",
+      "text": "0.10.0¶",
+      "id": "0100"
+    },
+    {
+      "level": "h2",
+      "text": "0.9.1¶",
+      "id": "091"
+    },
+    {
+      "level": "h2",
+      "text": "0.9.0¶",
+      "id": "090"
+    },
+    {
+      "level": "h2",
+      "text": "0.8.0¶",
+      "id": "080"
+    },
+    {
+      "level": "h2",
+      "text": "0.7.1¶",
+      "id": "071"
+    },
+    {
+      "level": "h2",
+      "text": "0.7.0¶",
+      "id": "070"
+    },
+    {
+      "level": "h2",
+      "text": "0.6.4¶",
+      "id": "064"
+    },
+    {
+      "level": "h2",
+      "text": "0.6.3¶",
+      "id": "063"
+    },
+    {
+      "level": "h2",
+      "text": "0.6.2¶",
+      "id": "062"
+    },
+    {
+      "level": "h2",
+      "text": "0.6.1¶",
+      "id": "061"
+    },
+    {
+      "level": "h2",
+      "text": "0.6.0¶",
+      "id": "060"
+    },
+    {
+      "level": "h2",
+      "text": "0.5.1¶",
+      "id": "051"
+    },
+    {
+      "level": "h2",
+      "text": "0.5.0¶",
+      "id": "050"
+    },
+    {
+      "level": "h2",
+      "text": "0.4.0¶",
+      "id": "040"
+    },
+    {
+      "level": "h2",
+      "text": "0.3.0¶",
+      "id": "030"
+    },
+    {
+      "level": "h2",
+      "text": "0.2.1¶",
+      "id": "021"
+    },
+    {
+      "level": "h2",
+      "text": "0.2.0¶",
+      "id": "020"
+    },
+    {
+      "level": "h2",
+      "text": "0.1.19¶",
+      "id": "0119"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "from fastapi import FastAPI\nfrom pydantic import BaseModel as BaseModelV2\nfrom pydantic.v1 import BaseModel\n\n\nclass Item(BaseModel):\n    name: str\n    description: str | None = None\n\n\nclass ItemV2(BaseModelV2):\n    title: str\n    summary: str | None = None\n\n\napp = FastAPI()\n\n\n@app.post(\"/items/\", response_model=ItemV2)\ndef create_item(item: Item):\n    return {\"title\": item.name, \"summary\": item.description}",
+      "language": "python"
+    },
+    {
+      "code": "from typing import Annotated, Literal\n\nfrom fastapi import FastAPI, Query\nfrom pydantic import BaseModel, Field\n\napp = FastAPI()\n\n\nclass FilterParams(BaseModel):\n    limit: int = Field(100, gt=0, le=100)\n    offset: int = Field(0, ge=0)\n    order_by: Literal[\"created_at\", \"updated_at\"] = \"created_at\"\n    tags: list[str] = []\n\n\n@app.get(\"/items/\")\nasync def read_items(filter_query: Annotated[FilterParams, Query()]):\n    return filter_query",
+      "language": "python"
+    },
+    {
+      "code": "from typing import Annotated\n\nfrom fastapi import FastAPI, Header\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\n\nclass CommonHeaders(BaseModel):\n    host: str\n    save_data: bool\n    if_modified_since: str | None = None\n    traceparent: str | None = None\n    x_tag: list[str] = []\n\n\n@app.get(\"/items/\")\nasync def read_items(headers: Annotated[CommonHeaders, Header()]):\n    return headers",
+      "language": "python"
+    },
+    {
+      "code": "from typing import Annotated\n\nfrom fastapi import Cookie, FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\n\nclass Cookies(BaseModel):\n    session_id: str\n    fatebook_tracker: str | None = None\n    googall_tracker: str | None = None\n\n\n@app.get(\"/items/\")\nasync def read_items(cookies: Annotated[Cookies, Cookie()]):\n    return cookies",
+      "language": "python"
+    },
+    {
+      "code": "from typing import Annotated, Literal\n\nfrom fastapi import FastAPI, Query\nfrom pydantic import BaseModel, Field\n\napp = FastAPI()\n\n\nclass FilterParams(BaseModel):\n    model_config = {\"extra\": \"forbid\"}\n\n    limit: int = Field(100, gt=0, le=100)\n    offset: int = Field(0, ge=0)\n    order_by: Literal[\"created_at\", \"updated_at\"] = \"created_at\"\n    tags: list[str] = []\n\n\n@app.get(\"/items/\")\nasync def read_items(filter_query: Annotated[FilterParams, Query()]):\n    return filter_query",
+      "language": "python"
+    },
+    {
+      "code": "from typing import Annotated\n\nfrom fastapi import FastAPI, Form\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\n\nclass FormData(BaseModel):\n    username: str\n    password: str\n    model_config = {\"extra\": \"forbid\"}\n\n\n@app.post(\"/login/\")\nasync def login(data: Annotated[FormData, Form()]):\n    return data",
+      "language": "python"
+    },
+    {
+      "code": "from typing import Annotated\n\nfrom fastapi import FastAPI, Form\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\n\nclass FormData(BaseModel):\n    username: str\n    password: str\n\n\n@app.post(\"/login/\")\nasync def login(data: Annotated[FormData, Form()]):\n    return data",
+      "language": "python"
+    },
+    {
+      "code": "pip install \"fastapi[standard]\"",
+      "language": "unknown"
+    },
+    {
+      "code": "python -m fastapi",
+      "language": "unknown"
+    },
+    {
+      "code": "$ pip install --upgrade fastapi\n\n$ fastapi dev main.py\n\n\n ╭────────── FastAPI CLI - Development mode ───────────╮\n │                                                     │\n │  Serving at: http://127.0.0.1:8000                  │\n │                                                     │\n │  API docs: http://127.0.0.1:8000/docs               │\n │                                                     │\n │  Running in development mode, for production use:   │\n │                                                     │\n │  fastapi run                                        │\n │                                                     │\n ╰─────────────────────────────────────────────────────╯\n\nINFO:     Will watch for changes in these directories: ['/home/user/code/awesomeapp']\nINFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)\nINFO:     Started reloader process [2248755] using WatchFiles\nINFO:     Started server process [2248757]\nINFO:     Waiting for application startup.\nINFO:     Application startup complete.",
+      "language": "unknown"
+    },
+    {
+      "code": "def my_dep():\n    try:\n        yield\n    except SomeException:\n        pass",
+      "language": "python"
+    },
+    {
+      "code": "def my_dep():\n    try:\n        yield\n    except SomeException:\n        raise",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import Depends, FastAPI, HTTPException\nfrom typing_extensions import Annotated\n\napp = FastAPI()\n\n\ndata = {\n    \"plumbus\": {\"description\": \"Freshly pickled plumbus\", \"owner\": \"Morty\"},\n    \"portal-gun\": {\"description\": \"Gun to create portals\", \"owner\": \"Rick\"},\n}\n\n\nclass OwnerError(Exception):\n    pass\n\n\ndef get_username():\n    try:\n        yield \"Rick\"\n    except OwnerError as e:\n        raise HTTPException(status_code=400, detail=f\"Owner error: {e}\")\n\n\n@app.get(\"/items/{item_id}\")\ndef get_item(item_id: str, username: Annotated[str, Depends(get_username)]):\n    if item_id not in data:\n        raise HTTPException(status_code=404, detail=\"Item not found\")\n    item = data[item_id]\n    if item[\"owner\"] != username:\n        raise OwnerError(username)\n    return item",
+      "language": "python"
+    },
+    {
+      "code": "sequenceDiagram\n\nparticipant client as Client\nparticipant handler as Exception handler\nparticipant dep as Dep with yield\nparticipant operation as Path Operation\nparticipant tasks as Background tasks\n\n    Note over client,tasks: Can raise exception for dependency, handled after response is sent\n    Note over client,operation: Can raise HTTPException and can change the response\n    client ->> dep: Start request\n    Note over dep: Run code up to yield\n    opt raise\n        dep -->> handler: Raise HTTPException\n        handler -->> client: HTTP error response\n        dep -->> dep: Raise other exception\n    end\n    dep ->> operation: Run dependency, e.g. DB session\n    opt raise\n        operation -->> dep: Raise HTTPException\n        dep -->> handler: Auto forward exception\n        handler -->> client: HTTP error response\n        operation -->> dep: Raise other exception\n        dep -->> handler: Auto forward exception\n    end\n    operation ->> client: Return response to client\n    Note over client,operation: Response is already sent, can't change it anymore\n    opt Tasks\n        operation -->> tasks: Send background tasks\n    end\n    opt Raise other exception\n        tasks -->> dep: Raise other exception\n    end\n    Note over dep: After yield\n    opt Handle other exception\n        dep -->> dep: Handle exception, can't change response. E.g. close DB session.\n    end",
+      "language": "unknown"
+    },
+    {
+      "code": "def get_current_user(token: str):\n    # authenticate user\n    return User()\n\n\n@app.get(\"/items/\")\ndef read_items(user: User = Depends(get_current_user)):\n    ...\n\n\n@app.post(\"/items/\")\ndef create_item(*, user: User = Depends(get_current_user), item: Item):\n    ...\n\n\n@app.get(\"/items/{item_id}\")\ndef read_item(*, user: User = Depends(get_current_user), item_id: int):\n    ...\n\n\n@app.delete(\"/items/{item_id}\")\ndef delete_item(*, user: User = Depends(get_current_user), item_id: int):\n    ...",
+      "language": "python"
+    },
+    {
+      "code": "user: User = Depends(get_current_user)",
+      "language": "unknown"
+    },
+    {
+      "code": "CurrentUser = Annotated[User, Depends(get_current_user)]",
+      "language": "unknown"
+    },
+    {
+      "code": "CurrentUser = Annotated[User, Depends(get_current_user)]\n\n\n@app.get(\"/items/\")\ndef read_items(user: CurrentUser):\n    ...\n\n\n@app.post(\"/items/\")\ndef create_item(user: CurrentUser, item: Item):\n    ...\n\n\n@app.get(\"/items/{item_id}\")\ndef read_item(user: CurrentUser, item_id: int):\n    ...\n\n\n@app.delete(\"/items/{item_id}\")\ndef delete_item(user: CurrentUser, item_id: int):\n    ...",
+      "language": "python"
+    },
+    {
+      "code": "from contextlib import asynccontextmanager\n\nfrom fastapi import FastAPI\n\n\ndef fake_answer_to_everything_ml_model(x: float):\n    return x * 42\n\n\nml_models = {}\n\n\n@asynccontextmanager\nasync def lifespan(app: FastAPI):\n    # Load the ML model\n    ml_models[\"answer_to_everything\"] = fake_answer_to_everything_ml_model\n    yield\n    # Clean up the ML models and release the resources\n    ml_models.clear()\n\n\napp = FastAPI(lifespan=lifespan)\n\n\n@app.get(\"/predict\")\nasync def predict(x: float):\n    result = ml_models[\"answer_to_everything\"](x)\n    return {\"result\": result}",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\n\nclass Item(BaseModel):\n    name: str\n    price: float\n\n\n@app.get(\"/items/\")\nasync def read_items() -> list[Item]:\n    return [\n        Item(name=\"Portal Gun\", price=42.0),\n        Item(name=\"Plumbus\", price=32.0),\n    ]",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import FastAPI\nfrom pydantic import BaseModel\n\nclass Item(BaseModel):\n    name: str\n    price: Optional[float] = None\n    owner_ids: Optional[List[int]] = None\n\napp = FastAPI()\n\n@app.get(\"/items/invalidnone\", response_model=Item)\ndef get_invalid_none():\n    return None",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import FastAPI\nfrom pydantic import BaseModel\n\nclass Item(BaseModel):\n    name: str\n    price: Optional[float] = None\n    owner_ids: Optional[List[int]] = None\n\napp = FastAPI()\n\n@app.get(\"/items/invalidnone\", response_model=Item)\ndef get_invalid_none():\n    if flag:\n        return {\"name\": \"foo\"}\n    # if flag is False, at this point the function will implicitly return None",
+      "language": "python"
+    },
+    {
+      "code": "from typing import Union\n\nfrom fastapi import FastAPI\nfrom pydantic import BaseModel\n\nclass Item(BaseModel):\n    name: str\n    price: Optional[float] = None\n    owner_ids: Optional[List[int]] = None\n\napp = FastAPI()\n\n@app.get(\"/items/invalidnone\", response_model=Union[Item, None])\ndef get_invalid_none():\n    return None",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import Cookie, FastAPI, Header, Path, Query\n\napp = FastAPI()\n\n\n@app.get(\"/items/{item_id}\")\ndef main(\n    item_id: int = Path(default=..., gt=0),\n    query: str = Query(default=..., max_length=10),\n    session: str = Cookie(default=..., min_length=3),\n    x_trace: str = Header(default=..., title=\"Tracing header\"),\n):\n    return {\"message\": \"Hello World\"}",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import Cookie, FastAPI, Header, Path, Query\n\napp = FastAPI()\n\n\n@app.get(\"/items/{item_id}\")\ndef main(\n    item_id: int = Path(gt=0),\n    query: str = Query(max_length=10),\n    session: str = Cookie(min_length=3),\n    x_trace: str = Header(title=\"Tracing header\"),\n):\n    return {\"message\": \"Hello World\"}",
+      "language": "python"
+    },
+    {
+      "code": "from typing import Union\nfrom fastapi import Cookie, FastAPI, Header, Path, Query\n\napp = FastAPI()\n\n\n@app.get(\"/items/{item_id}\")\ndef main(\n    item_id: int = Path(gt=0),\n    query: Union[str, None] = Query(default=None, max_length=10),\n    session: Union[str, None] = Cookie(default=None, min_length=3),\n    x_trace: Union[str, None] = Header(default=None, title=\"Tracing header\"),\n):\n    return {\"message\": \"Hello World\"}",
+      "language": "python"
+    },
+    {
+      "code": "async def get_database():\n    with Session() as session:\n        try:\n            yield session\n        except HTTPException:\n            session.rollback()\n            raise\n        finally:\n            session.close()",
+      "language": "python"
+    },
+    {
+      "code": "async def do_something():\n    try:\n        yield something\n    finally:\n        some_cleanup()",
+      "language": "python"
+    },
+    {
+      "code": "from contextvars import ContextVar\nfrom typing import Any, Dict, Optional\n\n\nlegacy_request_state_context_var: ContextVar[Optional[Dict[str, Any]]] = ContextVar(\n    \"legacy_request_state_context_var\", default=None\n)\n\nasync def set_up_request_state_dependency():\n    request_state = {\"user\": \"deadpond\"}\n    contextvar_token = legacy_request_state_context_var.set(request_state)\n    yield request_state\n    legacy_request_state_context_var.reset(contextvar_token)",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import FastAPI, Depends\n\n\nasync def some_dependency():\n    return\n\n\napp = FastAPI(dependencies=[Depends(some_dependency)])",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import APIRouter, Depends\n\n\nasync def some_dependency():\n    return\n\n\nrouter = APIRouter(prefix=\"/users\", dependencies=[Depends(some_dependency)])",
+      "language": "python"
+    }
+  ],
+  "patterns": [
+    {
+      "description": "Pydantic version 2 has the core re-written in Rust and includes a lot of improvements and features, for example:",
+      "code": "pip install --upgrade fastapi pydantic"
+    },
+    {
+      "description": "For example:",
+      "code": "from contextlib import asynccontextmanager\n\nfrom fastapi import FastAPI\n\n\ndef fake_answer_to_everything_ml_model(x: float):\n    return x * 42\n\n\nml_models = {}\n\n\n@asynccontextmanager\nasync def lifespan(app: FastAPI):\n    # Load the ML model\n    ml_models[\"answer_to_everything\"] = fake_answer_to_everything_ml_model\n    yield\n    # Clean up the ML models and release the resources\n    ml_models.clear()\n\n\napp = FastAPI(lifespan=lifespan)\n\n\n@app.get(\"/predict\")\nasync def predict(x: float):\n    result = ml_models[\"answer_to_everything\"](x)\n    return {\"result\": result}"
+    },
+    {
+      "description": "You could also be implicitly returning None without realizing, for example:",
+      "code": "None"
+    },
+    {
+      "description": "For example:",
+      "code": "from fastapi import Cookie, FastAPI, Header, Path, Query\n\napp = FastAPI()\n\n\n@app.get(\"/items/{item_id}\")\ndef main(\n    item_id: int = Path(default=..., gt=0),\n    query: str = Query(default=..., max_length=10),\n    session: str = Cookie(default=..., min_length=3),\n    x_trace: str = Header(default=..., title=\"Tracing header\"),\n):\n    return {\"message\": \"Hello World\"}"
+    },
+    {
+      "description": "Dependencies with yield can now catch HTTPException and custom exceptions. For example:",
+      "code": "yield"
+    }
+  ],
+  "links": [
+    "https://fastapi.tiangolo.com/release-notes/",
+    "https://fastapi.tiangolo.com/how-to/migrate-from-pydantic-v1-to-pydantic-v2/",
+    "https://fastapi.tiangolo.com/advanced/advanced-dependencies",
+    "https://fastapi.tiangolo.com/tutorial/query-params-str-validations/",
+    "https://fastapi.tiangolo.com/tutorial/query-param-models/",
+    "https://fastapi.tiangolo.com/tutorial/header-param-models/",
+    "https://fastapi.tiangolo.com/tutorial/cookie-param-models/",
+    "https://fastapi.tiangolo.com/tutorial/request-form-models/",
+    "https://fastapi.tiangolo.com/fastapi-cli/",
+    "https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/",
+    "https://fastapi.tiangolo.com/tutorial/handling-errors/",
+    "https://fastapi.tiangolo.com/reference/",
+    "https://fastapi.tiangolo.com/tutorial/schema-extra-example/",
+    "https://fastapi.tiangolo.com/how-to/separate-openapi-schemas/",
+    "https://fastapi.tiangolo.com/advanced/settings/",
+    "https://fastapi.tiangolo.com/advanced/openapi-webhooks/",
+    "https://fastapi.tiangolo.com/python-types/",
+    "https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/",
+    "https://fastapi.tiangolo.com/tutorial/dependencies/",
+    "https://fastapi.tiangolo.com/advanced/events/",
+    "https://fastapi.tiangolo.com/tutorial/response-model/",
+    "https://fastapi.tiangolo.com/advanced/websockets/",
+    "https://fastapi.tiangolo.com/help-fastapi/",
+    "https://fastapi.tiangolo.com/async/",
+    "https://fastapi.tiangolo.com/advanced/generate-clients/",
+    "https://fastapi.tiangolo.com/tutorial/request-files/",
+    "https://fastapi.tiangolo.com/tutorial/path-operation-configuration/",
+    "https://fastapi.tiangolo.com/advanced/extending-openapi/",
+    "https://fastapi.tiangolo.com/deployment/manually/",
+    "https://fastapi.tiangolo.com/advanced/graphql/",
+    "https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/",
+    "https://fastapi.tiangolo.com/tutorial/metadata/",
+    "https://fastapi.tiangolo.com/advanced/dataclasses/",
+    "https://fastapi.tiangolo.com/advanced/custom-response/",
+    "https://fastapi.tiangolo.com/advanced/openapi-callbacks/",
+    "https://fastapi.tiangolo.com/tutorial/bigger-applications/",
+    "https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-in-path-operation-decorators/",
+    "https://fastapi.tiangolo.com/tutorial/dependencies/global-dependencies/",
+    "https://fastapi.tiangolo.com/ja/",
+    "https://fastapi.tiangolo.com/tutorial/sql-databases/",
+    "https://fastapi.tiangolo.com/advanced/async-tests/",
+    "https://fastapi.tiangolo.com/advanced/behind-a-proxy/",
+    "https://fastapi.tiangolo.com/external-links/",
+    "https://fastapi.tiangolo.com/zh/tutorial/body-fields/",
+    "https://fastapi.tiangolo.com/zh/tutorial/body-multiple-params/",
+    "https://fastapi.tiangolo.com/zh/tutorial/path-params-numeric-validations/",
+    "https://fastapi.tiangolo.com/zh/tutorial/query-params-str-validations/",
+    "https://fastapi.tiangolo.com/zh/tutorial/body/",
+    "https://fastapi.tiangolo.com/zh/help-fastapi/",
+    "https://fastapi.tiangolo.com/zh/tutorial/query-params/",
+    "https://fastapi.tiangolo.com/zh/contributing/",
+    "https://fastapi.tiangolo.com/zh/tutorial/path-params/",
+    "https://fastapi.tiangolo.com/project-generation/",
+    "https://fastapi.tiangolo.com/zh/tutorial/first-steps/",
+    "https://fastapi.tiangolo.com/advanced/sub-applications/",
+    "https://fastapi.tiangolo.com/zh/python-types/",
+    "https://fastapi.tiangolo.com/pt/alternatives/",
+    "https://fastapi.tiangolo.com/pt/",
+    "https://fastapi.tiangolo.com/es/async/",
+    "https://fastapi.tiangolo.com/advanced/conditional-openapi/",
+    "https://fastapi.tiangolo.com/pt/benchmarks/",
+    "https://fastapi.tiangolo.com/pt/tutorial/",
+    "https://fastapi.tiangolo.com/es/advanced/",
+    "https://fastapi.tiangolo.com/pt/history-design-future/",
+    "https://fastapi.tiangolo.com/pt/features/",
+    "https://fastapi.tiangolo.com/es/tutorial/",
+    "https://fastapi.tiangolo.com/zh/deployment/",
+    "https://fastapi.tiangolo.com/zh/tutorial/",
+    "https://fastapi.tiangolo.com/zh/features/",
+    "https://fastapi.tiangolo.com/zh/",
+    "https://fastapi.tiangolo.com/es/python-types/",
+    "https://fastapi.tiangolo.com/es/features/",
+    "https://fastapi.tiangolo.com/advanced/testing-database/",
+    "https://fastapi.tiangolo.com/contributing/",
+    "https://fastapi.tiangolo.com/es/",
+    "https://fastapi.tiangolo.com/tutorial/body-fields/",
+    "https://fastapi.tiangolo.com/tutorial/debugging/",
+    "https://fastapi.tiangolo.com/advanced/middleware/",
+    "https://fastapi.tiangolo.com/advanced/wsgi/",
+    "https://fastapi.tiangolo.com/deployment/",
+    "https://fastapi.tiangolo.com/advanced/sql-databases-peewee/",
+    "https://fastapi.tiangolo.com/tutorial/",
+    "https://fastapi.tiangolo.com/advanced/",
+    "https://fastapi.tiangolo.com/advanced/security/http-basic-auth/",
+    "https://fastapi.tiangolo.com/advanced/custom-request-and-route/",
+    "https://fastapi.tiangolo.com/tutorial/first-steps/",
+    "https://fastapi.tiangolo.com/tutorial/query-params/",
+    "https://fastapi.tiangolo.com/advanced/security/oauth2-scopes/",
+    "https://fastapi.tiangolo.com/tutorial/body-nested-models/",
+    "https://fastapi.tiangolo.com/tutorial/extra-models/",
+    "https://fastapi.tiangolo.com/advanced/response-directly/",
+    "https://fastapi.tiangolo.com/advanced/response-cookies/",
+    "https://fastapi.tiangolo.com/advanced/response-headers/",
+    "https://fastapi.tiangolo.com/advanced/response-change-status-code/",
+    "https://fastapi.tiangolo.com/tutorial/dependencies/sub-dependencies/",
+    "https://fastapi.tiangolo.com/advanced/testing-dependencies/",
+    "https://fastapi.tiangolo.com/tutorial/path-params/",
+    "https://fastapi.tiangolo.com/tutorial/testing/",
+    "https://fastapi.tiangolo.com/tutorial/body-updates/",
+    "https://fastapi.tiangolo.com/advanced/security/",
+    "https://fastapi.tiangolo.com/tutorial/static-files/",
+    "https://fastapi.tiangolo.com/advanced/templates/",
+    "https://fastapi.tiangolo.com/tutorial/encoder/",
+    "https://fastapi.tiangolo.com/tutorial/middleware/",
+    "https://fastapi.tiangolo.com/tutorial/cors/",
+    "https://fastapi.tiangolo.com/advanced/additional-status-codes/",
+    "https://fastapi.tiangolo.com/alternatives/",
+    "https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/",
+    "https://fastapi.tiangolo.com/advanced/additional-responses/",
+    "https://fastapi.tiangolo.com/tutorial/background-tasks/",
+    "https://fastapi.tiangolo.com/advanced/async-sql-databases/",
+    "https://fastapi.tiangolo.com/tutorial/header-params/",
+    "https://fastapi.tiangolo.com/tutorial/application-configuration/",
+    "https://fastapi.tiangolo.com/tutorial/request-forms-and-files/",
+    "https://fastapi.tiangolo.com/history-design-future/",
+    "https://fastapi.tiangolo.com/advanced/using-request-directly/",
+    "https://fastapi.tiangolo.com/advanced/sub-applications-proxy/"
+  ]
+}

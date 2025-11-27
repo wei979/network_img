@@ -1,0 +1,174 @@
+{
+  "url": "https://react.dev/blog/2025/10/01/react-19-2",
+  "title": "React 19.2",
+  "content": "October 1, 2025 by The React Team\n\nReact 19.2 is now available on npm!\n\nThis is our third release in the last year, following React 19 in December and React 19.1 in June. In this post, we’ll give an overview of the new features in React 19.2, and highlight some notable changes.\n\n<Activity> lets you break your app into “activities” that can be controlled and prioritized.\n\nYou can use Activity as an alternative to conditionally rendering parts of your app:\n\nIn React 19.2, Activity supports two modes: visible and hidden.\n\nThis means you can pre-render and keep rendering hidden parts of the app without impacting the performance of anything visible on screen.\n\nYou can use Activity to render hidden parts of the app that a user is likely to navigate to next, or to save the state of parts the user navigates away from. This helps make navigations quicker by loading data, css, and images in the background, and allows back navigations to maintain state such as input fields.\n\nIn the future, we plan to add more modes to Activity for different use cases.\n\nFor examples on how to use Activity, check out the Activity docs.\n\nOne common pattern with useEffect is to notify the app code about some kind of “events” from an external system. For example, when a chat room gets connected, you might want to display a notification:\n\nThe problem with the code above is that a change to any values used inside such an “event” will cause the surrounding Effect to re-run. For example, changing the theme will cause the chat room to reconnect. This makes sense for values related to the Effect logic itself, like roomId, but it doesn’t make sense for theme.\n\nTo solve this, most users just disable the lint rule and exclude the dependency. But that can lead to bugs since the linter can no longer help you keep the dependencies up to date if you need to update the Effect later.\n\nWith useEffectEvent, you can split the “event” part of this logic out of the Effect that emits it:\n\nSimilar to DOM events, Effect Events always “see” the latest props and state.\n\nEffect Events should not be declared in the dependency array. You’ll need to upgrade to eslint-plugin-react-hooks@latest so that the linter doesn’t try to insert them as dependencies. Note that Effect Events can only be declared in the same component or Hook as “their” Effect. These restrictions are verified by the linter.\n\nYou should use useEffectEvent for functions that are conceptually “events” that happen to be fired from an Effect instead of a user event (that’s what makes it an “Effect Event”). You don’t need to wrap everything in useEffectEvent, or to use it just to silence the lint error, as this can lead to bugs.\n\nFor a deep dive on how to think about Event Effects, see: Separating Events from Effects.\n\ncacheSignal is only for use with React Server Components.\n\ncacheSignal allows you to know when the cache() lifetime is over:\n\nThis allows you to clean up or abort work when the result will no longer be used in the cache, such as:\n\nFor more info, see the cacheSignal docs.\n\nReact 19.2 adds a new set of custom tracks to Chrome DevTools performance profiles to provide more information about the performance of your React app:\n\nThe React Performance Tracks docs explain everything included in the tracks, but here is a high-level overview.\n\nThe Scheduler track shows what React is working on for different priorities such as “blocking” for user interactions, or “transition” for updates inside startTransition. Inside each track, you will see the type of work being performed such as the event that scheduled an update, and when the render for that update happened.\n\nWe also show information such as when an update is blocked waiting for a different priority, or when React is waiting for paint before continuing. The Scheduler track helps you understand how React splits your code into different priorities, and the order it completed the work.\n\nSee the Scheduler track docs to see everything included.\n\nThe Components track shows the tree of components that React is working on either to render or run effects. Inside you’ll see labels such as “Mount” for when children mount or effects are mounted, or “Blocked” for when rendering is blocked due to yielding to work outside React.\n\nThe Components track helps you understand when components are rendered or run effects, and the time it takes to complete that work to help identify performance problems.\n\nSee the Components track docs for see everything included.\n\nIn 19.2 we’re adding a new capability to pre-render part of the app ahead of time, and resume rendering it later.\n\nThis feature is called “Partial Pre-rendering”, and allows you to pre-render the static parts of your app and serve it from a CDN, and then resume rendering the shell to fill it in with dynamic content later.\n\nTo pre-render an app to resume later, first call prerender with an AbortController:\n\nThen, you can return the prelude shell to the client, and later call resume to “resume” to a SSR stream:\n\nOr you can call resumeAndPrerender to resume to get static HTML for SSG:\n\nFor more info, see the docs for the new APIs:\n\nAdditionally, the prerender apis now return a postpone state to pass to the resume apis.\n\nWe fixed a behavioral bug where Suspense boundaries would reveal differently depending on if they were rendered on the client or when streaming from server-side rendering.\n\nStarting in 19.2, React will batch reveals of server-rendered Suspense boundaries for a short time, to allow more content to be revealed together and align with the client-rendered behavior.\n\nPreviously, during streaming server-side rendering, suspense content would immediately replace fallbacks.\n\nIn React 19.2, suspense boundaries are batched for a small amount of time, to allow revealing more content together.\n\nThis fix also prepares apps for supporting <ViewTransition> for Suspense during SSR. By revealing more content together, animations can run in larger batches of content, and avoid chaining animations of content that stream in close together.\n\nReact uses heuristics to ensure throttling does not impact core web vitals and search ranking.\n\nFor example, if the total page load time is approaching 2.5s (which is the time considered “good” for LCP), React will stop batching and reveal content immediately so that the throttling is not the reason to miss the metric.\n\nReact 19.2 adds support for Web Streams for streaming SSR in Node.js:\n\nAs well as the new resume APIs:\n\nIn Node.js environments, we still highly recommend using the Node Streams APIs:\n\nThis is because Node Streams are much faster than Web Streams in Node, and Web Streams do not support compression by default, leading to users accidentally missing the benefits of streaming.\n\nWe also published eslint-plugin-react-hooks@latest with flat config by default in the recommended preset, and opt-in for new React Compiler powered rules.\n\nTo continue using the legacy config, you can change to recommended-legacy:\n\nFor a full list of compiler enabled rules, check out the linter docs.\n\nCheck out the eslint-plugin-react-hooks changelog for a full list of changes.\n\nIn 19.2, we’re updating the default useId prefix from :r: (19.0.0) or «r» (19.1.0) to _r_.\n\nThe original intent of using a special character that was not valid for CSS selectors was that it would be unlikely to collide with IDs written by users. However, to support View Transitions, we need to ensure that IDs generated by useId are valid for view-transition-name and XML 1.0 names.\n\nOther notable changes\n\nFor a full list of changes, please see the Changelog.\n\nThanks to Ricky Hanlon for writing this post, Dan Abramov, Matt Carroll, Jack Pope, and Joe Savona for reviewing this post.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "React 19.2",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "New React Features",
+      "id": "new-react-features"
+    },
+    {
+      "level": "h3",
+      "text": "<Activity />",
+      "id": "activity"
+    },
+    {
+      "level": "h3",
+      "text": "useEffectEvent",
+      "id": "use-effect-event"
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h4",
+      "text": "When to use useEffectEvent",
+      "id": "when-to-use-useeffectevent"
+    },
+    {
+      "level": "h3",
+      "text": "cacheSignal",
+      "id": "cache-signal"
+    },
+    {
+      "level": "h3",
+      "text": "React Server Components",
+      "id": ""
+    },
+    {
+      "level": "h3",
+      "text": "Performance Tracks",
+      "id": "performance-tracks"
+    },
+    {
+      "level": "h4",
+      "text": "Scheduler ⚛",
+      "id": "scheduler-"
+    },
+    {
+      "level": "h4",
+      "text": "Components ⚛",
+      "id": "components-"
+    },
+    {
+      "level": "h2",
+      "text": "New React DOM Features",
+      "id": "new-react-dom-features"
+    },
+    {
+      "level": "h3",
+      "text": "Partial Pre-rendering",
+      "id": "partial-pre-rendering"
+    },
+    {
+      "level": "h2",
+      "text": "Notable Changes",
+      "id": "notable-changes"
+    },
+    {
+      "level": "h3",
+      "text": "Batching Suspense Boundaries for SSR",
+      "id": "batching-suspense-boundaries-for-ssr"
+    },
+    {
+      "level": "h3",
+      "text": "Note",
+      "id": ""
+    },
+    {
+      "level": "h3",
+      "text": "SSR: Web Streams support for Node",
+      "id": "ssr-web-streams-support-for-node"
+    },
+    {
+      "level": "h3",
+      "text": "Pitfall",
+      "id": ""
+    },
+    {
+      "level": "h4",
+      "text": "Prefer Node Streams for server-side rendering in Node.js",
+      "id": "prefer-node-streams-for-server-side-rendering-in-nodejs"
+    },
+    {
+      "level": "h3",
+      "text": "eslint-plugin-react-hooks v6",
+      "id": "eslint-plugin-react-hooks"
+    },
+    {
+      "level": "h3",
+      "text": "Update the default useId prefix",
+      "id": "update-the-default-useid-prefix"
+    },
+    {
+      "level": "h2",
+      "text": "Changelog",
+      "id": "changelog"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "// Before{isVisible && <Page />}// After<Activity mode={isVisible ? 'visible' : 'hidden'}>  <Page /></Activity>",
+      "language": "unknown"
+    },
+    {
+      "code": "function ChatRoom({ roomId, theme }) {  useEffect(() => {    const connection = createConnection(serverUrl, roomId);    connection.on('connected', () => {      showNotification('Connected!', theme);    });    connection.connect();    return () => {      connection.disconnect()    };  }, [roomId, theme]);  // ...",
+      "language": "javascript"
+    },
+    {
+      "code": "function ChatRoom({ roomId, theme }) {  const onConnected = useEffectEvent(() => {    showNotification('Connected!', theme);  });  useEffect(() => {    const connection = createConnection(serverUrl, roomId);    connection.on('connected', () => {      onConnected();    });    connection.connect();    return () => connection.disconnect();  }, [roomId]); // ✅ All dependencies declared (Effect Events aren't dependencies)  // ...",
+      "language": "javascript"
+    },
+    {
+      "code": "import {cache, cacheSignal} from 'react';const dedupedFetch = cache(fetch);async function Component() {  await dedupedFetch(url, { signal: cacheSignal() });}",
+      "language": "python"
+    },
+    {
+      "code": "const {prelude, postponed} = await prerender(<App />, {  signal: controller.signal,});// Save the postponed state for laterawait savePostponedState(postponed);// Send prelude to client or CDN.",
+      "language": "javascript"
+    },
+    {
+      "code": "const postponed = await getPostponedState(request);const resumeStream = await resume(<App />, postponed);// Send stream to client.",
+      "language": "javascript"
+    },
+    {
+      "code": "const postponedState = await getPostponedState(request);const { prelude } = await resumeAndPrerender(<App />, postponedState);// Send complete HTML prelude to CDN.",
+      "language": "javascript"
+    },
+    {
+      "code": "- extends: ['plugin:react-hooks/recommended']+ extends: ['plugin:react-hooks/recommended-legacy']",
+      "language": "unknown"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://react.dev/blog",
+    "https://react.dev/blog/2025/10/01/react-19-2",
+    "https://react.dev/community/team",
+    "https://react.dev/reference/react/Activity",
+    "https://react.dev/learn/separating-events-from-effects",
+    "https://react.dev/reference/rsc/server-components",
+    "https://react.dev/reference/react/cache",
+    "https://react.dev/reference/react/cacheSignal",
+    "https://react.dev/reference/dev-tools/react-performance-tracks",
+    "https://react.dev/reference/react-dom/server/resume",
+    "https://react.dev/reference/react-dom/server/resumeToPipeableStream",
+    "https://react.dev/reference/react-dom/static/resumeAndPrerender",
+    "https://react.dev/reference/react-dom/static/resumeAndPrerenderToNodeStream",
+    "https://react.dev/reference/react-dom/server/renderToReadableStream",
+    "https://react.dev/reference/react-dom/static/prerender",
+    "https://react.dev/reference/react-dom/server/renderToPipeableStream",
+    "https://react.dev/reference/react-dom/static/prerenderToNodeStream",
+    "https://react.dev/reference/eslint-plugin-react-hooks",
+    "https://react.dev/blog/2025/10/07/introducing-the-react-foundation",
+    "https://react.dev/blog/2025/04/23/react-labs-view-transitions-activity-and-more"
+  ]
+}

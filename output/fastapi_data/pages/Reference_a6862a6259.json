@@ -1,0 +1,18 @@
+{
+  "url": "https://fastapi.tiangolo.com/reference/",
+  "title": "Reference¶",
+  "content": "Here's the reference or code API, the classes, functions, parameters, attributes, and all the FastAPI parts you can use in your applications.\n\nIf you want to learn FastAPI you are much better off reading the FastAPI Tutorial.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Reference¶",
+      "id": "reference"
+    }
+  ],
+  "code_samples": [],
+  "patterns": [],
+  "links": [
+    "https://fastapi.tiangolo.com/reference/",
+    "https://fastapi.tiangolo.com/tutorial/"
+  ]
+}

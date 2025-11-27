@@ -1,0 +1,93 @@
+{
+  "url": "https://fastapi.tiangolo.com/external-links/",
+  "title": "External Links and Articles¶",
+  "content": "FastAPI has a great community constantly growing.\n\nThere are many posts, articles, tools, and projects, related to FastAPI.\n\nHere's an incomplete list of some of them.\n\nIf you have an article, project, tool, or anything related to FastAPI that is not yet listed here, create a Pull Request adding it.\n\nGetting started with logging in FastAPI by Apitally.\n\nHow to profile a FastAPI asynchronous request by Balthazar Rouberol.\n\nDeploy a Serverless FastAPI App with Neon Postgres and AWS App Runner at any scale by Stephen Siegert - Neon.\n\nBuilding a Machine Learning Microservice with FastAPI by Kurtis Pykes - NVIDIA.\n\nBooking Appointments with Twilio, Notion, and FastAPI by Ravgeet Dhillon - Twilio.\n\nWrite a Python data layer with Azure Cosmos DB and FastAPI by Abhinav Tripathi - Microsoft Blogs.\n\n10 Tips for adding SQLAlchemy to FastAPI by Donny Peeters.\n\nTips on migrating from Flask to FastAPI and vice-versa by Jessica Temporal.\n\nExplore How to Effectively Use JWT With FastAPI by Ankit Anchlia.\n\nInstrument FastAPI with OpenTelemetry tracing and visualize traces in Grafana Tempo. by Nicoló Lino.\n\nML serving and monitoring with FastAPI and Evidently by Mikhail Rozhkov, Elena Samuylova.\n\nFastAPI Tutorial in Visual Studio Code by Visual Studio Code Team.\n\nFastAPI application monitoring made easy by Apitally.\n\nBuilding a RESTful API with FastAPI: Secure Signup and Login Functionality Included by John Philip.\n\nBuilding a CRUD API with FastAPI and Supabase by Keshav Malik.\n\nBuild an SMS Spam Classifier Serverless Database with FaunaDB and FastAPI by Adejumo Ridwan Suleiman.\n\nFastAPI lambda container: serverless simplified by Raf Rasenberg.\n\nAuthorization on FastAPI with Casbin by Teresa N. Fontanella De Santis.\n\nHow to monitor FastAPI application performance using Python agent by New Relic.\n\nBuilding the Poll App From Django Tutorial With FastAPI And React by Jean-Baptiste Rocher.\n\nSeamless FastAPI Configuration with ConfZ by Silvan Melchior.\n\n5 Advanced Features of FastAPI You Should Try by Kaustubh Gupta.\n\nDeploying ML Models as API Using FastAPI and Heroku by Kaustubh Gupta.\n\nUsing GitHub Actions to Deploy a FastAPI Project to Heroku by Somraj Saha.\n\nHow to Create A Fake Certificate Authority And Generate TLS Certs for FastAPI by @pystar.\n\nBuilding a realtime ticket booking solution with Kafka, FastAPI, and Ably by Ben Gamble.\n\nBuilding simple E-Commerce with NuxtJS and FastAPI by Shahriyar(Shako) Rzayev.\n\nServe a machine learning model using Sklearn, FastAPI and Docker by Rodrigo Arenas.\n\nBuilding an API with FastAPI and Supabase and Deploying on Deta by Yashasvi Singh.\n\nDeploy FastAPI on Ubuntu and Serve using Caddy 2 Web Server by Navule Pavan Kumar Rao.\n\nPython Facebook messenger webhook with FastAPI on Glitch by Patrick Ladon.\n\nDeploy a dockerized FastAPI application to AWS by Valon Januzaj.\n\nFastAPI for Flask Users by Amit Chaudhary.\n\nHow to monitor your FastAPI service by Louis Guitton.\n\nCreating a CRUD App with FastAPI (Part one) by Precious Ndubueze.\n\nBuild And Host Fast Data Science Applications Using FastAPI by Farhad Malik.\n\nDeploy FastAPI on Azure App Service by Navule Pavan Kumar Rao.\n\nMachine learning model serving in Python using FastAPI and streamlit by Davide Fiocco.\n\nIntroducing Dispatch by Netflix.\n\nUsing FastAPI with Django by Stavros Korokithakis.\n\nBuild a Secure Twilio Webhook with Python and FastAPI by Twilio.\n\nBuild a web API from scratch with FastAPI - the workshop by Sebastián Ramírez (tiangolo).\n\nFastAPI + Zeit.co = 🚀 by Paul Sec.\n\nBuild simple API service with Python FastAPI — Part 1 by cuongld2.\n\nMicroservice in Python using FastAPI by Paurakh Sharma Humagain.\n\nReal-time Notifications with Python and Postgres by Guillermo Cruz.\n\nCreate and Deploy FastAPI app to Heroku without using Docker by Navule Pavan Kumar Rao.\n\nAnother Boilerplate to FastAPI: Azure Pipeline CI + Pytest by Arthur Henrique.\n\nDeploy Machine Learning Models with Keras, FastAPI, Redis and Docker by Shane Soh.\n\nTowards Data Science: Deploying Iris Classifications with FastAPI and Docker by Mandy Gu.\n\nTestDriven.io: Developing and Testing an Asynchronous API with FastAPI and Pytest by Michael Herman.\n\nHow To Deploy Tensorflow 2.0 Models As An API Service With FastAPI & Docker by Bernard Brenyah.\n\nWhy I'm Leaving Flask by Dylan Anthony.\n\nUsing Docker Compose to deploy a lightweight Python REST API with a job queue by Mike Moritz.\n\nA FastAPI and Swagger UI visual cheatsheet by @euri10.\n\nUber: Ludwig v0.2 Adds New Features and Other Improvements to its Deep Learning Toolbox [including a FastAPI server] by Uber Engineering.\n\nHow to Deploy a Machine Learning Model by Maarten Grootendorst.\n\nJWT Authentication with FastAPI and AWS Cognito by Johannes Gontrum.\n\nTop 5 Asynchronous Web Frameworks for Python by Ankush Thakur.\n\nDeploying a scikit-learn model with ONNX and FastAPI by Nico Axtmann.\n\nFastAPI authentication revisited: Enabling API key authentication by Nils de Bruin.\n\nFastAPI and Scikit-Learn: Easily Deploy Models by Nick Cortale.\n\nIntroduction to the fastapi python framework by Errieta Kostala.\n\nFastAPI — How to add basic and cookie authentication by Nils de Bruin.\n\nFastAPI — Google as an external authentication provider by Nils de Bruin.\n\nFastAPI/Starlette debug vs prod by William Hayes.\n\nDeveloping FastAPI Application using K8s & AWS by Mukul Mantosh.\n\nFastapi, Docker(Docker compose) and Postgres by KrishNa.\n\nDeployment using Docker, Lambda, Aurora, CDK & GH Actions by Devon Ray.\n\nMastering Soft Delete: Advanced SQLAlchemy Techniques by Shubhendra Kushwaha.\n\nRole based row filtering: Advanced SQLAlchemy Techniques by Shubhendra Kushwaha.\n\nDomain-driven Design mit Python und FastAPI by Marcel Sander (actidoo).\n\nInbetriebnahme eines scikit-learn-Modells mit ONNX und FastAPI by Nico Axtmann.\n\nREST-API Programmieren mittels Python und dem FastAPI Modul by Felix Schürmeyer.\n\n[FastAPI] Python製のASGI Web フレームワーク FastAPIに入門する by @bee2.\n\nPythonのWeb frameworkのパフォーマンス比較 (Django, Flask, responder, FastAPI, japronto) by @bee2.\n\n【第4回】FastAPIチュートリアル: toDoアプリを作ってみよう【管理者ページ改良編】 by ライトコードメディア編集部.\n\n【第3回】FastAPIチュートリアル: toDoアプリを作ってみよう【認証・ユーザ登録編】 by ライトコードメディア編集部.\n\n【第2回】FastAPIチュートリアル: ToDoアプリを作ってみよう【モデル構築編】 by ライトコードメディア編集部.\n\n【第1回】FastAPIチュートリアル: ToDoアプリを作ってみよう【環境構築編】 by ライトコードメディア編集部.\n\nフロントエンド開発者向けのDockerによるPython開発環境構築 by Hikaru Takahashi.\n\nFastAPIでPOSTされたJSONのレスポンスbodyを受け取る by @angel_katayoku.\n\nFastAPIをMySQLと接続してDockerで管理してみる by @angel_katayoku.\n\nFastAPIでCORSを回避 by @angel_katayoku.\n\npython製の最新APIフレームワーク FastAPI を触ってみた by @ryoryomaru.\n\nFastAPI｜DB接続してCRUDするPython製APIサーバーを構築 by @mtitg.\n\nFastAPI do ZERO by Eduardo Mendes.\n\nDicas para migrar uma aplicação de Flask para FastAPI e vice-versa by Jessica Temporal.\n\nFastAPI: знакомимся с фреймворком by Troy Köhler.\n\nПочему Вы должны попробовать FastAPI? by prostomarkeloff.\n\nМелкая питонячая радость #2: Starlette - Солидная примочка – FastAPI by Andrey Korchak.\n\nStarting With FastAPI and Examining Python's Import System - Episode 72 by Real Python.\n\nDo you dare to press \".\"? - Episode 247 - Dan #6: SQLModel - use the same models for SQL and FastAPI by Python Bytes FM.\n\nBuild The Next Generation Of Python Web Applications With FastAPI - Episode 259 - interview to Sebastían Ramírez (tiangolo) by Podcast.__init__.\n\nFastAPI on PythonBytes by Python Bytes FM.\n\nPyCon AU 2023: Testing asynchronous applications with FastAPI and pytest by Jeny Sadadia.\n\n[VIRTUAL] Py.Amsterdam's flying Software Circus: Intro to FastAPI by Sebastián Ramírez (tiangolo).\n\nPyConBY 2020: Serve ML models easily with FastAPI by Sebastián Ramírez (tiangolo).\n\nPyCon UK 2019: FastAPI from the ground up by Chris Withers.\n\nMost starred GitHub repositories with the topic fastapi:\n\n★ 38085 - full-stack-fastapi-template by @fastapi.\n\n★ 32243 - Hello-Python by @mouredev.\n\n★ 21754 - serve by @jina-ai.\n\n★ 19400 - HivisionIDPhotos by @Zeyi-Lin.\n\n★ 16859 - sqlmodel by @fastapi.\n\n★ 14452 - Douyin_TikTok_Download_API by @Evil0ctal.\n\n★ 13613 - fastapi-best-practices by @zhanymkanov.\n\n★ 10624 - fastapi_mcp by @tadata-org.\n\n★ 10415 - awesome-fastapi by @mjhea0.\n\n★ 8879 - FastUI by @pydantic.\n\n★ 8824 - XHS-Downloader by @JoeanAmier.\n\n★ 8257 - SurfSense by @MODSetter.\n\n★ 7367 - FileCodeBox by @vastsa.\n\n★ 7291 - polar by @polarsource.\n\n★ 7065 - nonebot2 by @nonebot.\n\n★ 6070 - hatchet by @hatchet-dev.\n\n★ 5754 - serge by @serge-chat.\n\n★ 5599 - fastapi-users by @fastapi-users.\n\n★ 4422 - strawberry by @strawberry-graphql.\n\n★ 4301 - chatgpt-web-share by @chatpire.\n\n★ 4197 - poem by @poem-web.\n\n★ 4144 - dynaconf by @dynaconf.\n\n★ 4094 - atrilabs-engine by @Atri-Labs.\n\n★ 3739 - Kokoro-FastAPI by @remsky.\n\n★ 3614 - logfire by @pydantic.\n\n★ 3578 - LitServe by @Lightning-AI.\n\n★ 3496 - datamodel-code-generator by @koxudaxi.\n\n★ 3459 - farfalle by @rashadphz.\n\n★ 3456 - fastapi-admin by @fastapi-admin.\n\n★ 3447 - huma by @danielgtaylor.\n\n★ 3254 - tracecat by @TracecatHQ.\n\n★ 3134 - opyrator by @ml-tooling.\n\n★ 3107 - docarray by @docarray.\n\n★ 2936 - fastapi-realworld-example-app by @nsidnev.\n\n★ 2804 - uvicorn-gunicorn-fastapi-docker by @tiangolo.\n\n★ 2610 - best-of-web-python by @ml-tooling.\n\n★ 2572 - mcp-context-forge by @IBM.\n\n★ 2451 - fastapi-react by @Buuntu.\n\n★ 2441 - RasaGPT by @paulpierre.\n\n★ 2424 - FastAPI-template by @s3rius.\n\n★ 2357 - sqladmin by @aminalaee.\n\n★ 2324 - nextpy by @dot-agent.\n\n★ 2236 - supabase-py by @supabase.\n\n★ 2210 - 30-Days-of-Python by @codingforentrepreneurs.\n\n★ 2171 - langserve by @langchain-ai.\n\n★ 2164 - fastapi-utils by @fastapiutils.\n\n★ 2102 - solara by @widgetti.\n\n★ 1995 - Yuxi-Know by @xerrors.\n\n★ 1989 - mangum by @Kludex.\n\n★ 1816 - python-week-2022 by @rochacbruno.\n\n★ 1789 - agentkit by @BCG-X-Official.\n\n★ 1780 - manage-fastapi by @ycd.\n\n★ 1777 - ormar by @collerek.\n\n★ 1707 - openapi-python-client by @openapi-generators.\n\n★ 1695 - piccolo by @piccolo-orm.\n\n★ 1695 - vue-fastapi-admin by @mizhexiaoxiao.\n\n★ 1653 - fastapi-cache by @long2ice.\n\n★ 1635 - langchain-serve by @jina-ai.\n\n★ 1624 - termpair by @cs01.\n\n★ 1620 - slowapi by @laurentS.\n\n★ 1576 - coronavirus-tracker-api by @ExpDev07.\n\n★ 1546 - fastapi-crudrouter by @awtkns.\n\n★ 1516 - FastAPI-boilerplate by @benavlabs.\n\n★ 1481 - awesome-fastapi-projects by @Kludex.\n\n★ 1453 - fastapi-pagination by @uriyyo.\n\n★ 1415 - bracket by @evroon.\n\n★ 1413 - awesome-python-resources by @DjangoEx.\n\n★ 1406 - fastapi-boilerplate by @teamhide.\n\n★ 1346 - budgetml by @ebhy.\n\n★ 1342 - fastapi-amis-admin by @amisadmin.\n\n★ 1334 - fastapi-langgraph-agent-production-ready-template by @wassim249.\n\n★ 1303 - fastapi-tutorial by @liaogx.\n\n★ 1276 - fastapi_best_architecture by @fastapi-practices.\n\n★ 1272 - fastcrud by @benavlabs.\n\n★ 1253 - fastapi-code-generator by @koxudaxi.\n\n★ 1246 - prometheus-fastapi-instrumentator by @trallnag.\n\n★ 1221 - bolt-python by @slackapi.\n\n★ 1220 - bedrock-chat by @aws-samples.\n\n★ 1202 - fastapi_production_template by @zhanymkanov.\n\n★ 1193 - fastapi-scaff by @atpuxiner.\n\n★ 1164 - langchain-extract by @langchain-ai.\n\n★ 1149 - fastapi-alembic-sqlmodel-async by @jonra1993.\n\n★ 1133 - odmantic by @art049.\n\n★ 1122 - restish by @rest-sh.\n\n★ 1047 - runhouse by @run-house.\n\n★ 1027 - flock by @Onelevenvy.\n\n★ 999 - authx by @yezz123.\n\n★ 999 - autollm by @viddexa.\n\n★ 995 - lanarky by @ajndkr.\n\n★ 952 - titiler by @developmentseed.\n\n★ 946 - energy-forecasting by @iusztinpaul.\n\n★ 944 - secure by @TypeError.\n\n★ 934 - langcorn by @msoedov.\n\n★ 930 - RuoYi-Vue3-FastAPI by @insistence.\n\n★ 916 - aktools by @akfamily.\n\n★ 907 - every-pdf by @DDULDDUCK.\n\n★ 903 - marker-api by @adithya-s-k.\n\n★ 902 - fastapi-observability by @blueswen.\n\n★ 900 - fastapi-do-zero by @dunossauro.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "External Links and Articles¶",
+      "id": "external-links-and-articles"
+    },
+    {
+      "level": "h2",
+      "text": "Articles¶",
+      "id": "articles"
+    },
+    {
+      "level": "h3",
+      "text": "English¶",
+      "id": "english"
+    },
+    {
+      "level": "h3",
+      "text": "German¶",
+      "id": "german"
+    },
+    {
+      "level": "h3",
+      "text": "Japanese¶",
+      "id": "japanese"
+    },
+    {
+      "level": "h3",
+      "text": "Portuguese¶",
+      "id": "portuguese"
+    },
+    {
+      "level": "h3",
+      "text": "Russian¶",
+      "id": "russian"
+    },
+    {
+      "level": "h3",
+      "text": "Vietnamese¶",
+      "id": "vietnamese"
+    },
+    {
+      "level": "h3",
+      "text": "Taiwanese¶",
+      "id": "taiwanese"
+    },
+    {
+      "level": "h3",
+      "text": "Spanish¶",
+      "id": "spanish"
+    },
+    {
+      "level": "h2",
+      "text": "Podcasts¶",
+      "id": "podcasts"
+    },
+    {
+      "level": "h3",
+      "text": "English¶",
+      "id": "english_1"
+    },
+    {
+      "level": "h2",
+      "text": "Talks¶",
+      "id": "talks"
+    },
+    {
+      "level": "h3",
+      "text": "English¶",
+      "id": "english_2"
+    },
+    {
+      "level": "h3",
+      "text": "Taiwanese¶",
+      "id": "taiwanese_1"
+    },
+    {
+      "level": "h2",
+      "text": "GitHub Repositories¶",
+      "id": "github-repositories"
+    }
+  ],
+  "code_samples": [],
+  "patterns": [],
+  "links": [
+    "https://fastapi.tiangolo.com/external-links/",
+    "https://fastapi.tiangolo.com/external-links/{{ no such element: dict object['author_link'] }}"
+  ]
+}

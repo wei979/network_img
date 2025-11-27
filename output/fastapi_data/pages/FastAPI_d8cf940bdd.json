@@ -1,0 +1,156 @@
+{
+  "url": "https://fastapi.tiangolo.com/ja/",
+  "title": "FastAPI¶",
+  "content": "FastAPI framework, high performance, easy to learn, fast to code, ready for production\n\nドキュメント: https://fastapi.tiangolo.com\n\nソースコード: https://github.com/fastapi/fastapi\n\nFastAPI は、Pythonの標準である型ヒントに基づいてPython 以降でAPI を構築するための、モダンで、高速(高パフォーマンス)な、Web フレームワークです。\n\n高速: NodeJS や Go 並みのとても高いパフォーマンス (Starlette と Pydantic のおかげです)。 最も高速な Python フレームワークの一つです.\n\n高速なコーディング: 開発速度を約 200%~300%向上させます。 *\n\n* 本番アプリケーションを構築している開発チームのテストによる見積もり。\n\n\"[...] 最近 FastAPI を使っています。 [...] 実際に私のチームの全ての Microsoft の機械学習サービス で使用する予定です。 そのうちのいくつかのコアなWindows製品とOffice製品に統合されつつあります。\"\n\n\"FastAPIライブラリを採用し、クエリで予測値を取得できるRESTサーバを構築しました。 [for Ludwig]\"\n\n\"Netflix は、危機管理オーケストレーションフレームワーク、Dispatchのオープンソースリリースを発表できることをうれしく思います。 [built with FastAPI]\"\n\n\"私はFastAPIにワクワクしています。 めちゃくちゃ楽しいです！\"\n\n\"正直、超堅実で洗練されているように見えます。いろんな意味で、それは私がハグしたかったものです。\"\n\n\"REST API を構築するためのモダンなフレームワークを学びたい方は、FastAPI [...] をチェックしてみてください。 [...] 高速で, 使用、習得が簡単です。[...]\"\n\n\"私たちのAPIはFastAPIに切り替えました。[...] きっと気に入ると思います。 [...]\"\n\nもし Web API の代わりにターミナルで使用するCLIアプリを構築する場合は、Typerを確認してください。\n\nTyperは FastAPI の弟分です。そして、CLI 版 の FastAPIを意味しています。\n\nFastAPI は巨人の肩の上に立っています。\n\n本番環境では、Uvicorn または、 Hypercornのような、 ASGI サーバーが必要になります。\n\nasync / awaitを使用するときは、 async defを使います:\n\nわからない場合は、ドキュメントのasync と awaitにある\"In a hurry?\"セクションをチェックしてください。\n\nuvicorn main:appコマンドは以下の項目を参照します:\n\nブラウザからhttp://127.0.0.1:8000/items/5?q=somequeryを開きます。\n\n以下の JSON のレスポンスが確認できます:\n\nもうすでに以下の API が作成されています:\n\nhttp://127.0.0.1:8000/docsにアクセスしてみてください。\n\n自動対話型の API ドキュメントが表示されます。 (Swagger UIが提供しています。):\n\nhttp://127.0.0.1:8000/redocにアクセスしてみてください。\n\n代替の自動ドキュメントが表示されます。(ReDocが提供しています。):\n\nPUTリクエストからボディを受け取るためにmain.pyを修正しましょう。\n\nPydantic によって、Python の標準的な型を使ってボディを宣言します。\n\nサーバーは自動でリロードされます。(上述のuvicornコマンドで--reloadオプションを追加しているからです。)\n\nhttp://127.0.0.1:8000/docsにアクセスしましょう。\n\nhttp://127.0.0.1:8000/redocにアクセスしましょう。\n\n要約すると、関数のパラメータとして、パラメータやボディ などの型を一度だけ宣言します。\n\n標準的な最新の Python の型を使っています。\n\n新しい構文や特定のライブラリのメソッドやクラスなどを覚える必要はありません。\n\n単なる標準的な3.8 以降の Pythonです。\n\n...そして、この一度の宣言で、以下のようになります:\n\nコード例に戻りましょう、FastAPI は次のようになります:\n\nまだ表面的な部分に触れただけですが、もう全ての仕組みは分かっているはずです。\n\n...そして、エディタが属性を自動補完し、そのタイプを知る方法を確認してください。:\n\nより多くの機能を含む、より完全な例については、チュートリアル - ユーザーガイドをご覧ください。\n\nネタバレ注意: チュートリアル - ユーザーガイドは以下の情報が含まれています:\n\n独立した TechEmpower のベンチマークでは、Uvicorn で動作するFastAPIアプリケーションが、Python フレームワークの中で最も高速なものの 1 つであり、Starlette と Uvicorn（FastAPI で内部的に使用されています）にのみ下回っていると示されています。\n\n詳細はベンチマークセクションをご覧ください。\n\nPydantic によって使用されるもの:\n\nStarlette によって使用されるもの:\n\nFastAPI / Starlette に使用されるもの:\n\nこれらは全て pip install fastapi[all]でインストールできます。\n\nこのプロジェクトは MIT ライセンスです。",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "FastAPI¶",
+      "id": "fastapi"
+    },
+    {
+      "level": "h2",
+      "text": "Sponsors¶",
+      "id": "sponsors"
+    },
+    {
+      "level": "h2",
+      "text": "評価¶",
+      "id": "_1"
+    },
+    {
+      "level": "h2",
+      "text": "Typer, the FastAPI of CLIs¶",
+      "id": "typer-the-fastapi-of-clis"
+    },
+    {
+      "level": "h2",
+      "text": "必要条件¶",
+      "id": "_2"
+    },
+    {
+      "level": "h2",
+      "text": "インストール¶",
+      "id": "_3"
+    },
+    {
+      "level": "h2",
+      "text": "アプリケーション例¶",
+      "id": "_4"
+    },
+    {
+      "level": "h3",
+      "text": "アプリケーションの作成¶",
+      "id": "_5"
+    },
+    {
+      "level": "h3",
+      "text": "実行¶",
+      "id": "_6"
+    },
+    {
+      "level": "h3",
+      "text": "動作確認¶",
+      "id": "_7"
+    },
+    {
+      "level": "h3",
+      "text": "自動対話型の API ドキュメント¶",
+      "id": "api"
+    },
+    {
+      "level": "h3",
+      "text": "代替の API ドキュメント¶",
+      "id": "api_1"
+    },
+    {
+      "level": "h2",
+      "text": "アップグレード例¶",
+      "id": "_8"
+    },
+    {
+      "level": "h3",
+      "text": "自動対話型の API ドキュメントのアップグレード¶",
+      "id": "api_2"
+    },
+    {
+      "level": "h3",
+      "text": "代替の API ドキュメントのアップグレード¶",
+      "id": "api_3"
+    },
+    {
+      "level": "h3",
+      "text": "まとめ¶",
+      "id": "_9"
+    },
+    {
+      "level": "h2",
+      "text": "パフォーマンス¶",
+      "id": "_10"
+    },
+    {
+      "level": "h2",
+      "text": "オプションの依存関係¶",
+      "id": "_11"
+    },
+    {
+      "level": "h2",
+      "text": "ライセンス¶",
+      "id": "_12"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "$ pip install fastapi\n\n---> 100%",
+      "language": "unknown"
+    },
+    {
+      "code": "$ pip install \"uvicorn[standard]\"\n\n---> 100%",
+      "language": "unknown"
+    },
+    {
+      "code": "from fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get(\"/\")\ndef read_root():\n    return {\"Hello\": \"World\"}\n\n\n@app.get(\"/items/{item_id}\")\ndef read_item(item_id: int, q: str = None):\n    return {\"item_id\": item_id, \"q\": q}",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get(\"/\")\nasync def read_root():\n    return {\"Hello\": \"World\"}\n\n\n@app.get(\"/items/{item_id}\")\nasync def read_item(item_id: int, q: str = None):\n    return {\"item_id\": item_id, \"q\": q}",
+      "language": "python"
+    },
+    {
+      "code": "$ uvicorn main:app --reload\n\nINFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)\nINFO:     Started reloader process [28720]\nINFO:     Started server process [28722]\nINFO:     Waiting for application startup.\nINFO:     Application startup complete.",
+      "language": "unknown"
+    },
+    {
+      "code": "{\"item_id\": 5, \"q\": \"somequery\"}",
+      "language": "unknown"
+    },
+    {
+      "code": "from fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\n\nclass Item(BaseModel):\n    name: str\n    price: float\n    is_offer: bool = None\n\n\n@app.get(\"/\")\ndef read_root():\n    return {\"Hello\": \"World\"}\n\n\n@app.get(\"/items/{item_id}\")\ndef read_item(item_id: int, q: str = None):\n    return {\"item_id\": item_id, \"q\": q}\n\n\n@app.put(\"/items/{item_id}\")\ndef update_item(item_id: int, item: Item):\n    return {\"item_name\": item.name, \"item_id\": item_id}",
+      "language": "python"
+    },
+    {
+      "code": "item_id: int",
+      "language": "unknown"
+    },
+    {
+      "code": "return {\"item_name\": item.name, \"item_id\": item_id}",
+      "language": "unknown"
+    },
+    {
+      "code": "... \"item_name\": item.name ...",
+      "language": "unknown"
+    },
+    {
+      "code": "... \"item_price\": item.price ...",
+      "language": "unknown"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://fastapi.tiangolo.com/ja/",
+    "https://fastapi.tiangolo.com/fastapi-people/",
+    "https://fastapi.tiangolo.com/async/",
+    "https://fastapi.tiangolo.com/tutorial/",
+    "https://fastapi.tiangolo.com/benchmarks/"
+  ]
+}

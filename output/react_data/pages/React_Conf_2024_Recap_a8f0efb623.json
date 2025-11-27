@@ -1,0 +1,47 @@
+{
+  "url": "https://react.dev/blog/2024/05/22/react-conf-2024-recap",
+  "title": "React Conf 2024 Recap",
+  "content": "May 22, 2024 by Ricky Hanlon.\n\nLast week we hosted React Conf 2024, a two-day conference in Henderson, Nevada where 700+ attendees gathered in-person to discuss the latest in UI engineering. This was our first in-person conference since 2019, and we were thrilled to be able to bring the community together again.\n\nAt React Conf 2024, we announced the React 19 RC, the React Native New Architecture Beta, and an experimental release of the React Compiler. The community also took the stage to announce React Router v7, Universal Server Components in Expo Router, React Server Components in RedwoodJS, and much more.\n\nThe entire day 1 and day 2 streams are available online. In this post, we’ll summarize the talks and announcements from the event.\n\nWatch the full day 1 stream here.\n\nTo kick off day 1, Meta CTO Andrew “Boz” Bosworth shared a welcome message followed by an introduction by Seth Webster, who manages the React Org at Meta, and our MC Ashley Narcisse.\n\nIn the day 1 keynote, Joe Savona shared our goals and vision for React to make it easy for anyone to build great user experiences. Lauren Tan followed with a State of React, where she shared that React was downloaded over 1 billion times in 2023, and that 37% of new developers learn to program with React. Finally, she highlighted the work of the React community to make React, React.\n\nFor more, check out these talks from the community later in the conference:\n\nNext in the keynote, Josh Story and Andrew Clark shared new features coming in React 19, and announced the React 19 RC which is ready for testing in production. Check out all the features in the React 19 release post, and see these talks for deep dives on the new features:\n\nFinally, we ended the keynote with Joe Savona, Sathya Gunasekaran, and Mofei Zhang announcing that the React Compiler is now Open Source, and sharing an experimental version of the React Compiler to try out.\n\nFor more information on using the Compiler and how it works, check out the docs and these talks:\n\nWatch the full day 1 keynote here:\n\nWatch the full day 2 stream here.\n\nTo kick off day 2, Seth Webster shared a welcome message, followed by a Thank You from Eli White and an introduction by our Chief Vibes Officer Ashley Narcisse.\n\nIn the day 2 keynote, Nicola Corti shared the State of React Native, including 78 million downloads in 2023. He also highlighted apps using React Native including 2000+ screens used inside of Meta; the product details page in Facebook Marketplace, which is visited more than 2 billion times per day; and part of the Microsoft Windows Start Menu and some features in almost every Microsoft Office product across mobile and desktop.\n\nNicola also highlighted all the work the community does to support React Native including libraries, frameworks, and multiple platforms. For more, check out these talks from the community:\n\nRiccardo Cipolleschi continued the day 2 keynote by announcing that the React Native New Architecture is now in Beta and ready for apps to adopt in production. He shared new features and improvements in the new architecture, and shared the roadmap for the future of React Native. For more check out:\n\nNext in the keynote, Nicola announced that we are now recommending starting with a framework like Expo for all new apps created with React Native. With the change, he also announced a new React Native homepage and new Getting Started docs. You can view the new Getting Started guide in the React Native docs.\n\nFinally, to end the keynote, Kadi Kraman shared the latest features and improvements in Expo, and how to get started developing with React Native using Expo.\n\nWatch the full day 2 keynote here:\n\nThe React and React Native teams also ended each day with a Q&A session:\n\nWe also heard talks on accessibility, error reporting, css, and more:\n\nThank you to all the staff, speakers, and participants who made React Conf 2024 possible. There are too many to list, but we want to thank a few in particular.\n\nThank you to Barbara Markiewicz, the team at Callstack, and our React Team Developer Advocate Matt Carroll for helping to plan the entire event; and to Sunny Leggett and everyone from Zero Slope for helping to organize the event.\n\nThank you Ashley Narcisse for being our MC and Chief Vibes Officer; and to Michael Chan and Jamon Holmgren for hosting the Q&A sessions.\n\nThank you Seth Webster and Eli White for welcoming us each day and providing direction on structure and content; and to Tom Occhino for joining us with a special message during the after-party.\n\nThank you Ricky Hanlon for providing detailed feedback on talks, working on slide designs, and generally filling in the gaps to sweat the details.\n\nThank you Callstack for building the conference website; and to Kadi Kraman and the Expo team for building the conference mobile app.\n\nThank you to all the sponsors who made the event possible: Remix, Amazon, MUI, Sentry, Abbott, Expo, RedwoodJS, and Vercel.\n\nThank you to the AV Team for the visuals, stage, and sound; and to the Westin Hotel for hosting us.\n\nThank you to all the speakers who shared their knowledge and experiences with the community.\n\nFinally, thank you to everyone who attended in person and online to show what makes React, React. React is more than a library, it is a community, and it was inspiring to see everyone come together to share and learn together.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "React Conf 2024 Recap",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Day 1",
+      "id": "day-1"
+    },
+    {
+      "level": "h2",
+      "text": "Day 2",
+      "id": "day-2"
+    },
+    {
+      "level": "h2",
+      "text": "Q&A",
+      "id": "q-and-a"
+    },
+    {
+      "level": "h2",
+      "text": "And more…",
+      "id": "and-more"
+    },
+    {
+      "level": "h2",
+      "text": "Thank you",
+      "id": "thank-you"
+    }
+  ],
+  "code_samples": [],
+  "patterns": [],
+  "links": [
+    "https://react.dev/blog",
+    "https://react.dev/blog/2024/05/22/react-conf-2024-recap",
+    "https://react.dev/blog/2024/12/05/react-19",
+    "https://react.dev/learn/react-compiler",
+    "https://react.dev/blog/2024/10/21/react-compiler-beta-release",
+    "https://react.dev/blog/2024/04/25/react-19"
+  ]
+}

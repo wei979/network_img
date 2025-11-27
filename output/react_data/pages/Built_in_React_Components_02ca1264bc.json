@@ -1,0 +1,35 @@
+{
+  "url": "https://react.dev/reference/react/components",
+  "title": "Built-in React Components",
+  "content": "React exposes a few built-in components that you can use in your JSX.\n\nYou can also define your own components as JavaScript functions.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Built-in React Components",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Built-in components",
+      "id": "built-in-components"
+    },
+    {
+      "level": "h2",
+      "text": "Your own components",
+      "id": "your-own-components"
+    }
+  ],
+  "code_samples": [],
+  "patterns": [],
+  "links": [
+    "https://react.dev/reference/react",
+    "https://react.dev/reference/react/components",
+    "https://react.dev/reference/react/Fragment",
+    "https://react.dev/reference/react/Profiler",
+    "https://react.dev/reference/react/Suspense",
+    "https://react.dev/reference/react/StrictMode",
+    "https://react.dev/reference/react/Activity",
+    "https://react.dev/learn/your-first-component",
+    "https://react.dev/reference/react/useTransition"
+  ]
+}

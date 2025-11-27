@@ -1,0 +1,423 @@
+{
+  "name": "Network Traffic",
+  "meta": {
+    "total_packets": 5356,
+    "protocols": 4,
+    "generated_at": "2025-11-27T18:54:36.876458"
+  },
+  "children": [
+    {
+      "name": "UDP (5005)",
+      "protocol": "UDP",
+      "packet_count": 5005,
+      "children": [
+        {
+          "name": "10.1.1.14",
+          "packet_count": 3587,
+          "meta": {
+            "protocol": "UDP",
+            "unique_destinations": 77
+          },
+          "children": [
+            {
+              "name": "151.106.248.1:7139",
+              "packet_count": 2979,
+              "meta": {
+                "connection": "10.1.1.14:62296 -> 151.106.248.1:7139",
+                "protocol": "UDP"
+              }
+            },
+            {
+              "name": "35.215.146.191:50008",
+              "packet_count": 474,
+              "meta": {
+                "connection": "10.1.1.14:56884 -> 35.215.146.191:50008",
+                "protocol": "UDP"
+              }
+            },
+            {
+              "name": "20.157.23.37:54000",
+              "packet_count": 36,
+              "meta": {
+                "connection": "10.1.1.14:54904 -> 20.157.23.37:54000",
+                "protocol": "UDP"
+              }
+            },
+            {
+              "name": "142.250.204.36:443",
+              "packet_count": 6,
+              "meta": {
+                "connection": "10.1.1.14:50313 -> 142.250.204.36:443",
+                "protocol": "UDP"
+              }
+            },
+            {
+              "name": "10.1.1.1:53",
+              "packet_count": 5,
+              "meta": {
+                "connection": "10.1.1.14:64556 -> 10.1.1.1:53",
+                "protocol": "UDP"
+              }
+            }
+          ]
+        },
+        {
+          "name": "151.106.248.1",
+          "packet_count": 1164,
+          "meta": {
+            "protocol": "UDP",
+            "unique_destinations": 1
+          },
+          "children": [
+            {
+              "name": "10.1.1.14:62296",
+              "packet_count": 1164,
+              "meta": {
+                "connection": "151.106.248.1:7139 -> 10.1.1.14:62296",
+                "protocol": "UDP"
+              }
+            }
+          ]
+        },
+        {
+          "name": "35.215.146.191",
+          "packet_count": 170,
+          "meta": {
+            "protocol": "UDP",
+            "unique_destinations": 2
+          },
+          "children": [
+            {
+              "name": "10.1.1.14:56884",
+              "packet_count": 169,
+              "meta": {
+                "connection": "35.215.146.191:50008 -> 10.1.1.14:56884",
+                "protocol": "UDP"
+              }
+            },
+            {
+              "name": "10.1.1.14:60957",
+              "packet_count": 1,
+              "meta": {
+                "connection": "35.215.146.191:50008 -> 10.1.1.14:60957",
+                "protocol": "UDP"
+              }
+            }
+          ]
+        },
+        {
+          "name": "10.1.1.1",
+          "packet_count": 55,
+          "meta": {
+            "protocol": "UDP",
+            "unique_destinations": 43
+          },
+          "children": [
+            {
+              "name": "239.255.255.250:1900",
+              "packet_count": 8,
+              "meta": {
+                "connection": "10.1.1.1:47456 -> 239.255.255.250:1900",
+                "protocol": "UDP"
+              }
+            },
+            {
+              "name": "10.1.1.14:54513",
+              "packet_count": 3,
+              "meta": {
+                "connection": "10.1.1.1:53 -> 10.1.1.14:54513",
+                "protocol": "UDP"
+              }
+            },
+            {
+              "name": "10.1.1.14:57167",
+              "packet_count": 2,
+              "meta": {
+                "connection": "10.1.1.1:53 -> 10.1.1.14:57167",
+                "protocol": "UDP"
+              }
+            },
+            {
+              "name": "10.1.1.14:49665",
+              "packet_count": 2,
+              "meta": {
+                "connection": "10.1.1.1:53 -> 10.1.1.14:49665",
+                "protocol": "UDP"
+              }
+            },
+            {
+              "name": "10.1.1.14:64556",
+              "packet_count": 2,
+              "meta": {
+                "connection": "10.1.1.1:53 -> 10.1.1.14:64556",
+                "protocol": "UDP"
+              }
+            }
+          ]
+        },
+        {
+          "name": "20.157.23.37",
+          "packet_count": 15,
+          "meta": {
+            "protocol": "UDP",
+            "unique_destinations": 1
+          },
+          "children": [
+            {
+              "name": "10.1.1.14:54904",
+              "packet_count": 15,
+              "meta": {
+                "connection": "20.157.23.37:54000 -> 10.1.1.14:54904",
+                "protocol": "UDP"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TCP (339)",
+      "protocol": "TCP",
+      "packet_count": 339,
+      "children": [
+        {
+          "name": "10.1.1.14",
+          "packet_count": 173,
+          "meta": {
+            "protocol": "TCP",
+            "unique_destinations": 48
+          },
+          "children": [
+            {
+              "name": "204.79.197.222:443",
+              "packet_count": 13,
+              "meta": {
+                "connection": "10.1.1.14:1716 -> 204.79.197.222:443",
+                "protocol": "TCP"
+              }
+            },
+            {
+              "name": "210.71.227.211:443",
+              "packet_count": 12,
+              "meta": {
+                "connection": "10.1.1.14:5434 -> 210.71.227.211:443",
+                "protocol": "TCP"
+              }
+            },
+            {
+              "name": "162.159.135.234:443",
+              "packet_count": 8,
+              "meta": {
+                "connection": "10.1.1.14:4472 -> 162.159.135.234:443",
+                "protocol": "TCP"
+              }
+            },
+            {
+              "name": "142.250.196.202:443",
+              "packet_count": 8,
+              "meta": {
+                "connection": "10.1.1.14:9614 -> 142.250.196.202:443",
+                "protocol": "TCP"
+              }
+            },
+            {
+              "name": "172.65.217.212:5223",
+              "packet_count": 7,
+              "meta": {
+                "connection": "10.1.1.14:13912 -> 172.65.217.212:5223",
+                "protocol": "TCP"
+              }
+            }
+          ]
+        },
+        {
+          "name": "10.1.1.1",
+          "packet_count": 37,
+          "meta": {
+            "protocol": "TCP",
+            "unique_destinations": 10
+          },
+          "children": [
+            {
+              "name": "10.1.1.14:12532",
+              "packet_count": 5,
+              "meta": {
+                "connection": "10.1.1.1:53 -> 10.1.1.14:12532",
+                "protocol": "TCP"
+              }
+            },
+            {
+              "name": "10.1.1.14:11867",
+              "packet_count": 5,
+              "meta": {
+                "connection": "10.1.1.1:53 -> 10.1.1.14:11867",
+                "protocol": "TCP"
+              }
+            },
+            {
+              "name": "10.1.1.14:2952",
+              "packet_count": 5,
+              "meta": {
+                "connection": "10.1.1.1:53 -> 10.1.1.14:2952",
+                "protocol": "TCP"
+              }
+            },
+            {
+              "name": "10.1.1.14:9032",
+              "packet_count": 4,
+              "meta": {
+                "connection": "10.1.1.1:53 -> 10.1.1.14:9032",
+                "protocol": "TCP"
+              }
+            },
+            {
+              "name": "10.1.1.14:9826",
+              "packet_count": 4,
+              "meta": {
+                "connection": "10.1.1.1:53 -> 10.1.1.14:9826",
+                "protocol": "TCP"
+              }
+            }
+          ]
+        },
+        {
+          "name": "172.65.217.212",
+          "packet_count": 22,
+          "meta": {
+            "protocol": "TCP",
+            "unique_destinations": 2
+          },
+          "children": [
+            {
+              "name": "10.1.1.14:13912",
+              "packet_count": 18,
+              "meta": {
+                "connection": "172.65.217.212:5223 -> 10.1.1.14:13912",
+                "protocol": "TCP"
+              }
+            },
+            {
+              "name": "10.1.1.14:13909",
+              "packet_count": 4,
+              "meta": {
+                "connection": "172.65.217.212:5223 -> 10.1.1.14:13909",
+                "protocol": "TCP"
+              }
+            }
+          ]
+        },
+        {
+          "name": "210.71.227.211",
+          "packet_count": 18,
+          "meta": {
+            "protocol": "TCP",
+            "unique_destinations": 1
+          },
+          "children": [
+            {
+              "name": "10.1.1.14:5434",
+              "packet_count": 18,
+              "meta": {
+                "connection": "210.71.227.211:443 -> 10.1.1.14:5434",
+                "protocol": "TCP"
+              }
+            }
+          ]
+        },
+        {
+          "name": "204.79.197.222",
+          "packet_count": 16,
+          "meta": {
+            "protocol": "TCP",
+            "unique_destinations": 1
+          },
+          "children": [
+            {
+              "name": "10.1.1.14:1716",
+              "packet_count": 16,
+              "meta": {
+                "connection": "204.79.197.222:443 -> 10.1.1.14:1716",
+                "protocol": "TCP"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Non-IP (8)",
+      "protocol": "Non-IP",
+      "packet_count": 8,
+      "children": []
+    },
+    {
+      "name": "Other IP (4)",
+      "protocol": "Other IP",
+      "packet_count": 4,
+      "children": [
+        {
+          "name": "10.1.1.14",
+          "packet_count": 2,
+          "meta": {
+            "protocol": "Other IP",
+            "unique_destinations": 2
+          },
+          "children": [
+            {
+              "name": "224.0.0.251",
+              "packet_count": 1,
+              "meta": {
+                "connection": "10.1.1.14 -> 224.0.0.251",
+                "protocol": "Other IP"
+              }
+            },
+            {
+              "name": "224.0.0.252",
+              "packet_count": 1,
+              "meta": {
+                "connection": "10.1.1.14 -> 224.0.0.252",
+                "protocol": "Other IP"
+              }
+            }
+          ]
+        },
+        {
+          "name": "10.1.1.1",
+          "packet_count": 1,
+          "meta": {
+            "protocol": "Other IP",
+            "unique_destinations": 1
+          },
+          "children": [
+            {
+              "name": "224.0.0.1",
+              "packet_count": 1,
+              "meta": {
+                "connection": "10.1.1.1 -> 224.0.0.1",
+                "protocol": "Other IP"
+              }
+            }
+          ]
+        },
+        {
+          "name": "10.1.1.17",
+          "packet_count": 1,
+          "meta": {
+            "protocol": "Other IP",
+            "unique_destinations": 1
+          },
+          "children": [
+            {
+              "name": "239.255.255.250",
+              "packet_count": 1,
+              "meta": {
+                "connection": "10.1.1.17 -> 239.255.255.250",
+                "protocol": "Other IP"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

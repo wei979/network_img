@@ -1,0 +1,53 @@
+{
+  "url": "https://react.dev/reference/react-dom",
+  "title": "React DOM APIs",
+  "content": "The react-dom package contains methods that are only supported for the web applications (which run in the browser DOM environment). They are not supported for React Native.\n\nThese APIs can be imported from your components. They are rarely used:\n\nThese APIs can be used to make apps faster by pre-loading resources such as scripts, stylesheets, and fonts as soon as you know you need them, for example before navigating to another page where the resources will be used.\n\nReact-based frameworks frequently handle resource loading for you, so you might not have to call these APIs yourself. Consult your framework’s documentation for details.\n\nThe react-dom package provides two additional entry points:\n\nThese APIs were removed in React 19:",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "React DOM APIs",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "APIs",
+      "id": "apis"
+    },
+    {
+      "level": "h2",
+      "text": "Resource Preloading APIs",
+      "id": "resource-preloading-apis"
+    },
+    {
+      "level": "h2",
+      "text": "Entry points",
+      "id": "entry-points"
+    },
+    {
+      "level": "h2",
+      "text": "Removed APIs",
+      "id": "removed-apis"
+    }
+  ],
+  "code_samples": [],
+  "patterns": [],
+  "links": [
+    "https://react.dev/reference/react",
+    "https://react.dev/reference/react-dom",
+    "https://react.dev/reference/react-dom/createPortal",
+    "https://react.dev/reference/react-dom/flushSync",
+    "https://react.dev/learn/start-a-new-react-project",
+    "https://react.dev/reference/react-dom/prefetchDNS",
+    "https://react.dev/reference/react-dom/preconnect",
+    "https://react.dev/reference/react-dom/preload",
+    "https://react.dev/reference/react-dom/preloadModule",
+    "https://react.dev/reference/react-dom/preinit",
+    "https://react.dev/reference/react-dom/preinitModule",
+    "https://react.dev/reference/react-dom/client",
+    "https://react.dev/reference/react-dom/server",
+    "https://react.dev/reference/react-dom/client/hydrateRoot",
+    "https://react.dev/reference/react-dom/client/createRoot",
+    "https://react.dev/reference/react-dom/unmountComponentAtNode",
+    "https://react.dev/reference/react-dom/components/title"
+  ]
+}

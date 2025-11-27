@@ -1,0 +1,17 @@
+{
+  "url": "https://fastapi.tiangolo.com/newsletter/",
+  "title": "FastAPI and friends newsletter¶",
+  "content": "",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "FastAPI and friends newsletter¶",
+      "id": "fastapi-and-friends-newsletter"
+    }
+  ],
+  "code_samples": [],
+  "patterns": [],
+  "links": [
+    "https://fastapi.tiangolo.com/newsletter/"
+  ]
+}

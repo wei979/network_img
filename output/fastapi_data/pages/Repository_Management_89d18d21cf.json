@@ -1,0 +1,40 @@
+{
+  "url": "https://fastapi.tiangolo.com/management/",
+  "title": "Repository Management¶",
+  "content": "Here's a short description of how the FastAPI repository is managed and maintained.\n\nI, @tiangolo, am the creator and owner of the FastAPI repository. 🤓\n\nI normally give the final review to each PR before merging them. I make the final decisions on the project, I'm the BDFL. 😅\n\nThere's a team of people that help manage and maintain the project. 😎\n\nThey have different levels of permissions and specific instructions.\n\nSome of the tasks they can perform include:\n\nYou can see the current team members in FastAPI People - Team.\n\nJoining the team is by invitation only, and I could update or remove permissions, instructions, or membership.\n\nThe people that help others the most in GitHub Discussions can become FastAPI Experts.\n\nThis is normally the best way to contribute to the project.\n\nExternal contributions are very welcome and appreciated, including answering questions, submitting PRs, etc. 🙇‍♂️\n\nThere are many ways to help maintain FastAPI.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Repository Management¶",
+      "id": "repository-management"
+    },
+    {
+      "level": "h2",
+      "text": "Owner¶",
+      "id": "owner"
+    },
+    {
+      "level": "h2",
+      "text": "Team¶",
+      "id": "team"
+    },
+    {
+      "level": "h2",
+      "text": "FastAPI Experts¶",
+      "id": "fastapi-experts"
+    },
+    {
+      "level": "h2",
+      "text": "External Contributions¶",
+      "id": "external-contributions"
+    }
+  ],
+  "code_samples": [],
+  "patterns": [],
+  "links": [
+    "https://fastapi.tiangolo.com/management/",
+    "https://fastapi.tiangolo.com/management-tasks/",
+    "https://fastapi.tiangolo.com/fastapi-people/",
+    "https://fastapi.tiangolo.com/help-fastapi/"
+  ]
+}

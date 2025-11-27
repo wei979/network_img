@@ -1,0 +1,37 @@
+{
+  "url": "https://fastapi.tiangolo.com/tutorial/dependencies/global-dependencies/",
+  "title": "Global Dependencies¶",
+  "content": "For some types of applications you might want to add dependencies to the whole application.\n\nSimilar to the way you can add dependencies to the path operation decorators, you can add them to the FastAPI application.\n\nIn that case, they will be applied to all the path operations in the application:\n\nPrefer to use the Annotated version if possible.\n\nAnd all the ideas in the section about adding dependencies to the path operation decorators still apply, but in this case, to all of the path operations in the app.\n\nLater, when reading about how to structure bigger applications (Bigger Applications - Multiple Files), possibly with multiple files, you will learn how to declare a single dependencies parameter for a group of path operations.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Global Dependencies¶",
+      "id": "global-dependencies"
+    },
+    {
+      "level": "h2",
+      "text": "Dependencies for groups of path operations¶",
+      "id": "dependencies-for-groups-of-path-operations"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "from fastapi import Depends, FastAPI, Header, HTTPException\nfrom typing_extensions import Annotated\n\n\nasync def verify_token(x_token: Annotated[str, Header()]):\n    if x_token != \"fake-super-secret-token\":\n        raise HTTPException(status_code=400, detail=\"X-Token header invalid\")\n\n\nasync def verify_key(x_key: Annotated[str, Header()]):\n    if x_key != \"fake-super-secret-key\":\n        raise HTTPException(status_code=400, detail=\"X-Key header invalid\")\n    return x_key\n\n\napp = FastAPI(dependencies=[Depends(verify_token), Depends(verify_key)])\n\n\n@app.get(\"/items/\")\nasync def read_items():\n    return [{\"item\": \"Portal Gun\"}, {\"item\": \"Plumbus\"}]\n\n\n@app.get(\"/users/\")\nasync def read_users():\n    return [{\"username\": \"Rick\"}, {\"username\": \"Morty\"}]",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import Depends, FastAPI, Header, HTTPException\nfrom typing_extensions import Annotated\n\n\nasync def verify_token(x_token: Annotated[str, Header()]):\n    if x_token != \"fake-super-secret-token\":\n        raise HTTPException(status_code=400, detail=\"X-Token header invalid\")\n\n\nasync def verify_key(x_key: Annotated[str, Header()]):\n    if x_key != \"fake-super-secret-key\":\n        raise HTTPException(status_code=400, detail=\"X-Key header invalid\")\n    return x_key\n\n\napp = FastAPI(dependencies=[Depends(verify_token), Depends(verify_key)])\n\n\n@app.get(\"/items/\")\nasync def read_items():\n    return [{\"item\": \"Portal Gun\"}, {\"item\": \"Plumbus\"}]\n\n\n@app.get(\"/users/\")\nasync def read_users():\n    return [{\"username\": \"Rick\"}, {\"username\": \"Morty\"}]",
+      "language": "python"
+    },
+    {
+      "code": "from fastapi import Depends, FastAPI, Header, HTTPException\n\n\nasync def verify_token(x_token: str = Header()):\n    if x_token != \"fake-super-secret-token\":\n        raise HTTPException(status_code=400, detail=\"X-Token header invalid\")\n\n\nasync def verify_key(x_key: str = Header()):\n    if x_key != \"fake-super-secret-key\":\n        raise HTTPException(status_code=400, detail=\"X-Key header invalid\")\n    return x_key\n\n\napp = FastAPI(dependencies=[Depends(verify_token), Depends(verify_key)])\n\n\n@app.get(\"/items/\")\nasync def read_items():\n    return [{\"item\": \"Portal Gun\"}, {\"item\": \"Plumbus\"}]\n\n\n@app.get(\"/users/\")\nasync def read_users():\n    return [{\"username\": \"Rick\"}, {\"username\": \"Morty\"}]",
+      "language": "python"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://fastapi.tiangolo.com/tutorial/dependencies/global-dependencies/",
+    "https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-in-path-operation-decorators/",
+    "https://fastapi.tiangolo.com/tutorial/bigger-applications/"
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "url": "https://fastapi.tiangolo.com/management-tasks/",
+  "title": "Repository Management Tasks¶",
+  "content": "These are the tasks that can be performed to manage the FastAPI repository by team members.\n\nThis section is useful only to a handful of people, team members with permissions to manage the repository. You can probably skip it. 😉\n\n...so, you are a team member of FastAPI? Wow, you are so cool! 😎\n\nYou can help with everything on Help FastAPI - Get Help the same ways as external contributors. But additionally, there are some tasks that only you (as part of the team) can perform.\n\nHere are the general instructions for the tasks you can perform.\n\nThanks a lot for your help. 🙇\n\nFirst of all, be nice. 😊\n\nYou probably are super nice if you were added to the team, but it's worth mentioning it. 🤓\n\nWhen things are great, everything is easier, so that doesn't need much instructions. But when things are difficult, here are some guidelines.\n\nTry to find the good side. In general, if people are not being unfriendly, try to thank their effort and interest, even if you disagree with the main subject (discussion, PR), just thank them for being interested in the project, or for having dedicated some time to try to do something.\n\nIt's difficult to convey emotion in text, use emojis to help. 😅\n\nIn discussions and PRs, in many cases, people bring their frustration and show it without filter, in many cases exaggerating, complaining, being entitled, etc. That's really not nice, and when it happens, it lowers our priority to solve their problems. But still, try to breath, and be gentle with your answers.\n\nTry to avoid using bitter sarcasm or potentially passive-aggressive comments. If something is wrong, it's better to be direct (try to be gentle) than sarcastic.\n\nTry to be as specific and objective as possible, avoid generalizations.\n\nFor conversations that are more difficult, for example to reject a PR, you can ask me (@tiangolo) to handle it directly.\n\nOnce the PR is merged, a GitHub Action (latest-changes) will use the PR title to update the latest changes automatically.\n\nSo, having a nice PR title will not only look nice in GitHub, but also in the release notes. 📝\n\nThe same GitHub Action latest-changes uses one label in the PR to decide the section in the release notes to put this PR in.\n\nMake sure you use a supported label from the latest-changes list of labels:\n\nSome tools like Dependabot, will add some labels, like dependencies, but have in mind that this label is not used by the latest-changes GitHub Action, so it won't be used in the release notes. Please make sure one of the labels above is added.\n\nWhen there's a PR for a translation, apart from adding the lang-all label, also add a label for the language.\n\nThere will be a label for each language using the language code, like lang-{lang code}, for example, lang-es for Spanish, lang-fr for French, etc.\n\nThe label awaiting-review is special, only used for translations. A GitHub Action will detect it, then it will read the language label, and it will update the GitHub Discussions managing the translations for that language to notify people that there's a new translation to review.\n\nOnce a native speaker comes, reviews the PR, and approves it, the GitHub Action will come and remove the awaiting-review label, and add the approved-1 label.\n\nThis way, we can notice when there are new translations ready, because they have the approved-1 label.\n\nFor Spanish, as I'm a native speaker and it's a language close to me, I will give it a final review myself and in most cases tweak the PR a bit before merging it.\n\nFor the other languages, confirm that:\n\n...it could be translated as:\n\n...but needs to keep the exact tip keyword. If it was translated to consejo, like:\n\nit would change the style to the default one, it would look like:\n\nThose don't have to be translated, but if they are, they need to be written as:\n\nWhen there's a first translation for a language, it will have a docs/{lang code}/docs/index.md translated file and a docs/{lang code}/mkdocs.yml.\n\nFor example, for Bosnian, it would be:\n\nThe mkdocs.yml file will have only the following content:\n\nThe language code would normally be in the ISO 639-1 list of language codes.\n\nIn any case, the language code should be in the file docs/language_names.yml.\n\nThere won't be yet a label for the language code, for example, if it was Bosnian, there wouldn't be a lang-bs. Before creating the label and adding it to the PR, create the GitHub Discussion:\n\nUpdate \"Bosnian\" with the new language.\n\nAnd update the search link to point to the new language label that will be created, like lang-bs.\n\nCreate and add the label to that new Discussion just created, like lang-bs.\n\nThen go back to the PR, and add the label, like lang-bs, and lang-all and awaiting-review.\n\nNow the GitHub action will automatically detect the label lang-bs and will post in that Discussion that this PR is waiting to be reviewed.\n\nIf a PR doesn't explain what it does or why, ask for more information.\n\nA PR should have a specific use case that it is solving.\n\nEvery month, a GitHub Action updates the FastAPI People data. Those PRs look like this one: 👥 Update FastAPI People.\n\nIf the tests are passing, you can merge it right away.\n\nWhen people add external links they edit this file external_links.yml.\n\nAfter checking all these things and ensuring the PR has the right labels, you can merge it.\n\nDependabot will create PRs to update dependencies for several things, and those PRs all look similar, but some are way more delicate than others.\n\nWhen a question in GitHub Discussions has been answered, mark the answer by clicking \"Mark as answer\".\n\nYou can filter discussions by Questions that are Unanswered.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Repository Management Tasks¶",
+      "id": "repository-management-tasks"
+    },
+    {
+      "level": "h2",
+      "text": "Be Nice¶",
+      "id": "be-nice"
+    },
+    {
+      "level": "h3",
+      "text": "When Things are Difficult¶",
+      "id": "when-things-are-difficult"
+    },
+    {
+      "level": "h2",
+      "text": "Edit PR Titles¶",
+      "id": "edit-pr-titles"
+    },
+    {
+      "level": "h2",
+      "text": "Add Labels to PRs¶",
+      "id": "add-labels-to-prs"
+    },
+    {
+      "level": "h2",
+      "text": "Add Labels to Translation PRs¶",
+      "id": "add-labels-to-translation-prs"
+    },
+    {
+      "level": "h2",
+      "text": "Merge Translation PRs¶",
+      "id": "merge-translation-prs"
+    },
+    {
+      "level": "h2",
+      "text": "First Translation PR¶",
+      "id": "first-translation-pr"
+    },
+    {
+      "level": "h2",
+      "text": "Review PRs¶",
+      "id": "review-prs"
+    },
+    {
+      "level": "h2",
+      "text": "FastAPI People PRs¶",
+      "id": "fastapi-people-prs"
+    },
+    {
+      "level": "h2",
+      "text": "External Links PRs¶",
+      "id": "external-links-prs"
+    },
+    {
+      "level": "h2",
+      "text": "Dependabot PRs¶",
+      "id": "dependabot-prs"
+    },
+    {
+      "level": "h2",
+      "text": "Mark GitHub Discussions Answers¶",
+      "id": "mark-github-discussions-answers"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "🌐 Add Spanish translation for `docs/es/docs/teleporting.md`",
+      "language": "unknown"
+    },
+    {
+      "code": "/// tip\n\nThis is a tip.\n\n///",
+      "language": "unknown"
+    },
+    {
+      "code": "/// tip\n\nEsto es un consejo.\n\n///",
+      "language": "unknown"
+    },
+    {
+      "code": "/// consejo\n\nEsto es un consejo.\n\n///",
+      "language": "unknown"
+    },
+    {
+      "code": "/// tip | consejo\n\nEsto es un consejo.\n\n///",
+      "language": "unknown"
+    },
+    {
+      "code": "INHERIT: ../en/mkdocs.yml",
+      "language": "unknown"
+    },
+    {
+      "code": "## Bosnian translations\n\nThis is the issue to track translations of the docs to Bosnian. 🚀\n\nHere are the [PRs to review with the label `lang-bs`](https://github.com/fastapi/fastapi/pulls?q=is%3Apr+is%3Aopen+sort%3Aupdated-desc+label%3Alang-bs+label%3A%22awaiting-review%22). 🤓",
+      "language": "unknown"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://fastapi.tiangolo.com/management-tasks/",
+    "https://fastapi.tiangolo.com/fastapi-people/",
+    "https://fastapi.tiangolo.com/help-fastapi/"
+  ]
+}

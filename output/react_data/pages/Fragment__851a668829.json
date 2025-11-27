@@ -1,0 +1,141 @@
+{
+  "url": "https://react.dev/reference/react/Fragment",
+  "title": "<Fragment> (<>...</>)",
+  "content": "<Fragment>, often used via <>...</> syntax, lets you group elements without a wrapper node.\n\nWrap elements in <Fragment> to group them together in situations where you need a single element. Grouping elements in Fragment has no effect on the resulting DOM; it is the same as if the elements were not grouped. The empty JSX tag <></> is shorthand for <Fragment></Fragment> in most cases.\n\nWhen you pass a ref to a fragment, React provides a FragmentInstance object with methods for interacting with the DOM nodes wrapped by the fragment:\n\nEvent handling methods:\n\nFocus management methods:\n\nIf you want to pass key to a Fragment, you can’t use the <>...</> syntax. You have to explicitly import Fragment from 'react' and render <Fragment key={yourKey}>...</Fragment>.\n\nReact does not reset state when you go from rendering <><Child /></> to [<Child />] or back, or when you go from rendering <><Child /></> to <Child /> and back. This only works a single level deep: for example, going from <><><Child /></></> to <Child /> resets the state. See the precise semantics here.\n\nCanary only If you want to pass ref to a Fragment, you can’t use the <>...</> syntax. You have to explicitly import Fragment from 'react' and render <Fragment ref={yourRef}>...</Fragment>.\n\nUse Fragment, or the equivalent <>...</> syntax, to group multiple elements together. You can use it to put multiple elements in any place where a single element can go. For example, a component can only return one element, but by using a Fragment you can group multiple elements together and then return them as a group:\n\nFragments are useful because grouping elements with a Fragment has no effect on layout or styles, unlike if you wrapped the elements in another container like a DOM element. If you inspect this example with the browser tools, you’ll see that all <h1> and <article> DOM nodes appear as siblings without wrappers around them:\n\nThe example above is equivalent to importing Fragment from React:\n\nUsually you won’t need this unless you need to pass a key to your Fragment.\n\nLike any other element, you can assign Fragment elements to variables, pass them as props, and so on:\n\nYou can use Fragment to group text together with components:\n\nHere’s a situation where you need to write Fragment explicitly instead of using the <></> syntax. When you render multiple elements in a loop, you need to assign a key to each element. If the elements within the loop are Fragments, you need to use the normal JSX element syntax in order to provide the key attribute:\n\nYou can inspect the DOM to verify that there are no wrapper elements around the Fragment children:\n\nFragment refs allow you to interact with the DOM nodes wrapped by a Fragment without adding extra wrapper elements. This is useful for event handling, visibility tracking, focus management, and replacing deprecated patterns like ReactDOM.findDOMNode().\n\nFragment refs are useful for visibility tracking and intersection observation. This enables you to monitor when content becomes visible without requiring the child Components to expose refs:\n\nThis pattern is an alternative to Effect-based visibility logging, which is an anti-pattern in most cases. Relying on Effects alone does not guarantee that the rendered Component is observable by the user.\n\nFragment refs provide focus management methods that work across all DOM nodes within the Fragment:\n\nThe focus() method focuses the first focusable element within the Fragment, while focusLast() focuses the last focusable element.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "<Fragment> (<>...</>)",
+      "id": ""
+    },
+    {
+      "level": "h3",
+      "text": "Canary",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Reference",
+      "id": "reference"
+    },
+    {
+      "level": "h3",
+      "text": "<Fragment>",
+      "id": "fragment"
+    },
+    {
+      "level": "h4",
+      "text": "Props",
+      "id": "props"
+    },
+    {
+      "level": "h3",
+      "text": "Canary only FragmentInstance",
+      "id": "fragmentinstance"
+    },
+    {
+      "level": "h4",
+      "text": "Caveats",
+      "id": "caveats"
+    },
+    {
+      "level": "h2",
+      "text": "Usage",
+      "id": "usage"
+    },
+    {
+      "level": "h3",
+      "text": "Returning multiple elements",
+      "id": "returning-multiple-elements"
+    },
+    {
+      "level": "h5",
+      "text": "Deep Dive",
+      "id": ""
+    },
+    {
+      "level": "h4",
+      "text": "How to write a Fragment without the special syntax?",
+      "id": "how-to-write-a-fragment-without-the-special-syntax"
+    },
+    {
+      "level": "h3",
+      "text": "Assigning multiple elements to a variable",
+      "id": "assigning-multiple-elements-to-a-variable"
+    },
+    {
+      "level": "h3",
+      "text": "Grouping elements with text",
+      "id": "grouping-elements-with-text"
+    },
+    {
+      "level": "h3",
+      "text": "Rendering a list of Fragments",
+      "id": "rendering-a-list-of-fragments"
+    },
+    {
+      "level": "h3",
+      "text": "Canary only Using Fragment refs for DOM interaction",
+      "id": "using-fragment-refs-for-dom-interaction"
+    },
+    {
+      "level": "h3",
+      "text": "Canary only Tracking visibility with Fragment refs",
+      "id": "tracking-visibility-with-fragment-refs"
+    },
+    {
+      "level": "h3",
+      "text": "Canary only Focus management with Fragment refs",
+      "id": "focus-management-with-fragment-refs"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "<>  <OneChild />  <AnotherChild /></>",
+      "language": "unknown"
+    },
+    {
+      "code": "function Post() {  return (    <>      <PostTitle />      <PostBody />    </>  );}",
+      "language": "unknown"
+    },
+    {
+      "code": "import { Fragment } from 'react';function Post() {  return (    <Fragment>      <PostTitle />      <PostBody />    </Fragment>  );}",
+      "language": "python"
+    },
+    {
+      "code": "function CloseDialog() {  const buttons = (    <>      <OKButton />      <CancelButton />    </>  );  return (    <AlertDialog buttons={buttons}>      Are you sure you want to leave this page?    </AlertDialog>  );}",
+      "language": "javascript"
+    },
+    {
+      "code": "function DateRangePicker({ start, end }) {  return (    <>      From      <DatePicker date={start} />      to      <DatePicker date={end} />    </>  );}",
+      "language": "unknown"
+    },
+    {
+      "code": "function Blog() {  return posts.map(post =>    <Fragment key={post.id}>      <PostTitle title={post.title} />      <PostBody body={post.body} />    </Fragment>  );}",
+      "language": "javascript"
+    },
+    {
+      "code": "import { Fragment } from 'react';function ClickableFragment({ children, onClick }) {  return (    <Fragment ref={fragmentInstance => {      fragmentInstance.addEventListener('click', handleClick);      return () => fragmentInstance.removeEventListener('click', handleClick);    }}>      {children}    </Fragment>  );}",
+      "language": "python"
+    },
+    {
+      "code": "import { Fragment, useRef, useLayoutEffect } from 'react';function VisibilityObserverFragment({ threshold = 0.5, onVisibilityChange, children }) {  const fragmentRef = useRef(null);  useLayoutEffect(() => {    const observer = new IntersectionObserver(      (entries) => {        onVisibilityChange(entries.some(entry => entry.isIntersecting))      },      { threshold }    );        fragmentRef.current.observeUsing(observer);    return () => fragmentRef.current.unobserveUsing(observer);  }, [threshold, onVisibilityChange]);  return (    <Fragment ref={fragmentRef}>      {children}    </Fragment>  );}function MyComponent() {  const handleVisibilityChange = (isVisible) => {    console.log('Component is', isVisible ? 'visible' : 'hidden');  };  return (    <VisibilityObserverFragment onVisibilityChange={handleVisibilityChange}>      <SomeThirdPartyComponent />      <AnotherComponent />    </VisibilityObserverFragment>  );}",
+      "language": "python"
+    },
+    {
+      "code": "import { Fragment, useRef } from 'react';function FocusFragment({ children }) {  return (    <Fragment ref={(fragmentInstance) => fragmentInstance?.focus()}>      {children}    </Fragment>  );}",
+      "language": "python"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://react.dev/reference/react",
+    "https://react.dev/reference/react/components",
+    "https://react.dev/reference/react/Fragment",
+    "https://react.dev/learn/rendering-lists",
+    "https://react.dev/reference/react/useRef",
+    "https://react.dev/reference/react-dom/components/common",
+    "https://react.dev/learn/preserving-and-resetting-state",
+    "https://react.dev/reference/react/Profiler"
+  ]
+}

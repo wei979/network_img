@@ -1,0 +1,133 @@
+{
+  "url": "https://react.dev/reference/react-compiler/directives",
+  "title": "Directives",
+  "content": "React Compiler directives are special string literals that control whether specific functions are compiled.\n\nReact Compiler directives provide fine-grained control over which functions are optimized by the compiler. They are string literals placed at the beginning of a function body or at the top of a module.\n\nPlace directives at the beginning of a function to control its compilation:\n\nPlace directives at the top of a file to affect all functions in that module:\n\nDirectives behave differently depending on your compilationMode:\n\nDirectives are escape hatches. Prefer configuring the compiler at the project level:\n\nAlways explain why a directive is used:\n\nOpt-out directives should be temporary:\n\nWhen adopting the React Compiler in a large codebase:\n\nFor specific issues with directives, see the troubleshooting sections in:",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Directives",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Overview",
+      "id": "overview"
+    },
+    {
+      "level": "h3",
+      "text": "Available directives",
+      "id": "available-directives"
+    },
+    {
+      "level": "h3",
+      "text": "Quick comparison",
+      "id": "quick-comparison"
+    },
+    {
+      "level": "h2",
+      "text": "Usage",
+      "id": "usage"
+    },
+    {
+      "level": "h3",
+      "text": "Function-level directives",
+      "id": "function-level"
+    },
+    {
+      "level": "h3",
+      "text": "Module-level directives",
+      "id": "module-level"
+    },
+    {
+      "level": "h3",
+      "text": "Compilation modes interaction",
+      "id": "compilation-modes"
+    },
+    {
+      "level": "h2",
+      "text": "Best practices",
+      "id": "best-practices"
+    },
+    {
+      "level": "h3",
+      "text": "Use directives sparingly",
+      "id": "use-sparingly"
+    },
+    {
+      "level": "h3",
+      "text": "Document directive usage",
+      "id": "document-usage"
+    },
+    {
+      "level": "h3",
+      "text": "Plan for removal",
+      "id": "plan-removal"
+    },
+    {
+      "level": "h2",
+      "text": "Common patterns",
+      "id": "common-patterns"
+    },
+    {
+      "level": "h3",
+      "text": "Gradual adoption",
+      "id": "gradual-adoption"
+    },
+    {
+      "level": "h2",
+      "text": "Troubleshooting",
+      "id": "troubleshooting"
+    },
+    {
+      "level": "h3",
+      "text": "Common issues",
+      "id": "common-issues"
+    },
+    {
+      "level": "h2",
+      "text": "See also",
+      "id": "see-also"
+    }
+  ],
+  "code_samples": [
+    {
+      "code": "function MyComponent() {  \"use memo\"; // Opt this component into compilation  return <div>{/* ... */}</div>;}",
+      "language": "unknown"
+    },
+    {
+      "code": "// Opt into compilationfunction OptimizedComponent() {  \"use memo\";  return <div>This will be optimized</div>;}// Opt out of compilationfunction UnoptimizedComponent() {  \"use no memo\";  return <div>This won't be optimized</div>;}",
+      "language": "unknown"
+    },
+    {
+      "code": "// At the very top of the file\"use memo\";// All functions in this file will be compiledfunction Component1() {  return <div>Compiled</div>;}function Component2() {  return <div>Also compiled</div>;}// Can be overridden at function levelfunction Component3() {  \"use no memo\"; // This overrides the module directive  return <div>Not compiled</div>;}",
+      "language": "unknown"
+    },
+    {
+      "code": "// ✅ Good - project-wide configuration{  plugins: [    ['babel-plugin-react-compiler', {      compilationMode: 'infer'    }]  ]}// ⚠️ Use directives only when neededfunction SpecialCase() {  \"use no memo\"; // Document why this is needed  // ...}",
+      "language": "unknown"
+    },
+    {
+      "code": "// ✅ Good - clear explanationfunction DataGrid() {  \"use no memo\"; // TODO: Remove after fixing issue with dynamic row heights (JIRA-123)  // Complex grid implementation}// ❌ Bad - no explanationfunction Mystery() {  \"use no memo\";  // ...}",
+      "language": "unknown"
+    },
+    {
+      "code": "function TemporaryWorkaround() {  \"use no memo\"; // TODO: Remove after upgrading ThirdPartyLib to v2.0  return <ThirdPartyComponent />;}",
+      "language": "unknown"
+    },
+    {
+      "code": "// Start with annotation mode{  compilationMode: 'annotation'}// Opt in stable componentsfunction StableComponent() {  \"use memo\";  // Well-tested component}// Later, switch to infer mode and opt out problematic onesfunction ProblematicComponent() {  \"use no memo\"; // Fix issues before removing  // ...}",
+      "language": "unknown"
+    }
+  ],
+  "patterns": [],
+  "links": [
+    "https://react.dev/reference/react",
+    "https://react.dev/reference/react-compiler/directives",
+    "https://react.dev/reference/react-compiler/directives/use-memo",
+    "https://react.dev/reference/react-compiler/directives/use-no-memo",
+    "https://react.dev/reference/react-compiler/compilationMode",
+    "https://react.dev/reference/react-compiler/configuration",
+    "https://react.dev/learn/react-compiler",
+    "https://react.dev/reference/react-compiler/target"
+  ]
+}

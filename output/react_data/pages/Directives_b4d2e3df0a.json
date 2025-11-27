@@ -1,0 +1,33 @@
+{
+  "url": "https://react.dev/reference/rsc/directives",
+  "title": "Directives",
+  "content": "Directives are for use in React Server Components.\n\nDirectives provide instructions to bundlers compatible with React Server Components.",
+  "headings": [
+    {
+      "level": "h1",
+      "text": "Directives",
+      "id": ""
+    },
+    {
+      "level": "h3",
+      "text": "React Server Components",
+      "id": ""
+    },
+    {
+      "level": "h2",
+      "text": "Source code directives",
+      "id": "source-code-directives"
+    }
+  ],
+  "code_samples": [],
+  "patterns": [],
+  "links": [
+    "https://react.dev/reference/react",
+    "https://react.dev/reference/rsc/directives",
+    "https://react.dev/reference/rsc/server-components",
+    "https://react.dev/learn/start-a-new-react-project",
+    "https://react.dev/reference/rsc/use-client",
+    "https://react.dev/reference/rsc/use-server",
+    "https://react.dev/reference/rsc/server-functions"
+  ]
+}

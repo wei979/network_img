@@ -256,6 +256,46 @@ export const PROTOCOL_STATES = {
     warningEffect: 'blink-red'
   },
 
+  // PSH Flood 攻擊
+  'psh-flood': {
+    stages: [
+      {
+        step: 'PSH-Attack',
+        label: 'PSH 攻擊封包',
+        direction: 'forward',
+        color: '#ec4899', // 粉紅色（攻擊警示）
+        duration: 300,
+        icon: '⚡',
+        blinking: true
+      },
+      {
+        step: 'Flood',
+        label: '洪水攻擊中',
+        direction: 'forward',
+        color: '#f43f5e', // 紅粉色
+        duration: 400,
+        icon: '💥',
+        pulsing: true
+      },
+      {
+        step: 'Overload',
+        label: '資源過載',
+        direction: 'forward',
+        color: '#ef4444', // 紅色
+        duration: 300,
+        icon: '🔥',
+        blinking: true
+      }
+    ],
+    finalState: 'attack',
+    finalColor: '#ef4444',
+    colorTransition: ['#ec4899', '#f43f5e', '#ef4444'],
+    totalDuration: 1000,
+    description: 'PSH 洪水攻擊 - 強制接收端立即處理大量資料',
+    warningEffect: 'pulse-red',
+    isAttack: true
+  },
+
   // TCP 資料傳輸（通用 fallback）
   'tcp-data': {
     stages: [

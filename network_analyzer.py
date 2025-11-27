@@ -445,8 +445,11 @@ class NetworkAnalyzer:
 
         當其他特定協議檢測沒有結果時，按 5-tuple 分組所有 TCP 封包，
         創建基本的資料傳輸 timeline。
+
+        同時支援 Flood 攻擊檢測（按目標分組，忽略 source port）。
         """
-        connections = {}  # key: (src_ip, src_port, dst_ip, dst_port)
+        connections = {}  # key: (src_ip, src_port, dst_ip, dst_port) - 標準 5-tuple
+        flood_groups = {}  # key: (src_ip, dst_ip, dst_port) - Flood 攻擊分組（忽略 source port）
 
         for index, packet in enumerate(self.packets):
             if not packet.haslayer(IP) or not packet.haslayer(TCP):
@@ -458,7 +461,7 @@ class NetworkAnalyzer:
             length = len(packet)
             flags = int(tcp.flags)
 
-            # 標準化 key（排序確保雙向一致）
+            # === 標準 5-tuple 分組 ===
             endpoint1 = (ip.src, tcp.sport)
             endpoint2 = (ip.dst, tcp.dport)
             normalized_key = tuple(sorted([endpoint1, endpoint2]))
@@ -469,7 +472,9 @@ class NetworkAnalyzer:
                     'end_time': ts,
                     'packets': [],
                     'total_bytes': 0,
-                    'flags_seen': set()
+                    'flags_seen': set(),
+                    'psh_count': 0,
+                    'syn_count': 0
                 }
 
             conn = connections[normalized_key]
@@ -477,9 +482,10 @@ class NetworkAnalyzer:
             conn['packets'].append(index)
             conn['total_bytes'] += length
 
-            # 記錄看到的 flags
+            # 記錄看到的 flags 並計數
             if flags & 0x02:  # SYN
                 conn['flags_seen'].add('SYN')
+                conn['syn_count'] += 1
             if flags & 0x01:  # FIN
                 conn['flags_seen'].add('FIN')
             if flags & 0x04:  # RST
@@ -488,29 +494,173 @@ class NetworkAnalyzer:
                 conn['flags_seen'].add('ACK')
             if flags & 0x08:  # PSH
                 conn['flags_seen'].add('PSH')
+                conn['psh_count'] += 1
+
+            # === Flood 攻擊分組（忽略 source port）===
+            # 用於檢測每個封包使用不同 source port 的攻擊模式
+            flood_key = (ip.src, ip.dst, tcp.dport)  # 注意：不包含 source port
+            if flood_key not in flood_groups:
+                flood_groups[flood_key] = {
+                    'start_time': ts,
+                    'end_time': ts,
+                    'packets': [],
+                    'total_bytes': 0,
+                    'flags_seen': set(),
+                    'psh_count': 0,
+                    'syn_count': 0,
+                    'urg_count': 0,
+                    'fin_count': 0,
+                    'unique_sports': set()  # 追蹤不同的 source ports
+                }
+
+            fg = flood_groups[flood_key]
+            fg['end_time'] = max(fg['end_time'], ts)
+            fg['packets'].append(index)
+            fg['total_bytes'] += length
+            fg['unique_sports'].add(tcp.sport)
+
+            if flags & 0x02:  # SYN
+                fg['flags_seen'].add('SYN')
+                fg['syn_count'] += 1
+            if flags & 0x01:  # FIN
+                fg['flags_seen'].add('FIN')
+                fg['fin_count'] += 1
+            if flags & 0x20:  # URG
+                fg['flags_seen'].add('URG')
+                fg['urg_count'] += 1
+            if flags & 0x08:  # PSH
+                fg['flags_seen'].add('PSH')
+                fg['psh_count'] += 1
 
         timelines = []
-        for key, conn in connections.items():
-            # 至少需要 2 個封包才有意義
-            if len(conn['packets']) < 2:
+        processed_packets = set()  # 追蹤已被 Flood 檢測處理的封包
+
+        # === 第一階段：檢測 Flood 攻擊 ===
+        for flood_key, fg in flood_groups.items():
+            total_packets = len(fg['packets'])
+            unique_ports = len(fg['unique_sports'])
+
+            # Flood 攻擊特徵：
+            # 1. 大量封包 (> 50)
+            # 2. 使用很多不同的 source ports（幾乎每個封包都不同）
+            # 3. unique_ports / total_packets 比例 > 0.8
+            is_flood_pattern = (
+                total_packets > 50 and
+                unique_ports > 20 and
+                unique_ports / total_packets > 0.8
+            )
+
+            if not is_flood_pattern:
                 continue
 
+            # 判斷 Flood 類型
+            psh_ratio = fg['psh_count'] / total_packets if total_packets > 0 else 0
+            syn_ratio = fg['syn_count'] / total_packets if total_packets > 0 else 0
+            urg_ratio = fg['urg_count'] / total_packets if total_packets > 0 else 0
+            fin_ratio = fg['fin_count'] / total_packets if total_packets > 0 else 0
+
+            # URG+PSH+FIN 攻擊（異常旗標組合）
+            if urg_ratio > 0.5 and psh_ratio > 0.5 and fin_ratio > 0.5:
+                protocol_type = 'urg-psh-fin-flood'
+            # PSH Flood
+            elif psh_ratio > 0.6:
+                protocol_type = 'psh-flood'
+            # SYN Flood
+            elif syn_ratio > 0.8:
+                protocol_type = 'syn-flood'
+            # FIN Flood
+            elif fin_ratio > 0.8:
+                protocol_type = 'fin-flood'
+            else:
+                protocol_type = 'tcp-flood'  # 通用 Flood
+
+            src_ip, dst_ip, dst_port = flood_key
+            start_time = fg['start_time']
+            end_time = fg['end_time']
+            duration_ms = max(1000, int((end_time - start_time) * 1000))
+
+            # 標記這些封包已被處理
+            for pkt_idx in fg['packets']:
+                processed_packets.add(pkt_idx)
+
+            # 創建 Flood 攻擊 timeline
+            stages = [
+                {
+                    'key': 'attack',
+                    'label': f'{protocol_type.upper()} 攻擊',
+                    'direction': 'forward',
+                    'durationMs': duration_ms // 3,
+                    'packetRefs': fg['packets'][:10]
+                },
+                {
+                    'key': 'flood',
+                    'label': '洪水攻擊中',
+                    'direction': 'forward',
+                    'durationMs': duration_ms // 3,
+                    'packetRefs': fg['packets'][10:20] if len(fg['packets']) > 10 else []
+                },
+                {
+                    'key': 'overload',
+                    'label': '資源過載',
+                    'direction': 'forward',
+                    'durationMs': duration_ms // 3,
+                    'packetRefs': fg['packets'][20:30] if len(fg['packets']) > 20 else []
+                }
+            ]
+
+            timeline = {
+                'id': f"flood-{src_ip}-0-{dst_ip}-{dst_port}",  # 添加虛擬 srcPort=0 以符合前端解析格式
+                'protocol': 'tcp',
+                'protocolType': protocol_type,
+                'startEpochMs': int(start_time * 1000),
+                'endEpochMs': int(end_time * 1000),
+                'stages': stages,
+                'metrics': {
+                    'durationMs': duration_ms,
+                    'packetCount': total_packets,
+                    'totalBytes': fg['total_bytes'],
+                    'uniquePorts': unique_ports,
+                    'flagsSeen': list(fg['flags_seen']),
+                    'pshRatio': round(psh_ratio, 3),
+                    'synRatio': round(syn_ratio, 3),
+                    'isFlood': True
+                }
+            }
+            timelines.append(timeline)
+
+        # === 第二階段：處理正常連線（排除已被 Flood 處理的封包）===
+        for key, conn in connections.items():
+            # 過濾掉已被 Flood 檢測處理的封包
+            remaining_packets = [p for p in conn['packets'] if p not in processed_packets]
+
+            if len(remaining_packets) < 2:
+                continue
+
+            # 重新計算統計（基於剩餘封包）
             start_time = conn['start_time']
             end_time = conn['end_time']
             duration_ms = max(1, int((end_time - start_time) * 1000))
 
-            # 根據看到的 flags 決定 protocolType
-            flags_seen = conn['flags_seen']
-            if 'SYN' in flags_seen and 'FIN' in flags_seen:
-                protocol_type = 'tcp-session'  # 完整會話
-            elif 'SYN' in flags_seen:
-                protocol_type = 'tcp-handshake'  # 可能是不完整的握手
-            elif 'FIN' in flags_seen or 'RST' in flags_seen:
-                protocol_type = 'tcp-teardown'  # 連線結束
-            else:
-                protocol_type = 'tcp-data'  # 純資料傳輸
+            total_packets = len(remaining_packets)
+            # 使用原始的 flag 計數（因為我們是按連線計算，不是按封包）
+            psh_ratio = conn['psh_count'] / len(conn['packets']) if len(conn['packets']) > 0 else 0
+            syn_ratio = conn['syn_count'] / len(conn['packets']) if len(conn['packets']) > 0 else 0
 
-            # 創建簡單的單階段或雙階段 timeline
+            flags_seen = conn['flags_seen']
+
+            # 決定 protocolType
+            if psh_ratio > 0.6 and syn_ratio < 0.4 and total_packets > 20:
+                protocol_type = 'psh-flood'
+            elif 'SYN' in flags_seen and 'FIN' in flags_seen:
+                protocol_type = 'tcp-session'
+            elif 'SYN' in flags_seen:
+                protocol_type = 'tcp-handshake'
+            elif 'FIN' in flags_seen or 'RST' in flags_seen:
+                protocol_type = 'tcp-teardown'
+            else:
+                protocol_type = 'tcp-data'
+
+            # 創建 timeline
             stages = []
             half_duration = max(800, duration_ms // 2)
 
@@ -519,7 +669,7 @@ class NetworkAnalyzer:
                 'label': 'Data Transfer',
                 'direction': 'forward',
                 'durationMs': half_duration,
-                'packetRefs': conn['packets'][:len(conn['packets'])//2] or conn['packets'][:1]
+                'packetRefs': remaining_packets[:len(remaining_packets)//2] or remaining_packets[:1]
             })
 
             stages.append({
@@ -527,7 +677,7 @@ class NetworkAnalyzer:
                 'label': 'Response',
                 'direction': 'backward',
                 'durationMs': half_duration,
-                'packetRefs': conn['packets'][len(conn['packets'])//2:] or conn['packets'][-1:]
+                'packetRefs': remaining_packets[len(remaining_packets)//2:] or remaining_packets[-1:]
             })
 
             endpoint1, endpoint2 = key
@@ -540,7 +690,7 @@ class NetworkAnalyzer:
                 'stages': stages,
                 'metrics': {
                     'durationMs': duration_ms,
-                    'packetCount': len(conn['packets']),
+                    'packetCount': len(remaining_packets),
                     'totalBytes': conn['total_bytes'],
                     'flagsSeen': list(flags_seen)
                 }

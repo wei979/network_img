@@ -572,6 +572,11 @@ async def get_packet_statistics(
         # FIN Flood: High FIN ratio but low SYN (sending FIN without proper handshake)
         attack_type = 'FIN Flood'
         threat_level = 'high'
+    elif psh_ratio > 0.6 and syn_ratio < 0.4 and fin_ratio < 0.3 and total_packets > 100:
+        # PSH Flood: High PSH ratio without other flood indicators
+        # Attackers use PSH flag to force immediate data processing, overwhelming the receiver
+        attack_type = 'PSH Flood'
+        threat_level = 'high'
     elif rst_ratio > 0.4 and total_packets > 100:
         attack_type = 'RST Attack'
         threat_level = 'high' if rst_ratio > 0.6 else 'medium'
@@ -601,6 +606,9 @@ async def get_packet_statistics(
         anomaly_score += min(30, urg_psh_fin_ratio * 100)
     if urg_ratio > 0.2:
         anomaly_score += min(15, (urg_ratio - 0.2) * 50)
+    # PSH Flood: High PSH ratio without other indicators is anomalous
+    if psh_ratio > 0.5 and syn_ratio < 0.4:
+        anomaly_score += min(25, (psh_ratio - 0.5) * 50)
     anomaly_score = min(100, round(anomaly_score))
 
     return {

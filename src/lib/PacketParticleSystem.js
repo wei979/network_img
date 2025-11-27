@@ -293,8 +293,16 @@ export class PacketParticleSystem {
       // 判斷封包方向
       let isForward = true // 預設為前向
       if (this.connectionSource && packet.fiveTuple) {
-        const packetSource = `${packet.fiveTuple.srcIp}:${packet.fiveTuple.srcPort}`
-        isForward = (packetSource === this.connectionSource)
+        const [connSrcIp, connSrcPort] = this.connectionSource.split(':')
+        if (connSrcPort === '0') {
+          // Flood 攻擊使用虛擬端口 0：只比較 IP 地址
+          // 因為每個封包的來源端口都不同
+          isForward = (packet.fiveTuple.srcIp === connSrcIp)
+        } else {
+          // 正常連線：比較完整的 IP:Port
+          const packetSource = `${packet.fiveTuple.srcIp}:${packet.fiveTuple.srcPort}`
+          isForward = (packetSource === this.connectionSource)
+        }
       }
 
       // 計算粒子是否應該顯示

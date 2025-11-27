@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { Activity, AlertTriangle, Clock, Zap, TrendingUp, Server, Loader } from 'lucide-react'
+import { getAttackTypeClassName, getAttackTypeIconColor, getAttackTypeDescription, isAttackType } from '../lib/AttackTypes'
 
 /**
  * AttackTimelineChart - 攻擊時間軸統計圖
@@ -268,19 +269,7 @@ export default function AttackTimelineChart({
             </div>
           )}
           {/* 攻擊類型標籤 */}
-          <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-            summary.attack_type === 'SYN Flood' || summary.attack_type === 'FIN Flood'
-              ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-              : summary.attack_type === 'URG-PSH-FIN Attack'
-                ? 'bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30'
-                : summary.attack_type === 'RST Attack'
-                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                  : summary.attack_type === 'High Volume Attack'
-                    ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
-                    : summary.attack_type === 'Suspicious Traffic'
-                      ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                      : 'bg-green-500/20 text-green-400 border border-green-500/30'
-          }`}>
+          <div className={`px-3 py-1 rounded-full text-xs font-semibold ${getAttackTypeClassName(summary.attack_type)} border`}>
             {summary.attack_type}
           </div>
         </div>
@@ -329,19 +318,7 @@ export default function AttackTimelineChart({
       {/* TCP 旗標分析 - 第二行：偵測依據 */}
       <div className="p-4 border-b border-slate-700 bg-slate-900/50">
         <div className="flex items-center gap-2 mb-3">
-          <AlertTriangle className={`w-4 h-4 ${
-            summary.attack_type === 'SYN Flood' || summary.attack_type === 'FIN Flood'
-              ? 'text-red-400'
-              : summary.attack_type === 'URG-PSH-FIN Attack'
-                ? 'text-fuchsia-400'
-                : summary.attack_type === 'RST Attack'
-                  ? 'text-amber-400'
-                  : summary.attack_type === 'High Volume Attack'
-                    ? 'text-orange-400'
-                    : summary.attack_type === 'Suspicious Traffic'
-                      ? 'text-yellow-400'
-                      : 'text-emerald-400'
-          }`} />
+          <AlertTriangle className={`w-4 h-4 ${getAttackTypeIconColor(summary.attack_type)}`} />
           <span className="text-sm font-semibold text-slate-200">TCP 旗標分析</span>
           {/* 異常分數 */}
           {summary.anomaly_score !== undefined && summary.anomaly_score > 0 && (
@@ -364,13 +341,11 @@ export default function AttackTimelineChart({
             </div>
           )}
           <span className={`ml-auto text-xs px-2 py-0.5 rounded ${
-            summary.attack_type === 'SYN Flood' || summary.attack_type === 'FIN Flood' || summary.attack_type === 'RST Attack'
+            isAttackType(summary.attack_type)
               ? 'bg-red-500/20 text-red-300'
-              : summary.attack_type === 'URG-PSH-FIN Attack'
-                ? 'bg-fuchsia-500/20 text-fuchsia-300'
-                : summary.attack_type === 'High Volume Attack' || summary.attack_type === 'Suspicious Traffic'
-                  ? 'bg-amber-500/20 text-amber-300'
-                  : 'bg-emerald-500/20 text-emerald-300'
+              : summary.attack_type === 'Suspicious Traffic'
+                ? 'bg-amber-500/20 text-amber-300'
+                : 'bg-emerald-500/20 text-emerald-300'
           }`}>
             {summary.attack_type === 'Normal Traffic' ? '流量正常' :
              summary.attack_type === 'Suspicious Traffic' ? '可疑流量' : '偵測到異常'}
@@ -442,6 +417,9 @@ export default function AttackTimelineChart({
                   {summary.psh_ratio > 0 && `，PSH 比例 ${summary.psh_ratio}%`}
                   。這種攻擊同時設置緊急(URG)、推送(PSH)、結束(FIN)旗標，會消耗 CPU 資源並可能繞過防火牆規則。
                 </>
+              )}
+              {summary.attack_type === 'PSH Flood' && (
+                <>⚠️ PSH 封包比例過高 ({summary.psh_ratio || 0}%) 且 SYN 比例正常 ({summary.syn_ratio}%)，符合 PSH Flood 攻擊特徵。攻擊者發送大量 PSH 封包強制接收端立即處理資料，消耗 CPU 資源。</>
               )}
               {summary.attack_type === 'RST Attack' && (
                 <>⚠️ RST 封包比例過高 ({summary.rst_ratio || 0}%)，符合 RST 攻擊特徵。攻擊者大量發送 RST 封包強制關閉連線，可能導致服務中斷。</>

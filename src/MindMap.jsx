@@ -50,7 +50,8 @@ const PROTOCOL_COLORS = {
   'timeout': '#f59e0b',         // 黃橙色 - 超時
   'udp-transfer': '#60a5fa',    // 淡藍色 - UDP 傳輸
   'icmp-ping': '#facc15',       // 黃色 - ICMP Ping
-  'ssh-secure': '#10b981'       // 綠色 - SSH 安全連線
+  'ssh-secure': '#10b981',      // 綠色 - SSH 安全連線
+  'psh-flood': '#ec4899'        // 粉紅色 - PSH 洪水攻擊
 }
 
 const STAGE_LABEL_MAP = {
@@ -2199,11 +2200,22 @@ export default function MindMap() {
                   // 解析連線資訊
                   const connId = batchViewerConnection.originalId || batchViewerConnection.id || ''
                   const parts = connId.replace('aggregated-', '').split('-')
-                  const srcLabel = parts.length >= 3 ? `${parts[1]}:${parts[2]}` : batchViewerConnection.src || 'Source'
+                  // Flood 攻擊使用虛擬端口 0，此時僅顯示 IP 不顯示端口
+                  const srcPort = parts[2]
+                  const srcLabel = parts.length >= 3
+                    ? (srcPort === '0' ? parts[1] : `${parts[1]}:${srcPort}`)
+                    : batchViewerConnection.src || 'Source'
                   const dstLabel = parts.length >= 5 ? `${parts[3]}:${parts[4]}` : batchViewerConnection.dst || 'Destination'
                   const protocol = (parts[0] || 'TCP').toUpperCase()
                   const connectionCount = batchViewerConnection.connectionCount || 1
                   const isAttack = connectionCount > 50
+
+                  // 根據連線類型決定節點標籤
+                  // Flood 攻擊（虛擬端口 0）或高流量攻擊：使用攻擊者/目標
+                  // 一般連線：使用中性的端點標籤（因為封包可能雙向流動）
+                  const isFloodAttack = srcPort === '0'
+                  const leftNodeLabel = isFloodAttack ? '攻擊者' : (isAttack ? '來源' : '端點 A')
+                  const rightNodeLabel = isFloodAttack ? '目標' : (isAttack ? '目標' : '端點 B')
 
                   // 動畫參數
                   const srcX = 15, srcY = 50
@@ -2274,19 +2286,19 @@ export default function MindMap() {
                         strokeDasharray={isAttack ? "2 1" : "none"}
                       />
 
-                      {/* 來源節點 */}
+                      {/* 左側節點（來源/攻擊者/端點 A） */}
                       <g transform={`translate(${srcX}, ${srcY})`}>
-                        <circle r="5" fill="#1e293b" stroke="#38bdf8" strokeWidth="0.4" filter="url(#animNodeGlow)" />
-                        <circle r="3.5" fill="#0f172a" stroke="#22d3ee" strokeWidth="0.3" />
-                        <text y="0.8" textAnchor="middle" className="text-[2px] fill-cyan-300 font-bold">SRC</text>
+                        <circle r="5" fill="#1e293b" stroke={isFloodAttack ? '#f97316' : '#38bdf8'} strokeWidth="0.4" filter="url(#animNodeGlow)" />
+                        <circle r="3.5" fill="#0f172a" stroke={isFloodAttack ? '#fb923c' : '#22d3ee'} strokeWidth="0.3" />
+                        <text y="0.8" textAnchor="middle" className={`text-[2px] font-bold ${isFloodAttack ? 'fill-orange-300' : 'fill-cyan-300'}`}>{leftNodeLabel}</text>
                         <text y="10" textAnchor="middle" className="text-[1.8px] fill-slate-300 font-mono">{srcLabel}</text>
                       </g>
 
-                      {/* 目的節點 */}
+                      {/* 右側節點（目標/端點 B） */}
                       <g transform={`translate(${dstX}, ${dstY})`}>
-                        <circle r="5" fill="#1e293b" stroke={isAttack ? '#ef4444' : '#10b981'} strokeWidth="0.4" filter="url(#animNodeGlow)" />
-                        <circle r="3.5" fill="#0f172a" stroke={isAttack ? '#f87171' : '#34d399'} strokeWidth="0.3" />
-                        <text y="0.8" textAnchor="middle" className={`text-[2px] font-bold ${isAttack ? 'fill-red-300' : 'fill-emerald-300'}`}>DST</text>
+                        <circle r="5" fill="#1e293b" stroke={isAttack || isFloodAttack ? '#ef4444' : '#10b981'} strokeWidth="0.4" filter="url(#animNodeGlow)" />
+                        <circle r="3.5" fill="#0f172a" stroke={isAttack || isFloodAttack ? '#f87171' : '#34d399'} strokeWidth="0.3" />
+                        <text y="0.8" textAnchor="middle" className={`text-[2px] font-bold ${isAttack || isFloodAttack ? 'fill-red-300' : 'fill-emerald-300'}`}>{rightNodeLabel}</text>
                         <text y="10" textAnchor="middle" className="text-[1.8px] fill-slate-300 font-mono">{dstLabel}</text>
                       </g>
 

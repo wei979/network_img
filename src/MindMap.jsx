@@ -19,7 +19,7 @@ import {
 import { ProtocolAnimationController } from './lib/ProtocolAnimationController'
 import { getProtocolColor } from './lib/ProtocolStates'
 import PacketParticleSystem from './lib/PacketParticleSystem'
-import PacketViewer from './components/PacketViewer'
+// PacketViewer 已整合到 BatchPacketViewer，不再單獨使用
 import BatchPacketViewer from './components/BatchPacketViewer'
 import TimelineControls from './components/TimelineControls'
 import FloodParticleSystem from './components/FloodParticleSystem'
@@ -32,27 +32,45 @@ const API_ANALYZE_URL = '/api/analyze'
 const ANALYZER_API_ENABLED = true
 
 const PROTOCOL_COLORS = {
+  // 基本協議顏色
   tcp: '#38bdf8',
   udp: '#60a5fa',
   http: '#a855f7',
   https: '#14b8a6',
   dns: '#f97316',
   icmp: '#facc15',
-  // 新增協議類型顏色
-  'tcp-handshake': '#22c55e',
-  'tcp-teardown': '#ef4444',
-  'http-request': '#a855f7',
-  'dns-query': '#f97316',
-  'timeout': '#f59e0b',
-  'udp-transfer': '#60a5fa',
-  'icmp-ping': '#facc15',
-  'ssh-secure': '#10b981'
+  // 特定協議動畫類型顏色
+  'tcp-handshake': '#22c55e',   // 綠色 - 連線建立
+  'tcp-teardown': '#ef4444',    // 紅色 - 連線關閉
+  'tcp-data': '#38bdf8',        // 藍色 - 資料傳輸
+  'tcp-session': '#06b6d4',     // 青色 - 完整會話
+  'http-request': '#a855f7',    // 紫色 - HTTP 請求
+  'https-request': '#14b8a6',   // 藍綠色 - HTTPS 安全請求
+  'dns-query': '#f97316',       // 橙色 - DNS 查詢
+  'timeout': '#f59e0b',         // 黃橙色 - 超時
+  'udp-transfer': '#60a5fa',    // 淡藍色 - UDP 傳輸
+  'icmp-ping': '#facc15',       // 黃色 - ICMP Ping
+  'ssh-secure': '#10b981'       // 綠色 - SSH 安全連線
 }
 
 const STAGE_LABEL_MAP = {
+  // TCP 三次握手
   'SYN Sent': 'SYN 送出',
   'SYN-ACK Received': 'SYN-ACK 收到',
   'ACK Confirmed': 'ACK 確認',
+  // TCP 四次揮手
+  'FIN Sent': 'FIN 送出',
+  'ACK (for FIN)': 'ACK 確認',
+  'FIN from Peer': '對方 FIN',
+  'Final ACK': '最終 ACK',
+  // TCP 資料傳輸
+  'Data Transfer': '資料傳輸',
+  'Data Response': '資料回應',
+  // TCP 完整會話
+  'Connection Established': '連線建立',
+  'Data Exchange': '資料交換',
+  'Connection Closed': '連線關閉',
+  // UDP
   'UDP Transfer': 'UDP 傳輸'
 }
 
@@ -577,14 +595,25 @@ const parseTimelineId = (timeline) => {
     return null
   }
 
-  const parts = timeline.id.split('-')
-  if (parts.length < 5) {
+  // Timeline ID 格式可能是：
+  // 1. "tcp-teardown-10.128.0.2-5416-10.0.0.2-80" (帶子類型)
+  // 2. "tcp-10.128.0.2-5416-10.0.0.2-80" (純協議)
+  // 使用正則表達式提取 IP 和 Port
+  const ipPortPattern = /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-(\d+)-(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-(\d+)$/
+  const match = timeline.id.match(ipPortPattern)
+
+  if (!match) {
     return null
   }
 
-  const [protocol, srcIp, srcPort, dstIp, dstPort] = parts
+  const [, srcIp, srcPort, dstIp, dstPort] = match
+
+  // 提取協議類型（IP 之前的部分）
+  const protocolPart = timeline.id.replace(ipPortPattern, '').replace(/-$/, '')
+
   return {
-    protocol,
+    protocol: protocolPart,
+    protocolType: timeline.protocolType || protocolPart,
     src: { ip: srcIp, port: srcPort },
     dst: { ip: dstIp, port: dstPort }
   }
@@ -871,11 +900,6 @@ const buildAggregatedConnections = (timelines) => {
     }))
   }
 
-  console.log('[MindMap] Aggregated connections:', stats)
-  console.log('[MindMap] Aggregation details:', connections.map(c =>
-    `${c.src} → ${c.dst}: ${c.connectionCount} 條連線`
-  ).join(', '))
-
   return connections
 }
 
@@ -897,6 +921,7 @@ export default function MindMap() {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
+  const [attackAnalysis, setAttackAnalysis] = useState(null) // 攻擊分析數據
   const controllersRef = useRef(new Map())
   const [renderStates, setRenderStates] = useState({})
   const rafRef = useRef(null)
@@ -962,7 +987,6 @@ export default function MindMap() {
   // 同步 selectedConnectionId 到 ref，讓動畫循環能訪問最新值
   useEffect(() => {
     selectedConnectionIdRef.current = selectedConnectionId
-    console.log('[MindMap] selectedConnectionId changed:', selectedConnectionId)
   }, [selectedConnectionId])
 
   // 粒子系統狀態
@@ -1396,6 +1420,7 @@ export default function MindMap() {
     setTimelines(payload.timelines)
     setSourceFiles(payload.sourceFiles || [])
     setGeneratedAt(payload.generatedAt || null)
+    setAttackAnalysis(payload.attackAnalysis || null) // 提取攻擊分析數據
     setLoading(false)
   }, [])
 
@@ -1443,12 +1468,6 @@ export default function MindMap() {
     // 重置全局時間到起點
     globalTimeRef.current = 0
     setGlobalTimeDisplay(0)
-
-    console.log('[MindMap] Global timeline range:', {
-      startTime: globalStartTimestamp.current,
-      endTime: globalEndTimestamp.current,
-      duration: (globalEndTimestamp.current - globalStartTimestamp.current) + 's'
-    })
   }, [timelines])
 
   useEffect(() => {
@@ -1515,7 +1534,6 @@ export default function MindMap() {
           const hasChanged = currentIndicesArray.length !== newIndicesArray.length ||
             currentIndicesArray.some((v, i) => v !== newIndicesArray[i])
           if (hasChanged) {
-            console.log('[MindMap] Active particles changed:', [...newActiveIndices])
             setActiveParticleIndices(newActiveIndices)
           }
         }
@@ -1523,19 +1541,9 @@ export default function MindMap() {
 
       // 更新遠景動畫 controllers（循環播放）
       if (!isPaused && timelines.length > 0) {
-        // 診斷日誌
-        if (Math.random() < 0.01) {
-          console.log('[MindMap Animation] Loop running:', {
-            isPaused,
-            timelinesCount: timelines.length,
-            controllersCount: controllersRef.current.size
-          })
-        }
-
         // 確保所有連線都有 controller
         timelines.forEach(timeline => {
           if (!controllersRef.current.has(timeline.id)) {
-            console.log('[MindMap Animation] Creating controller for:', timeline.id, timeline)
             const controller = new ProtocolAnimationController(timeline)
             controller.reset()
             controllersRef.current.set(timeline.id, controller)
@@ -1557,13 +1565,6 @@ export default function MindMap() {
           newRenderStates[id] = controller.getRenderableState()
         })
 
-        // 診斷：檢查渲染狀態
-        if (Math.random() < 0.01 && Object.keys(newRenderStates).length > 0) {
-          const firstKey = Object.keys(newRenderStates)[0]
-          console.log('[MindMap Animation] Sample renderState:', firstKey, newRenderStates[firstKey])
-        }
-
-        // 暫時改為每幀都更新，以便調試（之後可改回 0.2）
         setRenderStates(newRenderStates)
       }
 
@@ -1642,19 +1643,72 @@ export default function MindMap() {
         throw new Error(`無法取得封包資訊 (${response.status})`)
       }
       const data = await response.json()
-      console.log('[MindMap] Fetched connection packets:', {
-        connectionId,
-        dataType: typeof data,
-        isArray: Array.isArray(data),
-        hasPacketsField: 'packets' in data,
-        packetsCount: data?.packets?.length || 0,
-        totalPackets: data?.total_packets
-      })
       // 保存完整的資料物件（PacketViewer 需要 connection_id 等資訊）
       setConnectionPackets(data)
     } catch (err) {
       console.error('獲取封包資訊失敗:', err)
       setError(err?.message || '無法載入封包資訊')
+      setConnectionPackets(null)
+    } finally {
+      setLoadingPackets(false)
+    }
+  }
+
+  // 獲取批量封包資料（用於攻擊流量的近景動畫）
+  const fetchBatchPacketsForAnimation = async (connection) => {
+    if (!connection?.connections) {
+      return
+    }
+
+    const connectionIds = connection.connections
+      .slice(0, 100) // 最多取 100 條連線
+      .map(c => c.originalId)
+
+    setLoadingPackets(true)
+    try {
+      const response = await fetch('/api/packets/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          connection_ids: connectionIds,
+          packets_per_connection: 5 // 每條連線取 5 個封包
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`無法取得批量封包 (${response.status})`)
+      }
+
+      const data = await response.json()
+
+      // 合併所有連線的封包為單一陣列
+      const allPackets = []
+      Object.values(data.results || {}).forEach(connData => {
+        if (connData.packets) {
+          allPackets.push(...connData.packets)
+        }
+      })
+
+      // 按時間戳排序
+      allPackets.sort((a, b) => a.timestamp - b.timestamp)
+
+      // 分配全局唯一索引（用於動畫粒子與側邊欄同步）
+      allPackets.forEach((packet, idx) => {
+        packet.index = idx
+      })
+
+      console.log(`[MindMap] Loaded ${allPackets.length} packets from ${Object.keys(data.results || {}).length} connections for animation`)
+
+      // 設置合併後的封包資料
+      setConnectionPackets({
+        connection_id: connection.id,
+        total_packets: allPackets.length,
+        packets: allPackets,
+        isBatchData: true // 標記為批量資料
+      })
+    } catch (err) {
+      console.error('獲取批量封包失敗:', err)
       setConnectionPackets(null)
     } finally {
       setLoadingPackets(false)
@@ -1669,7 +1723,6 @@ export default function MindMap() {
     }
 
     const connectionIds = connection.connections.map(c => c.originalId)
-    console.log('[MindMap] Fetching flood statistics for', connectionIds.length, 'connections')
 
     try {
       const response = await fetch('/api/packets/statistics', {
@@ -1687,7 +1740,6 @@ export default function MindMap() {
       }
 
       const data = await response.json()
-      console.log('[MindMap] Flood statistics loaded:', data.summary)
       setFloodStatistics(data)
 
       // 啟動時間進度動畫
@@ -1743,18 +1795,15 @@ export default function MindMap() {
   useEffect(() => {
     // 提取封包陣列（後端返回的格式是 { packets: [...] }）
     const packets = connectionPackets?.packets || []
-    console.log('[MindMap] Particle system useEffect triggered. packets:', packets.length)
 
     // 清理舊的粒子系統
     if (particleSystemRef.current) {
-      console.log('[MindMap] Destroying old particle system')
       particleSystemRef.current.destroy()
       particleSystemRef.current = null
     }
 
     // 如果有封包資料，創建新的粒子系統
     if (packets.length > 0) {
-      console.log('[MindMap] Creating particle system with', packets.length, 'packets')
       particleSystemRef.current = new PacketParticleSystem(
         packets,
         null, // connectionPath 稍後從 connections 中獲取
@@ -1766,12 +1815,9 @@ export default function MindMap() {
         }
       )
 
-      console.log('[MindMap] Particle system created, duration:', particleSystemRef.current.duration)
-
       // 更新全局時間範圍以包含這個連線的封包
       const particleDuration = particleSystemRef.current.duration // 毫秒
       if (particleDuration > globalDuration) {
-        console.log('[MindMap] Expanding global duration from', globalDuration, 'to', particleDuration)
         setGlobalDuration(particleDuration)
         // 同時更新全局時間戳範圍（使用封包的時間範圍）
         globalStartTimestamp.current = particleSystemRef.current.startTimestamp
@@ -1781,13 +1827,9 @@ export default function MindMap() {
       // 設置播放狀態
       if (isParticleAnimationPlaying) {
         particleSystemRef.current.play()
-        console.log('[MindMap] Particle system playing')
       } else {
         particleSystemRef.current.pause()
-        console.log('[MindMap] Particle system paused')
       }
-    } else {
-      console.log('[MindMap] No connection packets, particle system not created')
     }
 
     // 清理函數
@@ -2150,9 +2192,312 @@ export default function MindMap() {
               <div className="flex h-[480px] items-center justify-center text-sm text-slate-500">
                 目前沒有協定時間軸資料。請上傳 PCAP/PCAPNG 擷取檔開始分析。
               </div>
+            ) : showBatchViewer && batchViewerConnection ? (
+              /* 近景模式：簡化的封包動畫視圖 */
+              <div className="relative">
+                {(() => {
+                  // 解析連線資訊
+                  const connId = batchViewerConnection.originalId || batchViewerConnection.id || ''
+                  const parts = connId.replace('aggregated-', '').split('-')
+                  const srcLabel = parts.length >= 3 ? `${parts[1]}:${parts[2]}` : batchViewerConnection.src || 'Source'
+                  const dstLabel = parts.length >= 5 ? `${parts[3]}:${parts[4]}` : batchViewerConnection.dst || 'Destination'
+                  const protocol = (parts[0] || 'TCP').toUpperCase()
+                  const connectionCount = batchViewerConnection.connectionCount || 1
+                  const isAttack = connectionCount > 50
+
+                  // 動畫參數
+                  const srcX = 15, srcY = 50
+                  const dstX = 85, dstY = 50
+                  const pathD = `M ${srcX} ${srcY} Q 50 35 ${dstX} ${dstY}` // 弧形路徑
+
+                  // 計算點在路徑上的位置（二次貝茲曲線）
+                  const getPointOnPath = (t) => {
+                    const x = (1-t)*(1-t)*srcX + 2*(1-t)*t*50 + t*t*dstX
+                    const y = (1-t)*(1-t)*srcY + 2*(1-t)*t*35 + t*t*dstY
+                    return { x, y }
+                  }
+
+                  return (
+                    <>
+                    <svg
+                      viewBox="0 0 100 100"
+                      preserveAspectRatio="xMidYMid meet"
+                      className="w-full h-[480px] rounded-2xl"
+                      style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}
+                    >
+                      <defs>
+                        <filter id="animNodeGlow" filterUnits="userSpaceOnUse">
+                          <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur" />
+                          <feMerge>
+                            <feMergeNode in="blur" />
+                            <feMergeNode in="SourceGraphic" />
+                          </feMerge>
+                        </filter>
+                        <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor={isAttack ? '#ef4444' : '#38bdf8'} />
+                          <stop offset="50%" stopColor={isAttack ? '#f97316' : '#22d3ee'} />
+                          <stop offset="100%" stopColor={isAttack ? '#ef4444' : '#38bdf8'} />
+                        </linearGradient>
+                        <pattern id="animGrid" width="10" height="10" patternUnits="userSpaceOnUse">
+                          <circle cx="5" cy="5" r="0.3" fill="#334155" opacity="0.5" />
+                        </pattern>
+                      </defs>
+
+                      {/* 背景網格 */}
+                      <rect width="100" height="100" fill="url(#animGrid)" />
+
+                      {/* 標題 */}
+                      <text x="50" y="8" textAnchor="middle" className="text-[3px] fill-slate-400 font-medium">
+                        封包傳輸動畫
+                      </text>
+                      <text x="50" y="13" textAnchor="middle" className="text-[2.2px] fill-cyan-400 font-mono">
+                        {protocol} {isAttack && `⚠ ${connectionCount} 連線`}
+                      </text>
+
+                      {/* 連接路徑 - 外層光暈 */}
+                      <path
+                        d={pathD}
+                        stroke="url(#pathGradient)"
+                        strokeWidth="1.5"
+                        strokeOpacity="0.2"
+                        fill="none"
+                        strokeLinecap="round"
+                      />
+                      {/* 連接路徑 - 主線 */}
+                      <path
+                        d={pathD}
+                        stroke="url(#pathGradient)"
+                        strokeWidth="0.6"
+                        strokeOpacity="0.8"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeDasharray={isAttack ? "2 1" : "none"}
+                      />
+
+                      {/* 來源節點 */}
+                      <g transform={`translate(${srcX}, ${srcY})`}>
+                        <circle r="5" fill="#1e293b" stroke="#38bdf8" strokeWidth="0.4" filter="url(#animNodeGlow)" />
+                        <circle r="3.5" fill="#0f172a" stroke="#22d3ee" strokeWidth="0.3" />
+                        <text y="0.8" textAnchor="middle" className="text-[2px] fill-cyan-300 font-bold">SRC</text>
+                        <text y="10" textAnchor="middle" className="text-[1.8px] fill-slate-300 font-mono">{srcLabel}</text>
+                      </g>
+
+                      {/* 目的節點 */}
+                      <g transform={`translate(${dstX}, ${dstY})`}>
+                        <circle r="5" fill="#1e293b" stroke={isAttack ? '#ef4444' : '#10b981'} strokeWidth="0.4" filter="url(#animNodeGlow)" />
+                        <circle r="3.5" fill="#0f172a" stroke={isAttack ? '#f87171' : '#34d399'} strokeWidth="0.3" />
+                        <text y="0.8" textAnchor="middle" className={`text-[2px] font-bold ${isAttack ? 'fill-red-300' : 'fill-emerald-300'}`}>DST</text>
+                        <text y="10" textAnchor="middle" className="text-[1.8px] fill-slate-300 font-mono">{dstLabel}</text>
+                      </g>
+
+                      {/* 封包粒子動畫 - 包含生命週期效果 */}
+                      {particleSystemRef.current && (() => {
+                        const particles = particleSystemRef.current.getActiveParticles()
+                        return particles.map(particle => {
+                          const point = getPointOnPath(particle.position)
+                          const isSelected = selectedPacketIndex === particle.index
+                          // 應用生命週期縮放
+                          const displaySize = particle.size * (particle.scale || 1)
+                          const displayOpacity = particle.opacity || 1
+                          // 根據階段決定光暈強度
+                          const glowOpacity = 0.3 + (particle.glowIntensity || 0) * 0.5
+                          // 階段指示顏色
+                          const phaseColor = particle.phase === 'spawn' ? '#22d3ee' :
+                                           particle.phase === 'arrive' ? '#fbbf24' : particle.color
+
+                          return (
+                            <g
+                              key={particle.id}
+                              style={{
+                                opacity: displayOpacity,
+                                transition: 'opacity 0.1s ease-out'
+                              }}
+                            >
+                              {/* 生成階段額外光環 */}
+                              {particle.phase === 'spawn' && (
+                                <circle
+                                  cx={point.x}
+                                  cy={point.y}
+                                  r={displaySize * 1.5}
+                                  fill="none"
+                                  stroke="#22d3ee"
+                                  strokeWidth="0.15"
+                                  opacity={0.6 * (1 - (particle.phaseProgress || 0))}
+                                />
+                              )}
+
+                              {/* 到達階段吸收環 */}
+                              {particle.phase === 'arrive' && (
+                                <>
+                                  <circle
+                                    cx={point.x}
+                                    cy={point.y}
+                                    r={displaySize * (2 - (particle.phaseProgress || 0))}
+                                    fill="none"
+                                    stroke="#fbbf24"
+                                    strokeWidth="0.1"
+                                    opacity={0.4 * (particle.phaseProgress || 0)}
+                                    strokeDasharray="0.5 0.5"
+                                  />
+                                  {/* 螺旋吸入效果線 */}
+                                  {[0, 120, 240].map((angle, i) => (
+                                    <line
+                                      key={i}
+                                      x1={point.x + Math.cos((angle + (particle.phaseProgress || 0) * 180) * Math.PI / 180) * displaySize * 1.5}
+                                      y1={point.y + Math.sin((angle + (particle.phaseProgress || 0) * 180) * Math.PI / 180) * displaySize * 1.5}
+                                      x2={point.x}
+                                      y2={point.y}
+                                      stroke="#fbbf24"
+                                      strokeWidth="0.08"
+                                      opacity={0.3 * (particle.phaseProgress || 0)}
+                                    />
+                                  ))}
+                                </>
+                              )}
+
+                              {/* 粒子光暈 */}
+                              <circle
+                                cx={point.x}
+                                cy={point.y}
+                                r={displaySize * 0.8}
+                                fill={particle.glowColor || particle.color}
+                                opacity={glowOpacity}
+                                filter="url(#animNodeGlow)"
+                              />
+
+                              {/* 粒子主體 */}
+                              <circle
+                                cx={point.x}
+                                cy={point.y}
+                                r={displaySize * 0.4}
+                                fill={particle.color}
+                                opacity={isSelected ? 1 : 0.9}
+                                stroke={isSelected ? '#ffd700' : 'none'}
+                                strokeWidth={isSelected ? 0.3 : 0}
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => setSelectedPacketIndex(particle.index)}
+                              />
+
+                              {/* TCP Flags 標籤 - 所有階段都顯示 */}
+                              {particle.tcpFlags && (
+                                <g style={{ opacity: displayOpacity }}>
+                                  <rect
+                                    x={point.x - 5}
+                                    y={point.y - displaySize - 4}
+                                    width="10"
+                                    height="3"
+                                    rx="0.5"
+                                    fill="#1e293b"
+                                    fillOpacity="0.95"
+                                    stroke={particle.phase === 'spawn' ? '#22d3ee' :
+                                           particle.phase === 'arrive' ? '#fbbf24' : particle.color}
+                                    strokeWidth="0.15"
+                                  />
+                                  <text
+                                    x={point.x}
+                                    y={point.y - displaySize - 1.8}
+                                    textAnchor="middle"
+                                    className="text-[1.6px] fill-white font-mono font-bold"
+                                    style={{ pointerEvents: 'none' }}
+                                  >
+                                    {particle.tcpFlags}
+                                  </text>
+                                </g>
+                              )}
+
+                              {/* 封包編號標籤 */}
+                              <text
+                                x={point.x}
+                                y={point.y + displaySize + 2.5}
+                                textAnchor="middle"
+                                className="text-[1.4px] fill-slate-300 font-mono font-semibold"
+                                style={{ pointerEvents: 'none', opacity: displayOpacity }}
+                              >
+                                #{particle.index}
+                              </text>
+
+                              {/* 階段指示文字 - 生成/到達時顯示 (在 TCP flags 上方) */}
+                              {(particle.phase === 'spawn' || particle.phase === 'arrive') && (
+                                <text
+                                  x={point.x}
+                                  y={point.y - displaySize - (particle.tcpFlags ? 5.5 : 1)}
+                                  textAnchor="middle"
+                                  className={`text-[1.3px] font-bold ${particle.phase === 'spawn' ? 'fill-cyan-300' : 'fill-amber-300'}`}
+                                  style={{ pointerEvents: 'none' }}
+                                >
+                                  {particle.phase === 'spawn' ? '生成' : '到達'}
+                                </text>
+                              )}
+                            </g>
+                          )
+                        })
+                      })()}
+
+                      {/* 洪流粒子效果 - 僅在沒有封包動畫時顯示（避免兩個動畫系統同時運行） */}
+                      {isAttack && floodStatistics && !connectionPackets?.packets?.length && (
+                        <FloodParticleSystem
+                          fromPoint={{ x: srcX, y: srcY }}
+                          toPoint={{ x: dstX, y: dstY }}
+                          statistics={floodStatistics}
+                          isPlaying={!isPaused}
+                          timeProgress={floodTimeProgress}
+                          onIntensityChange={handleFloodIntensityChange}
+                        />
+                      )}
+
+                      {/* 統計資訊面板 */}
+                      <g transform="translate(5, 75)">
+                        <rect x="0" y="0" width="25" height="18" rx="1" fill="#1e293b" fillOpacity="0.9" stroke="#334155" strokeWidth="0.2" />
+                        <text x="12.5" y="4" textAnchor="middle" className="text-[1.8px] fill-slate-400">統計資訊</text>
+                        <text x="2" y="8" className="text-[1.5px] fill-slate-500">連線數:</text>
+                        <text x="23" y="8" textAnchor="end" className="text-[1.5px] fill-cyan-400 font-mono">{connectionCount}</text>
+                        <text x="2" y="11.5" className="text-[1.5px] fill-slate-500">封包數:</text>
+                        <text x="23" y="11.5" textAnchor="end" className="text-[1.5px] fill-cyan-400 font-mono">{connectionPackets?.total_packets || connectionPackets?.packets?.length || '—'}</text>
+                        <text x="2" y="15" className="text-[1.5px] fill-slate-500">類型:</text>
+                        <text x="23" y="15" textAnchor="end" className={`text-[1.5px] font-mono ${isAttack ? 'fill-red-400' : 'fill-emerald-400'}`}>{isAttack ? '攻擊流量' : '正常流量'}</text>
+                      </g>
+
+                      {/* 圖例 - 含生命週期階段 */}
+                      <g transform="translate(65, 70)">
+                        <rect x="0" y="0" width="32" height="28" rx="1" fill="#1e293b" fillOpacity="0.9" stroke="#334155" strokeWidth="0.2" />
+                        <text x="16" y="4" textAnchor="middle" className="text-[1.8px] fill-slate-400">圖例</text>
+
+                        {/* 封包類型 */}
+                        <circle cx="4" cy="8" r="1" fill="#38bdf8" />
+                        <text x="7" y="8.5" className="text-[1.2px] fill-slate-400">正常封包</text>
+                        <circle cx="4" cy="11.5" r="1" fill="#ef4444" />
+                        <text x="7" y="12" className="text-[1.2px] fill-slate-400">異常/攻擊</text>
+                        <circle cx="4" cy="15" r="1" fill="#22c55e" />
+                        <text x="7" y="15.5" className="text-[1.2px] fill-slate-400">SYN 連線</text>
+
+                        {/* 生命週期階段 */}
+                        <text x="2" y="19" className="text-[1.2px] fill-slate-500">生命週期:</text>
+                        <circle cx="4" cy="22" r="0.8" fill="#22d3ee" />
+                        <circle cx="4" cy="22" r="1.3" fill="none" stroke="#22d3ee" strokeWidth="0.1" />
+                        <text x="7" y="22.5" className="text-[1.1px] fill-cyan-300">生成</text>
+                        <circle cx="16" cy="22" r="0.8" fill="#fbbf24" />
+                        <circle cx="16" cy="22" r="1.3" fill="none" stroke="#fbbf24" strokeWidth="0.1" strokeDasharray="0.3 0.3" />
+                        <text x="19" y="22.5" className="text-[1.1px] fill-amber-300">到達</text>
+
+                        {/* 已選取 */}
+                        <circle cx="4" cy="26" r="1" fill="#ffd700" stroke="#ffd700" strokeWidth="0.3" />
+                        <text x="7" y="26.5" className="text-[1.2px] fill-slate-400">已選取</text>
+                      </g>
+                    </svg>
+
+                    {/* 返回遠景模式的提示 */}
+                    <div className="absolute top-4 right-4 bg-slate-800/90 backdrop-blur-sm border border-slate-600/50 rounded-lg px-3 py-2 shadow-lg">
+                      <div className="text-xs text-slate-400">
+                        點擊右側面板「關閉」按鈕返回遠景
+                      </div>
+                    </div>
+                    </>
+                  )
+                })()}
+              </div>
             ) : (
               <div className="relative">
-                {/* 地圖式控制 UI：縮放顯示與控制按鈕 */}
+                {/* 遠景模式：地圖式控制 UI：縮放顯示與控制按鈕 */}
                 <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-2">
                   {/* 縮放顯示 */}
                   <div className="bg-slate-800/90 backdrop-blur-sm border border-slate-600/50 rounded-lg px-3 py-2 shadow-lg">
@@ -2390,7 +2735,6 @@ export default function MindMap() {
                           // 檢查是否為聚合連線
                           if (connection.id?.startsWith('aggregated-')) {
                             // 聚合連線：開啟批量檢視器
-                            console.log('[MindMap] Aggregated connection clicked:', connection)
                             if (showBatchViewer && batchViewerConnection?.id === connection.id) {
                               // 點擊同一聚合連線，關閉檢視器
                               setShowBatchViewer(false)
@@ -2399,22 +2743,45 @@ export default function MindMap() {
                               setConnectionPackets(null)  // 清除封包資料
                             } else {
                               // 開啟檢視器
-                              console.log('[MindMap] Showing batch packet viewer')
                               setShowBatchViewer(true)
                               setBatchViewerConnection(connection)
                               // 新增：設置選中的連線 ID 並獲取封包資料以啟用近景粒子系統
                               setSelectedConnectionId(connection.id)
-                              // 使用第一個子連線的 originalId 獲取封包資料
-                              const firstChildId = connection.connections?.[0]?.originalId || connection.originalId
-                              console.log('[MindMap] Fetching packets for aggregated connection, firstChildId:', firstChildId)
-                              fetchConnectionPackets(firstChildId)
+                              // 判斷是否為攻擊流量（連線數 > 50）
+                              const isAttackTraffic = (connection.connectionCount || 0) > 50
+                              if (isAttackTraffic) {
+                                // 攻擊流量：使用批量封包資料
+                                fetchBatchPacketsForAnimation(connection)
+                              } else {
+                                // 少量連線：使用第一個子連線的封包
+                                const firstChildId = connection.connections?.[0]?.originalId || connection.originalId
+                                fetchConnectionPackets(firstChildId)
+                              }
                             }
                           } else {
-                            // 普通連線：原本的邏輯
-                            const newConnectionId = selectedConnectionId === connection.id ? null : connection.id
-                            setSelectedConnectionId(newConnectionId)
-                            // 使用 originalId 來獲取封包資訊（API 期望的是沒有索引後綴的 ID）
-                            fetchConnectionPackets(newConnectionId ? connection.originalId : null)
+                            // 普通連線：統一使用 BatchPacketViewer
+                            if (selectedConnectionId === connection.id) {
+                              // 點擊同一連線，關閉檢視器
+                              setShowBatchViewer(false)
+                              setBatchViewerConnection(null)
+                              setSelectedConnectionId(null)
+                              setConnectionPackets(null)
+                            } else {
+                              // 構造單一連線的 batchViewerConnection 格式
+                              const singleConnection = {
+                                ...connection,
+                                connectionCount: 1,
+                                connections: [{
+                                  originalId: connection.originalId || connection.id,
+                                  ...connection
+                                }]
+                              }
+                              setShowBatchViewer(true)
+                              setBatchViewerConnection(singleConnection)
+                              setSelectedConnectionId(connection.id)
+                              // 同時獲取封包資料供動畫使用
+                              fetchConnectionPackets(connection.originalId || connection.id)
+                            }
                           }
                         }}
                         style={{ cursor: 'pointer' }}
@@ -2456,8 +2823,8 @@ export default function MindMap() {
                           )
                         })()}
 
-                        {/* 洪流粒子效果 - 攻擊流量在近景模式時顯示 */}
-                        {isAggregated && showBatchViewer && floodStatistics && connection.id === batchViewerConnection?.id && isAttackTraffic && (
+                        {/* 洪流粒子效果 - 僅在沒有封包動畫時顯示（避免與 PacketParticleSystem 衝突） */}
+                        {isAggregated && showBatchViewer && floodStatistics && connection.id === batchViewerConnection?.id && isAttackTraffic && !connectionPackets?.packets?.length && (
                           <FloodParticleSystem
                             fromPoint={adjustedFromPoint}
                             toPoint={adjustedToPoint}
@@ -2589,7 +2956,6 @@ export default function MindMap() {
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     e.preventDefault()
-                                    console.log('[MindMap] Particle clicked:', particle.index, particle)
                                     setSelectedPacketIndex(particle.index)
                                   }}
                                 />
@@ -2769,6 +3135,7 @@ export default function MindMap() {
             </div>
 
             <div className="mt-4 space-y-3 max-h-[450px] overflow-y-auto pr-2">
+              {/* 連線列表 - 威脅分析已移至 BatchPacketViewer 統一顯示 */}
               {connections.map((connection) => {
                 const renderState = renderStates[connection.originalId] // 使用 originalId 匹配 timeline.id
                 const protocolType = renderState?.protocolType || connection.protocolType || connection.primaryProtocolType
@@ -2794,25 +3161,43 @@ export default function MindMap() {
                   <div
                     key={connection.id}
                     onClick={() => {
-                      // 檢查是否為聚合連線
-                      if (connection.id?.startsWith('aggregated-')) {
-                        // 聚合連線：開啟批量檢視器
-                        console.log('[MindMap Sidebar] Aggregated connection clicked:', connection)
-                        if (showBatchViewer && batchViewerConnection?.id === connection.id) {
-                          // 點擊同一聚合連線，關閉檢視器
-                          setShowBatchViewer(false)
-                          setBatchViewerConnection(null)
-                        } else {
-                          // 開啟檢視器
-                          console.log('[MindMap Sidebar] Showing batch packet viewer')
+                      // 統一使用 BatchPacketViewer
+                      if (selectedConnectionId === connection.id) {
+                        // 點擊同一連線，關閉檢視器
+                        setShowBatchViewer(false)
+                        setBatchViewerConnection(null)
+                        setSelectedConnectionId(null)
+                        setConnectionPackets(null)
+                      } else {
+                        // 檢查是否為聚合連線
+                        if (connection.id?.startsWith('aggregated-')) {
+                          // 聚合連線：直接使用
                           setShowBatchViewer(true)
                           setBatchViewerConnection(connection)
+                          setSelectedConnectionId(connection.id)
+                          // 判斷是否為攻擊流量
+                          const isAttackTraffic = (connection.connectionCount || 0) > 50
+                          if (isAttackTraffic) {
+                            fetchBatchPacketsForAnimation(connection)
+                          } else {
+                            const firstChildId = connection.connections?.[0]?.originalId || connection.originalId
+                            fetchConnectionPackets(firstChildId)
+                          }
+                        } else {
+                          // 普通連線：構造單一連線格式
+                          const singleConnection = {
+                            ...connection,
+                            connectionCount: 1,
+                            connections: [{
+                              originalId: connection.originalId || connection.id,
+                              ...connection
+                            }]
+                          }
+                          setShowBatchViewer(true)
+                          setBatchViewerConnection(singleConnection)
+                          setSelectedConnectionId(connection.id)
+                          fetchConnectionPackets(connection.originalId || connection.id)
                         }
-                      } else {
-                        // 普通連線：切換選擇狀態
-                        setSelectedConnectionId(
-                          selectedConnectionId === connection.id ? null : connection.id
-                        )
                       }
                     }}
                     className={`rounded-lg border p-4 transition-all duration-300 cursor-pointer ${
@@ -2879,19 +3264,7 @@ export default function MindMap() {
         </div>
       </main>
 
-      {/* 封包檢視器浮動面板 */}
-      {connectionPackets && (
-        <PacketViewer
-          connectionData={connectionPackets}
-          onClose={() => {
-            setConnectionPackets(null)
-            setSelectedConnectionId(null)
-          }}
-          loading={loadingPackets}
-        />
-      )}
-
-      {/* 批量封包檢視器（聚合連線用） */}
+      {/* 統一封包檢視器 - 使用 BatchPacketViewer 處理所有連線 */}
       {showBatchViewer && batchViewerConnection && (
         <BatchPacketViewer
           aggregatedConnection={batchViewerConnection}
@@ -2900,8 +3273,8 @@ export default function MindMap() {
           activeParticleIndices={activeParticleIndices}
           selectedPacketIndex={selectedPacketIndex}
           onPacketSelect={(index) => setSelectedPacketIndex(index)}
+          preloadedPackets={connectionPackets}
           onStatisticsLoaded={(data) => {
-            console.log('[MindMap] Statistics loaded from AttackTimelineChart:', data.summary)
             setFloodStatistics(data)
           }}
           onClose={() => {
@@ -2911,6 +3284,8 @@ export default function MindMap() {
             setFloodIntensity(0)
             setSelectedPacketIndex(null)
             setActiveParticleIndices(new Set())
+            setSelectedConnectionId(null)
+            setConnectionPackets(null)
           }}
         />
       )}

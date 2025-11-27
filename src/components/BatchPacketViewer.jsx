@@ -23,7 +23,8 @@ export default function BatchPacketViewer({
   isAttackTraffic = true, // 是否為攻擊流量 (connectionCount > 50)
   activeParticleIndices = new Set(), // 當前動畫中顯示的粒子索引
   selectedPacketIndex = null, // 使用者點選的封包索引
-  onPacketSelect = null // 封包點選回調
+  onPacketSelect = null, // 封包點選回調
+  preloadedPackets = null // 預載入的封包資料（來自 MindMap 的 connectionPackets）
 }) {
   // 智能預設標籤：攻擊流量預設顯示時間軸，正常流量預設顯示封包列表
   const [activeTab, setActiveTab] = useState(isAttackTraffic ? 'timeline' : 'packets') // 'timeline' | 'packets'
@@ -46,7 +47,19 @@ export default function BatchPacketViewer({
   useEffect(() => {
     if (selectedPacketIndex === null) return
 
-    // 查找封包所屬的連線
+    // 預載入模式：直接滾動
+    if (preloadedPackets?.packets?.length > 0) {
+      setActiveTab('packets')
+      setTimeout(() => {
+        const packetEl = packetRefsMap.current.get(selectedPacketIndex)
+        if (packetEl) {
+          packetEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 100)
+      return
+    }
+
+    // 原始模式：查找封包所屬的連線
     let targetConnId = null
     for (const [connId, connData] of Object.entries(batchData)) {
       if (connData.packets?.some(p => p.index === selectedPacketIndex)) {
@@ -68,7 +81,29 @@ export default function BatchPacketViewer({
         }
       }, 100)
     }
-  }, [selectedPacketIndex, batchData])
+  }, [selectedPacketIndex, batchData, preloadedPackets])
+
+  // 追蹤活躍粒子，自動滾動到第一個活躍封包（預載入模式下）
+  const lastActiveIndicesRef = useRef(new Set())
+  useEffect(() => {
+    if (!preloadedPackets?.packets?.length || activeTab !== 'packets') return
+
+    // 找出新增的活躍索引
+    const newActiveIndices = [...activeParticleIndices].filter(
+      idx => !lastActiveIndicesRef.current.has(idx)
+    )
+
+    // 如果有新的活躍粒子，滾動到第一個
+    if (newActiveIndices.length > 0 && selectedPacketIndex === null) {
+      const firstNewActive = Math.min(...newActiveIndices)
+      const packetEl = packetRefsMap.current.get(firstNewActive)
+      if (packetEl) {
+        packetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }
+    }
+
+    lastActiveIndicesRef.current = new Set(activeParticleIndices)
+  }, [activeParticleIndices, preloadedPackets, activeTab, selectedPacketIndex])
 
   // 配置
   const BATCH_SIZE = 10
@@ -346,11 +381,24 @@ export default function BatchPacketViewer({
           <div>
             <h2 className="text-lg font-semibold text-slate-200">批量封包檢視器</h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              已載入 {loadedCount} / {totalConnections} 條連線
-              {totalConnections < connectionIds.length && (
-                <span className="text-orange-400 ml-2">
-                  （已限制最多 {MAX_TOTAL_CONNECTIONS} 條）
-                </span>
+              {preloadedPackets?.packets?.length > 0 ? (
+                <>
+                  <span className="text-cyan-400">{preloadedPackets.packets.length}</span> 封包（動畫同步模式）
+                  {activeParticleIndices.size > 0 && (
+                    <span className="text-emerald-400 ml-2">
+                      • {activeParticleIndices.size} 個活躍
+                    </span>
+                  )}
+                </>
+              ) : (
+                <>
+                  已載入 {loadedCount} / {totalConnections} 條連線
+                  {totalConnections < connectionIds.length && (
+                    <span className="text-orange-400 ml-2">
+                      （已限制最多 {MAX_TOTAL_CONNECTIONS} 條）
+                    </span>
+                  )}
+                </>
               )}
             </p>
           </div>
@@ -414,7 +462,12 @@ export default function BatchPacketViewer({
         >
           <Database className="w-4 h-4" />
           封包列表
-          <span className="text-xs text-slate-500">({loadedCount}/{totalConnections})</span>
+          <span className="text-xs text-slate-500">
+            {preloadedPackets?.packets?.length > 0
+              ? `(${preloadedPackets.packets.length})`
+              : `(${loadedCount}/${totalConnections})`
+            }
+          </span>
         </button>
       </div>
 
@@ -449,10 +502,116 @@ export default function BatchPacketViewer({
         {/* 封包列表 Tab */}
         {activeTab === 'packets' && (
           <div ref={scrollContainerRef} className="h-full overflow-y-auto p-4 space-y-3">
-            {connectionIds.slice(0, loadedCount).map((connId, index) => renderConnectionCard(connId, index))}
+            {/* 預載入封包模式：顯示扁平列表（與動畫同步） */}
+            {preloadedPackets?.packets?.length > 0 ? (
+              <>
+                <div className="mb-3 p-3 bg-cyan-900/20 rounded-lg border border-cyan-500/30">
+                  <div className="flex items-center gap-2 text-cyan-400 text-sm">
+                    <Database className="w-4 h-4" />
+                    <span className="font-medium">動畫封包列表</span>
+                    <span className="text-xs text-slate-400">（{preloadedPackets.packets.length} 封包，與動畫同步）</span>
+                  </div>
+                </div>
+                {preloadedPackets.packets.map((packet) => {
+                  const isActive = activeParticleIndices.has(packet.index)
+                  const isSelected = selectedPacketIndex === packet.index
 
-            {/* 載入更多按鈕 */}
-            {hasMore && (
+                  // 動態計算高亮樣式
+                  let highlightClass = 'bg-slate-800/70 border-slate-700'
+                  if (isSelected) {
+                    highlightClass = 'bg-amber-900/40 border-amber-400 ring-2 ring-amber-400/50'
+                  } else if (isActive) {
+                    highlightClass = 'bg-cyan-900/30 border-cyan-400/50 ring-1 ring-cyan-400/30'
+                  }
+
+                  return (
+                    <div
+                      key={packet.index}
+                      ref={el => {
+                        if (el) packetRefsMap.current.set(packet.index, el)
+                      }}
+                      data-packet-index={packet.index}
+                      className={`rounded-lg p-3 border cursor-pointer transition-all duration-300 ${highlightClass}`}
+                      onClick={() => onPacketSelect?.(packet.index)}
+                    >
+                      {/* 封包標題 */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs font-semibold ${isSelected ? 'text-amber-300' : isActive ? 'text-cyan-300' : 'text-slate-300'}`}>
+                            封包 #{packet.index}
+                          </span>
+                          {/* TCP Flags 標籤 */}
+                          {packet.headers?.tcp?.flags && (
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
+                              packet.headers.tcp.flags.includes('URG') || packet.headers.tcp.flags.includes('PSH')
+                                ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                : packet.headers.tcp.flags.includes('SYN')
+                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                : 'bg-slate-600/50 text-slate-300'
+                            }`}>
+                              {packet.headers.tcp.flags}
+                            </span>
+                          )}
+                          {packet.errorType && (
+                            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/30">
+                              <AlertTriangle className="w-3 h-3 text-red-400" />
+                              <span className="text-[10px] font-semibold text-red-400">
+                                {packet.errorType}
+                              </span>
+                            </div>
+                          )}
+                          {/* 活躍指示器 */}
+                          {isActive && (
+                            <span className="flex items-center gap-1 text-[10px] text-cyan-400">
+                              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                              動畫中
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                          <Clock className="w-3 h-3" />
+                          {packet.relativeTime || '0.000s'}
+                        </div>
+                      </div>
+
+                      {/* 簡化的封包資訊 */}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-slate-500">來源</span>
+                          <div className="text-slate-300 font-mono truncate">
+                            {packet.fiveTuple?.srcIp}:{packet.fiveTuple?.srcPort}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">目的</span>
+                          <div className="text-slate-300 font-mono truncate">
+                            {packet.fiveTuple?.dstIp}:{packet.fiveTuple?.dstPort}
+                          </div>
+                        </div>
+                        {packet.length && (
+                          <div>
+                            <span className="text-slate-500">長度</span>
+                            <div className="text-slate-300 font-mono">{packet.length} bytes</div>
+                          </div>
+                        )}
+                        {packet.headers?.tcp?.seq && (
+                          <div>
+                            <span className="text-slate-500">Seq</span>
+                            <div className="text-slate-300 font-mono">{packet.headers.tcp.seq}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </>
+            ) : (
+              /* 原始模式：按連線分組顯示 */
+              connectionIds.slice(0, loadedCount).map((connId, index) => renderConnectionCard(connId, index))
+            )}
+
+            {/* 載入更多按鈕 - 預載入模式下隱藏 */}
+            {!preloadedPackets?.packets?.length && hasMore && (
               <div className="flex justify-center pt-4">
                 <button
                   onClick={loadBatch}
@@ -474,8 +633,8 @@ export default function BatchPacketViewer({
               </div>
             )}
 
-            {/* 錯誤訊息 */}
-            {error && (
+            {/* 錯誤訊息 - 預載入模式下隱藏 */}
+            {!preloadedPackets?.packets?.length && error && (
               <div className="bg-red-900/20 rounded-lg p-4 border border-red-500/30">
                 <div className="flex items-center gap-2 text-red-400">
                   <AlertTriangle className="w-4 h-4" />
@@ -484,8 +643,8 @@ export default function BatchPacketViewer({
               </div>
             )}
 
-            {/* 全部載入完成 */}
-            {!hasMore && loadedCount > 0 && (
+            {/* 全部載入完成 - 預載入模式下隱藏 */}
+            {!preloadedPackets?.packets?.length && !hasMore && loadedCount > 0 && (
               <div className="text-center py-4 text-slate-400 text-sm">
                 已載入全部 {loadedCount} 條連線
               </div>

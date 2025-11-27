@@ -256,18 +256,37 @@ export default function AttackTimelineChart({
           <Activity className="w-5 h-5 text-cyan-400" />
           <h3 className="text-sm font-semibold text-slate-200">攻擊時間軸</h3>
         </div>
-        <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-          summary.attack_type === 'SYN Flood'
-            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-            : summary.attack_type === 'High Volume Attack'
-              ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
-              : 'bg-green-500/20 text-green-400 border border-green-500/30'
-        }`}>
-          {summary.attack_type}
+        <div className="flex items-center gap-2">
+          {/* 威脅等級指示 */}
+          {summary.threat_level && summary.threat_level !== 'low' && (
+            <div className={`px-2 py-0.5 rounded text-[10px] font-medium ${
+              summary.threat_level === 'high'
+                ? 'bg-red-500/30 text-red-300 border border-red-500/40'
+                : 'bg-amber-500/30 text-amber-300 border border-amber-500/40'
+            }`}>
+              {summary.threat_level === 'high' ? '高風險' : '中風險'}
+            </div>
+          )}
+          {/* 攻擊類型標籤 */}
+          <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+            summary.attack_type === 'SYN Flood' || summary.attack_type === 'FIN Flood'
+              ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+              : summary.attack_type === 'URG-PSH-FIN Attack'
+                ? 'bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30'
+                : summary.attack_type === 'RST Attack'
+                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                  : summary.attack_type === 'High Volume Attack'
+                    ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                    : summary.attack_type === 'Suspicious Traffic'
+                      ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                      : 'bg-green-500/20 text-green-400 border border-green-500/30'
+          }`}>
+            {summary.attack_type}
+          </div>
         </div>
       </div>
 
-      {/* 統計摘要 */}
+      {/* 統計摘要 - 第一行：基本指標 */}
       <div className="grid grid-cols-4 gap-4 p-4 border-b border-slate-700 bg-slate-900/30">
         <div className="text-center">
           <div className="flex items-center justify-center gap-1 text-slate-500 text-xs mb-1">
@@ -290,10 +309,10 @@ export default function AttackTimelineChart({
         <div className="text-center">
           <div className="flex items-center justify-center gap-1 text-slate-500 text-xs mb-1">
             <TrendingUp className="w-3 h-3" />
-            SYN 比例
+            總封包數
           </div>
-          <div className="text-lg font-bold text-orange-400">
-            {summary.syn_ratio}%
+          <div className="text-lg font-bold text-purple-400">
+            {formatNumber(summary.total_packets)}
           </div>
         </div>
         <div className="text-center">
@@ -305,6 +324,142 @@ export default function AttackTimelineChart({
             {summary.duration_seconds}s
           </div>
         </div>
+      </div>
+
+      {/* TCP 旗標分析 - 第二行：偵測依據 */}
+      <div className="p-4 border-b border-slate-700 bg-slate-900/50">
+        <div className="flex items-center gap-2 mb-3">
+          <AlertTriangle className={`w-4 h-4 ${
+            summary.attack_type === 'SYN Flood' || summary.attack_type === 'FIN Flood'
+              ? 'text-red-400'
+              : summary.attack_type === 'URG-PSH-FIN Attack'
+                ? 'text-fuchsia-400'
+                : summary.attack_type === 'RST Attack'
+                  ? 'text-amber-400'
+                  : summary.attack_type === 'High Volume Attack'
+                    ? 'text-orange-400'
+                    : summary.attack_type === 'Suspicious Traffic'
+                      ? 'text-yellow-400'
+                      : 'text-emerald-400'
+          }`} />
+          <span className="text-sm font-semibold text-slate-200">TCP 旗標分析</span>
+          {/* 異常分數 */}
+          {summary.anomaly_score !== undefined && summary.anomaly_score > 0 && (
+            <div className="flex items-center gap-1.5">
+              <div className="w-16 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    summary.anomaly_score >= 60 ? 'bg-red-500' :
+                    summary.anomaly_score >= 30 ? 'bg-amber-500' : 'bg-yellow-500'
+                  }`}
+                  style={{ width: `${summary.anomaly_score}%` }}
+                />
+              </div>
+              <span className={`text-[10px] font-mono ${
+                summary.anomaly_score >= 60 ? 'text-red-400' :
+                summary.anomaly_score >= 30 ? 'text-amber-400' : 'text-yellow-400'
+              }`}>
+                {summary.anomaly_score}
+              </span>
+            </div>
+          )}
+          <span className={`ml-auto text-xs px-2 py-0.5 rounded ${
+            summary.attack_type === 'SYN Flood' || summary.attack_type === 'FIN Flood' || summary.attack_type === 'RST Attack'
+              ? 'bg-red-500/20 text-red-300'
+              : summary.attack_type === 'URG-PSH-FIN Attack'
+                ? 'bg-fuchsia-500/20 text-fuchsia-300'
+                : summary.attack_type === 'High Volume Attack' || summary.attack_type === 'Suspicious Traffic'
+                  ? 'bg-amber-500/20 text-amber-300'
+                  : 'bg-emerald-500/20 text-emerald-300'
+          }`}>
+            {summary.attack_type === 'Normal Traffic' ? '流量正常' :
+             summary.attack_type === 'Suspicious Traffic' ? '可疑流量' : '偵測到異常'}
+          </span>
+        </div>
+        <div className="grid grid-cols-4 gap-4 text-xs">
+          <div>
+            <span className="text-slate-500 block mb-1">SYN 比例</span>
+            <div className={`font-bold text-base ${
+              summary.syn_ratio > 70 ? 'text-red-400' :
+              summary.syn_ratio > 50 ? 'text-orange-400' : 'text-slate-300'
+            }`}>
+              {summary.syn_ratio}%
+            </div>
+            <span className="text-slate-600 text-[10px]">
+              {summary.syn_ratio > 70 ? '異常高' : summary.syn_ratio > 50 ? '偏高' : '正常'}
+            </span>
+          </div>
+          <div>
+            <span className="text-slate-500 block mb-1">FIN 比例</span>
+            <div className={`font-bold text-base ${
+              summary.fin_ratio > 70 ? 'text-red-400' :
+              summary.fin_ratio > 50 ? 'text-orange-400' : 'text-slate-300'
+            }`}>
+              {summary.fin_ratio || 0}%
+            </div>
+            <span className="text-slate-600 text-[10px]">
+              {summary.fin_ratio > 70 ? '異常高' : summary.fin_ratio > 50 ? '偏高' : '正常'}
+            </span>
+          </div>
+          <div>
+            <span className="text-slate-500 block mb-1">RST 比例</span>
+            <div className={`font-bold text-base ${
+              summary.rst_ratio > 50 ? 'text-amber-400' :
+              summary.rst_ratio > 30 ? 'text-yellow-400' : 'text-slate-300'
+            }`}>
+              {summary.rst_ratio || 0}%
+            </div>
+            <span className="text-slate-600 text-[10px]">
+              {summary.rst_ratio > 50 ? '連線異常' : summary.rst_ratio > 30 ? '偏高' : '正常'}
+            </span>
+          </div>
+          <div>
+            <span className="text-slate-500 block mb-1">ACK 比例</span>
+            <div className={`font-bold text-base ${
+              summary.ack_ratio < 20 ? 'text-amber-400' : 'text-emerald-400'
+            }`}>
+              {summary.ack_ratio || 0}%
+            </div>
+            <span className="text-slate-600 text-[10px]">
+              {summary.ack_ratio < 20 ? '回應不足' : '正常回應'}
+            </span>
+          </div>
+        </div>
+        {/* 攻擊判定說明 */}
+        {summary.attack_type !== 'Normal Traffic' && (
+          <div className="mt-3 pt-3 border-t border-slate-700/50">
+            <p className="text-[10px] text-slate-400 leading-relaxed">
+              {summary.attack_type === 'SYN Flood' && (
+                <>⚠️ SYN 封包比例過高 ({summary.syn_ratio}%) 且缺少對應 ACK 回應，符合 SYN Flood 攻擊特徵。這種攻擊會耗盡目標伺服器的半開連線資源。</>
+              )}
+              {summary.attack_type === 'FIN Flood' && (
+                <>⚠️ FIN 封包比例過高 ({summary.fin_ratio || 0}%) 且 SYN 比例偏低 ({summary.syn_ratio}%)，符合 FIN Flood 攻擊特徵。攻擊者大量發送 FIN 封包嘗試消耗系統資源。</>
+              )}
+              {summary.attack_type === 'URG-PSH-FIN Attack' && (
+                <>🔥 偵測到 URG-PSH-FIN 組合攻擊！
+                  {summary.urg_psh_fin_ratio > 0 && ` 異常旗標組合封包佔 ${summary.urg_psh_fin_ratio}%`}
+                  {summary.urg_ratio > 0 && `，URG 比例 ${summary.urg_ratio}%`}
+                  {summary.psh_ratio > 0 && `，PSH 比例 ${summary.psh_ratio}%`}
+                  。這種攻擊同時設置緊急(URG)、推送(PSH)、結束(FIN)旗標，會消耗 CPU 資源並可能繞過防火牆規則。
+                </>
+              )}
+              {summary.attack_type === 'RST Attack' && (
+                <>⚠️ RST 封包比例過高 ({summary.rst_ratio || 0}%)，符合 RST 攻擊特徵。攻擊者大量發送 RST 封包強制關閉連線，可能導致服務中斷。</>
+              )}
+              {summary.attack_type === 'High Volume Attack' && (
+                <>⚠️ 封包速率異常 ({formatNumber(summary.peak_rate)}/s)，可能為高流量 DDoS 攻擊或網路掃描行為。</>
+              )}
+              {summary.attack_type === 'Suspicious Traffic' && (
+                <>⚡ 偵測到可疑流量模式：
+                  {summary.fin_ratio > 40 && `FIN 比例偏高 (${summary.fin_ratio}%)`}
+                  {summary.fin_ratio > 40 && summary.rst_ratio > 30 && '、'}
+                  {summary.rst_ratio > 30 && `RST 比例偏高 (${summary.rst_ratio}%)`}
+                  。建議持續監控，尚未達到明確攻擊閾值。
+                </>
+              )}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* 圖表區域 */}

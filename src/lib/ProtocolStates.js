@@ -256,6 +256,66 @@ export const PROTOCOL_STATES = {
     warningEffect: 'blink-red'
   },
 
+  // TCP 資料傳輸（通用 fallback）
+  'tcp-data': {
+    stages: [
+      {
+        step: 'Transfer',
+        label: '資料傳輸',
+        direction: 'forward',
+        color: '#38bdf8', // 藍色
+        duration: 800,
+        icon: '→'
+      },
+      {
+        step: 'Response',
+        label: '回應',
+        direction: 'backward',
+        color: '#38bdf8',
+        duration: 800,
+        icon: '←'
+      }
+    ],
+    finalState: 'completed',
+    finalColor: '#38bdf8',
+    totalDuration: 1600,
+    description: 'TCP 資料傳輸'
+  },
+
+  // TCP 完整會話
+  'tcp-session': {
+    stages: [
+      {
+        step: 'Established',
+        label: '連線建立',
+        direction: 'both',
+        color: '#10b981', // 綠色
+        duration: 400,
+        icon: '⇄'
+      },
+      {
+        step: 'Transfer',
+        label: '資料傳輸',
+        direction: 'both',
+        color: '#38bdf8', // 藍色
+        duration: 1000,
+        icon: '⇆'
+      },
+      {
+        step: 'Closing',
+        label: '連線關閉',
+        direction: 'both',
+        color: '#f97316', // 橙色
+        duration: 400,
+        icon: '⇄'
+      }
+    ],
+    finalState: 'closed',
+    finalColor: '#6b7280',
+    totalDuration: 1800,
+    description: 'TCP 完整會話'
+  },
+
   // UDP 傳輸
   'udp-transfer': {
     stages: [

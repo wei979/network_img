@@ -21,7 +21,7 @@ const AnomalyDetection = () => {
       target: '192.168.1.1',
       count: 150,
       timestamp: new Date(Date.now() - 300000),
-      description: '检测到 SYN Flood 攻击，短时间内发送大量 SYN 包'
+      description: '偵測到 SYN Flood 攻擊，短時間內傳送大量 SYN 封包'
     },
     {
       id: 2,
@@ -31,7 +31,7 @@ const AnomalyDetection = () => {
       target: '192.168.1.0/24',
       count: 25,
       timestamp: new Date(Date.now() - 600000),
-      description: '检测到端口扫描行为，尝试探测多个端口'
+      description: '偵測到連接埠掃描行為，嘗試探測多個連接埠'
     },
     {
       id: 3,
@@ -41,14 +41,14 @@ const AnomalyDetection = () => {
       target: 'suspicious.domain.com',
       count: 75,
       timestamp: new Date(Date.now() - 900000),
-      description: '检测到可疑 DNS 查询模式，可能存在 DNS 隧道'
+      description: '偵測到可疑 DNS 查詢模式，可能存在 DNS 隧道'
     }
   ]
 
   useEffect(() => {
     if (isMonitoring) {
       const interval = setInterval(() => {
-        // 模拟实时异常检测
+        // 模擬即時異常偵測
         const randomAnomaly = mockAnomalies[Math.floor(Math.random() * mockAnomalies.length)]
         const newAnomaly = {
           ...randomAnomaly,
@@ -95,7 +95,7 @@ const AnomalyDetection = () => {
   const getTypeName = (type) => {
     const names = {
       synFlood: 'SYN Flood',
-      portScan: '端口扫描',
+      連接埠掃描,
       dnsTunnel: 'DNS 隧道'
     }
     return names[type] || type
@@ -104,24 +104,24 @@ const AnomalyDetection = () => {
   const ruleConfigs = [
     {
       key: 'synFlood',
-      name: 'SYN Flood 检测',
+      name: 'SYN Flood 偵測',
       icon: Shield,
       color: 'text-red-500',
-      description: '检测短时间内大量 SYN 包的异常行为'
+      description: '偵測短時間內大量 SYN 封包的異常行為'
     },
     {
       key: 'dnsTunnel',
-      name: 'DNS 隧道检测',
+      name: 'DNS 隧道偵測',
       icon: Activity,
       color: 'text-blue-500',
-      description: '检测可疑的 DNS 查询模式和数据传输'
+      description: '偵測可疑的 DNS 查詢模式和資料傳輸'
     },
     {
       key: 'portScan',
-      name: '端口扫描检测',
+      name: '連接埠掃描偵測',
       icon: Eye,
       color: 'text-orange-500',
-      description: '检测针对多个端口的扫描行为'
+      description: '偵測針對多個連接埠的掃描行為'
     }
   ]
 
@@ -130,7 +130,7 @@ const AnomalyDetection = () => {
       {/* 检测规则配置 */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-800">异常检测规则</h3>
+          <h3 className="text-lg font-semibold text-gray-800">異常偵測規則</h3>
           <button
             onClick={() => setIsMonitoring(!isMonitoring)}
             className={`
@@ -141,7 +141,7 @@ const AnomalyDetection = () => {
               }
             `}
           >
-            {isMonitoring ? '停止监控' : '开始监控'}
+            {isMonitoring ? '停止監控' : '開始監控'}
           </button>
         </div>
 
@@ -164,7 +164,7 @@ const AnomalyDetection = () => {
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">启用检测</span>
+                    <span className="text-sm text-gray-600">啟用偵測</span>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
@@ -178,7 +178,7 @@ const AnomalyDetection = () => {
 
                   <div>
                     <label className="block text-sm text-gray-600 mb-1">
-                      阈值: {rule.threshold}
+                      閾值: {rule.threshold}
                     </label>
                     <input
                       type="range"
@@ -193,7 +193,7 @@ const AnomalyDetection = () => {
 
                   <div>
                     <label className="block text-sm text-gray-600 mb-1">
-                      时间窗口: {rule.timeWindow}s
+                      時間範圍: {rule.timeWindow}s
                     </label>
                     <input
                       type="range"
@@ -212,20 +212,20 @@ const AnomalyDetection = () => {
         </div>
       </div>
 
-      {/* 检测结果 */}
+      {/* 偵測結果 */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-800">检测到的异常</h3>
+            <h3 className="text-lg font-semibold text-gray-800">偵測到的異常</h3>
             <div className="flex items-center space-x-2">
               {isMonitoring && (
                 <div className="flex items-center space-x-2 text-green-600">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm">实时监控中</span>
+                  <span className="text-sm">即時監控中</span>
                 </div>
               )}
               <span className="text-sm text-gray-500">
-                共 {detectedAnomalies.length} 条记录
+                共 {detectedAnomalies.length} 條紀錄
               </span>
             </div>
           </div>
@@ -249,7 +249,7 @@ const AnomalyDetection = () => {
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-3">
-                          <h4 className="font-medium text-gray-800">
+                          <h4 className=".font-medium text-gray-800">
                             {getTypeName(anomaly.type)}
                           </h4>
                           <span className={`
@@ -273,15 +273,15 @@ const AnomalyDetection = () => {
                           <span className="ml-2 font-mono text-gray-800">{anomaly.source}</span>
                         </div>
                         <div>
-                          <span className="text-gray-500">目标:</span>
+                          <span className="text-gray-500">目標:</span>
                           <span className="ml-2 font-mono text-gray-800">{anomaly.target}</span>
                         </div>
                         <div>
-                          <span className="text-gray-500">计数:</span>
+                          <span className="text-gray-500">計數:</span>
                           <span className="ml-2 font-medium text-gray-800">{anomaly.count}</span>
                         </div>
                         <div>
-                          <span className="text-gray-500">严重程度:</span>
+                          <span className="text-gray-500">嚴重程度:</span>
                           <span className={`ml-2 font-medium ${
                             anomaly.severity === 'high' ? 'text-red-600' :
                             anomaly.severity === 'medium' ? 'text-yellow-600' : 'text-blue-600'
@@ -301,9 +301,9 @@ const AnomalyDetection = () => {
               <div className="text-gray-400 mb-2">
                 <AlertTriangle className="w-12 h-12 mx-auto" />
               </div>
-              <p className="text-gray-500">暂无检测到异常</p>
+              <p className="text-gray-500">暫無偵測到異常</p>
               <p className="text-sm text-gray-400 mt-1">
-                {isMonitoring ? '正在实时监控中...' : '点击"开始监控"开始异常检测'}
+                {isMonitoring ? '正在即時監控中...' : '點擊"開始監控"以啟動異常偵測'}
               </p>
             </div>
           )}

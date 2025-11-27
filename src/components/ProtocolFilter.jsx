@@ -13,7 +13,7 @@ const ProtocolFilter = ({
       color: 'text-blue-500',
       bgColor: 'bg-blue-50',
       borderColor: 'border-blue-200',
-      description: 'TCP 连接协议'
+      description: 'TCP 連線協定'
     },
     {
       key: 'udp',
@@ -22,7 +22,7 @@ const ProtocolFilter = ({
       color: 'text-green-500',
       bgColor: 'bg-green-50',
       borderColor: 'border-green-200',
-      description: 'UDP 传输协议'
+      description: 'UDP 傳輸協定'
     },
     {
       key: 'http',
@@ -31,7 +31,7 @@ const ProtocolFilter = ({
       color: 'text-purple-500',
       bgColor: 'bg-purple-50',
       borderColor: 'border-purple-200',
-      description: 'HTTP 请求协议'
+      description: 'HTTP 請求協定'
     },
     {
       key: 'dns',
@@ -40,7 +40,7 @@ const ProtocolFilter = ({
       color: 'text-orange-500',
       bgColor: 'bg-orange-50',
       borderColor: 'border-orange-200',
-      description: 'DNS 查询协议'
+      description: 'DNS 查詢協定'
     }
   ]
 
@@ -57,9 +57,9 @@ const ProtocolFilter = ({
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">协议过滤器</h3>
+        <h3 className="text-lg font-semibold text-gray-800">通訊協定過濾器</h3>
         <div className="text-sm text-gray-500">
-          已启用: {activeCount}/{protocolConfigs.length}
+          已啟用: {activeCount}/{protocolConfigs.length}
         </div>
       </div>
       
@@ -100,7 +100,7 @@ const ProtocolFilter = ({
                       {config.label}
                     </span>
                     
-                    {/* 开关指示器 */}
+                    {/* 開關指示器 */}
                     <div className={`
                       w-8 h-4 rounded-full transition-colors duration-200 relative
                       ${isActive ? 'bg-green-400' : 'bg-gray-300'}
@@ -121,7 +121,7 @@ const ProtocolFilter = ({
                 </div>
               </div>
               
-              {/* 活跃状态指示器 */}
+              {/* 啟用狀態指示器 */}
               {isActive && (
                 <div className={`
                   absolute top-2 right-2 w-2 h-2 rounded-full ${config.color.replace('text-', 'bg-')}
@@ -132,13 +132,13 @@ const ProtocolFilter = ({
         })}
       </div>
       
-      {/* 快速操作按钮 */}
+      {/* 快速操作按鈕 */}
       <div className="flex space-x-2 mt-4 pt-3 border-t border-gray-100">
         <button
           onClick={() => onFilterChange({ tcp: true, udp: true, http: true, dns: true })}
           className="flex-1 px-3 py-2 text-sm font-medium text-green-600 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 transition-colors duration-200"
         >
-          全部启用
+          全部啟用
         </button>
         <button
           onClick={() => onFilterChange({ tcp: false, udp: false, http: false, dns: false })}

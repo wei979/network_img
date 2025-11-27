@@ -14,7 +14,7 @@ const HttpRequestDemo = () => {
   const lastTickRef = useRef(performance.now())
 
   useEffect(() => {
-    // 創建 HTTP/HTTPS 請求動畫控制器
+    // 建立 HTTP/HTTPS 請求動畫控制器
     const controller = protocolType === 'https-request'
       ? ProtocolAnimationController.createHttpsRequest(
           `demo-${protocolType}-192.168.1.100-80-192.168.1.200-443`,
@@ -170,7 +170,7 @@ const HttpRequestDemo = () => {
       <div className="bg-slate-800 rounded-lg p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">協議類型</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">通訊協定類型</label>
             <select
               value={protocolType}
               onChange={(e) => setProtocolType(e.target.value)}
@@ -360,7 +360,7 @@ const HttpRequestDemo = () => {
               </span>
               <span className="text-slate-400 text-sm">
                 {statusCode >= 200 && statusCode < 300 && '成功'}
-                {statusCode >= 300 && statusCode < 400 && '重定向'}
+                {statusCode >= 300 && statusCode < 400 && '重導向'}
                 {statusCode >= 400 && statusCode < 500 && '客戶端錯誤'}
                 {statusCode >= 500 && '伺服器錯誤'}
               </span>

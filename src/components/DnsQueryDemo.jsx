@@ -15,7 +15,7 @@ const DnsQueryDemo = () => {
   const lastTickRef = useRef(performance.now())
 
   useEffect(() => {
-    // 創建 DNS 查詢動畫控制器
+    // 建立 DNS 查詢動畫控制器
     const controller = ProtocolAnimationController.createDnsQuery(
       `demo-dns-query-${queryDomain}-${Date.now()}`,
       resolvedIP,
@@ -155,7 +155,7 @@ const DnsQueryDemo = () => {
       <div className="bg-slate-800 rounded-lg p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">查詢域名</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">查詢網域</label>
             <input
               type="text"
               value={queryDomain}
@@ -404,7 +404,7 @@ const DnsQueryDemo = () => {
             <div className="flex items-center justify-between">
               <span className="text-slate-300">狀態:</span>
               <span className="text-slate-400">
-                {currentStage.step === 'Query' && '發送 DNS 查詢'}
+                {currentStage.step === 'Query' && '傳送 DNS 查詢'}
                 {currentStage.step === 'Waiting' && '等待 DNS 伺服器回應'}
                 {currentStage.step === 'Response' && '收到 DNS 回應'}
               </span>
@@ -429,7 +429,7 @@ const DnsQueryDemo = () => {
               <div>
                 <p className="font-medium text-green-400">DNS 查詢成功</p>
                 <p className="text-green-300 text-sm">
-                  域名 {queryDomain} 解析為 {resolvedIP}
+                  網域 {queryDomain} 解析為 {resolvedIP}
                 </p>
               </div>
             </div>

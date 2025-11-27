@@ -79,7 +79,7 @@ function App() {
               }`}
             >
               <Clock className="w-4 h-4" />
-              連線超時測試
+              連線逾時測試
             </button>
             
             <button
@@ -115,7 +115,7 @@ function App() {
               }`}
             >
               <Filter className="w-4 h-4" />
-              協議過濾器測試
+              通訊協定過濾器測試
             </button>
             
             <button
@@ -127,7 +127,7 @@ function App() {
               }`}
             >
               <AlertTriangle className="w-4 h-4" />
-              異常檢測測試
+              異常偵測測試
             </button>
           </div>
         </div>

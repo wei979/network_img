@@ -14,7 +14,7 @@ const TimeoutDemo = () => {
   const lastTickRef = useRef(performance.now())
 
   useEffect(() => {
-    // 創建連線超時動畫控制器
+    // 建立連線逾時動畫控制器
     const controller = ProtocolAnimationController.createTimeout(
       `demo-timeout-${protocolType}-192.168.1.100-80-192.168.1.200-443`,
       {
@@ -22,7 +22,7 @@ const TimeoutDemo = () => {
           console.log('進入階段:', stage)
         },
         onComplete: () => {
-          console.log('連線超時完成')
+          console.log('連線逾時完成')
           setIsPlaying(false)
         }
       }
@@ -142,7 +142,7 @@ const TimeoutDemo = () => {
       <div className="flex items-center gap-3 mb-6">
         <AlertTriangle className="w-6 h-6 text-yellow-400" />
         <h2 className="text-xl font-semibold text-slate-100">
-          連線超時視覺化演示
+          連線逾時視覺化演示
         </h2>
       </div>
 
@@ -150,7 +150,7 @@ const TimeoutDemo = () => {
       <div className="bg-slate-800 rounded-lg p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">協議類型</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">通訊協定類型</label>
             <select
               value={protocolType}
               onChange={(e) => setProtocolType(e.target.value)}
@@ -164,7 +164,7 @@ const TimeoutDemo = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">超時時間 (毫秒)</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">逾時時間 (毫秒)</label>
             <select
               value={timeoutDuration}
               onChange={(e) => setTimeoutDuration(parseInt(e.target.value))}
@@ -280,7 +280,7 @@ const TimeoutDemo = () => {
             </circle>
           )}
 
-          {/* 警告圖示 (超時時顯示) */}
+          {/* 警告圖示 (逾時時顯示) */}
           {currentStage?.step === 'Timeout' && (
             <g transform="translate(50, 10)">
               <circle cx="0" cy="0" r="4" fill="#ef4444" opacity="0.8">
@@ -368,13 +368,13 @@ const TimeoutDemo = () => {
           <p className="text-slate-400">等待開始...</p>
         )}
 
-        {/* 超時警告 */}
+        {/* 逾時警告 */}
         {currentStage?.step === 'Timeout' && (
           <div className="mt-4 pt-3 border-t border-slate-700">
             <div className="flex items-center gap-2 p-3 bg-red-900/20 border border-red-700/30 rounded-lg">
               <WifiOff className="w-5 h-5 text-red-400" />
               <div>
-                <p className="font-medium text-red-400">連線超時</p>
+                <p className="font-medium text-red-400">連線逾時</p>
                 <p className="text-red-300 text-sm">
                   伺服器在 {timeoutDuration/1000} 秒內未回應，連線已中斷
                 </p>

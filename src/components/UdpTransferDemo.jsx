@@ -15,7 +15,7 @@ const UdpTransferDemo = () => {
   const lastTickRef = useRef(performance.now())
 
   useEffect(() => {
-    // 創建 UDP 傳輸動畫控制器
+    // 建立 UDP 傳輸動畫控制器
     const controller = ProtocolAnimationController.createUdpTransfer(
       `demo-udp-transfer-192.168.1.100-8080-192.168.1.200-9090-${Date.now()}`,
       {
@@ -181,7 +181,7 @@ const UdpTransferDemo = () => {
       <div className="bg-slate-800 rounded-lg p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">數據包數量</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">資料封包數量</label>
             <select
               value={packetCount}
               onChange={(e) => setPacketCount(parseInt(e.target.value))}
@@ -218,7 +218,7 @@ const UdpTransferDemo = () => {
               className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={isPlaying}
             >
-              <option value="512B">512 字節</option>
+              <option value="512B">512 位元組</option>
               <option value="1KB">1 KB</option>
               <option value="4KB">4 KB</option>
               <option value="64KB">64 KB</option>
@@ -247,7 +247,7 @@ const UdpTransferDemo = () => {
             </linearGradient>
           </defs>
 
-          {/* 發送端節點 */}
+          {/* 傳送端節點 */}
           <circle 
             cx="20" 
             cy="20" 
@@ -337,7 +337,7 @@ const UdpTransferDemo = () => {
                 )}
               </circle>
               
-              {/* 數據包軌跡 */}
+              {/* 資料封包軌跡 */}
               {packet.position > 0 && packet.position < 1 && (
                 <circle
                   cx={20 + (80 - 20) * Math.max(0, packet.position - 0.05)}
@@ -350,7 +350,7 @@ const UdpTransferDemo = () => {
             </g>
           ))}
 
-          {/* 發送指示器 */}
+          {/* 傳送指示器 */}
           {currentStage?.step === 'Send' && (
             <g transform="translate(25, 15)">
               <circle cx="0" cy="0" r="2" fill="#10b981" opacity="0.8">
@@ -490,7 +490,7 @@ const UdpTransferDemo = () => {
               <span className="text-slate-300">狀態:</span>
               <span className="text-slate-400">
                 {currentStage.step === 'Send' && '準備發送數據包'}
-                {currentStage.step === 'Transfer' && '正在傳輸數據包'}
+                {currentStage.step === 'Transfer' && '正在傳輸資料封包'}
                 {renderState?.isCompleted && '傳輸完成'}
               </span>
             </div>
@@ -511,7 +511,7 @@ const UdpTransferDemo = () => {
           <div className="flex items-center gap-2 p-3 bg-blue-900/20 border border-blue-700/30 rounded-lg">
             <Zap className="w-5 h-5 text-blue-400" />
             <div>
-              <p className="font-medium text-blue-400">UDP 協議特性</p>
+              <p className="font-medium text-blue-400">UDP 通訊協定特性</p>
               <p className="text-blue-300 text-sm">
                 無連接、快速傳輸、不保證可靠性，適合即時通訊和串流媒體
               </p>

@@ -12,10 +12,10 @@ const ProtocolFilterTest = () => {
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters)
-    console.log('协议过滤器状态更新:', newFilters)
+    console.log('通訊協定過濾器狀態更新:', newFilters)
   }
 
-  // 模拟网络数据包
+  // 模擬網路資料封包
   const mockPackets = [
     { id: 1, protocol: 'tcp', source: '192.168.1.100', dest: '192.168.1.1', port: 80, time: '10:30:15' },
     { id: 2, protocol: 'udp', source: '192.168.1.100', dest: '8.8.8.8', port: 53, time: '10:30:16' },
@@ -25,7 +25,7 @@ const ProtocolFilterTest = () => {
     { id: 6, protocol: 'udp', source: '192.168.1.100', dest: '192.168.1.255', port: 137, time: '10:30:20' }
   ]
 
-  // 根据过滤器筛选数据包
+  // 根據過濾器篩選資料封包
   const filteredPackets = mockPackets.filter(packet => filters[packet.protocol])
 
   const getProtocolColor = (protocol) => {
@@ -42,47 +42,47 @@ const ProtocolFilterTest = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">协议过滤器测试</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">通訊協定過濾器測試</h1>
           <p className="text-gray-600">
-            测试网络协议过滤功能，可以选择性显示不同类型的网络流量
+            測試網路通訊協定過濾功能，可以選擇性顯示不同類型的網路流量
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* 协议过滤器 */}
+          {/* 通訊協定過濾器 */}  
           <div className="lg:col-span-1">
             <ProtocolFilter 
               filters={filters}
               onFilterChange={handleFilterChange}
             />
             
-            {/* 过滤统计 */}
+            {/* 過濾統計 */}
             <div className="mt-4 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-              <h4 className="font-semibold text-gray-800 mb-3">过滤统计</h4>
+              <h4 className="font-semibold text-gray-800 mb-3">過濾統計</h4>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">总数据包:</span>
+                  <span className="text-gray-600">總資料封包:</span>
                   <span className="font-medium">{mockPackets.length}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">已过滤:</span>
+                  <span className="text-gray-600">已過濾:</span>
                   <span className="font-medium text-green-600">{filteredPackets.length}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">已隐藏:</span>
+                  <span className="text-gray-600">已隱藏:</span>
                   <span className="font-medium text-red-600">{mockPackets.length - filteredPackets.length}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* 数据包列表 */}
+          {/* 資料封包列表 */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-800">网络数据包</h3>
+                <h3 className="text-lg font-semibold text-gray-800">網路資料封包</h3>
                 <p className="text-sm text-gray-600 mt-1">
-                  显示 {filteredPackets.length} 个数据包 (共 {mockPackets.length} 个)
+                  顯示 {filteredPackets.length} 個資料封包 (共 {mockPackets.length} 個)
                 </p>
               </div>
               
@@ -120,8 +120,8 @@ const ProtocolFilterTest = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                     </div>
-                    <p className="text-gray-500">没有符合过滤条件的数据包</p>
-                    <p className="text-sm text-gray-400 mt-1">请调整协议过滤器设置</p>
+                    <p className="text-gray-500">沒有符合過濾條件的資料封包</p>
+                    <p className="text-sm text-gray-400 mt-1">請調整通訊協定過濾器設定</p>
                   </div>
                 )}
               </div>

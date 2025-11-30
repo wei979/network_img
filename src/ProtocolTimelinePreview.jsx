@@ -6,9 +6,9 @@ const API_TIMELINES_URL = '/api/timelines'
 const STATIC_TIMELINES_URL = '/data/protocol_timeline_sample.json'
 
 const STAGE_LABEL_MAP = {
-  'SYN Sent': 'SYN 送出',
-  'SYN-ACK Received': 'SYN-ACK 收到',
-  'ACK Confirmed': 'ACK 確認',
+  'SYN Sent': 'SYN 已傳送',
+  'SYN-ACK Received': 'SYN-ACK 已收到',
+  'ACK Confirmed': 'ACK 已確認',
   'UDP Transfer': 'UDP 傳輸'
 }
 
@@ -100,7 +100,7 @@ const ProtocolTimelinePreview = () => {
       }
 
       if (!finalResult || !Array.isArray(finalResult.timelines) || !finalResult.timelines.length) {
-        setError('無法載入協定時間軸範例資料')
+        setError('無法載入通訊協定時間軸範例資料')
         setLoading(false)
         return
       }
@@ -176,7 +176,7 @@ const ProtocolTimelinePreview = () => {
     return (
       <div className="flex items-center justify-center py-10 text-gray-400">
         <Loader2 className="h-5 w-5 animate-spin mr-2" />
-        正在載入協定時間軸範例...
+        正在載入通訊協定時間軸範例...
       </div>
     )
   }
@@ -211,7 +211,7 @@ const ProtocolTimelinePreview = () => {
           協定時間軸預覽（範例）
         </h3>
         <span className="text-xs text-gray-400">
-          {`總計 ${timelines.length} 條流程${remainingCount > 0 ? `，顯示前 ${visibleTimelines.length} 條` : ''}`}
+          {`總計 {timelines.length} 筆流程${remainingCount > 0 ? `，顯示前 {visibleTimelines.length} 筆` : ''}`}
         </span>
       </div>
 

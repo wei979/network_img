@@ -12,7 +12,7 @@ const TcpTeardownDemo = () => {
   const lastTickRef = useRef(performance.now())
 
   useEffect(() => {
-    // 創建 TCP 四次揮手動畫控制器
+    // 建立 TCP 四次揮手動畫控制器
     const controller = ProtocolAnimationController.createTcpTeardown(
       'demo-tcp-teardown-192.168.1.100-80-192.168.1.200-12345',
       {
@@ -239,7 +239,7 @@ const TcpTeardownDemo = () => {
             className="flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors"
           >
             <RotateCcw className="w-4 h-4" />
-            重置
+            重設
           </button>
         </div>
 

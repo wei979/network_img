@@ -38,8 +38,55 @@ function App() {
               <Network className="w-5 h-5" />
               <span className="font-medium">主應用</span>
             </button>
-
-            {/* 學習按鈕 */}
+            
+            <button
+              onClick={() => setCurrentView('timeout')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                currentView === 'timeout'
+                  ? 'bg-orange-600 text-white'
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              }`}
+            >
+              <Clock className="w-4 h-4" />
+              連線逾時測試
+            </button>
+            
+            <button
+              onClick={() => setCurrentView('dns-query')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                currentView === 'dns-query'
+                  ? 'bg-cyan-600 text-white'
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              }`}
+            >
+              <Search className="w-4 h-4" />
+              DNS 查詢測試
+            </button>
+            
+            <button
+              onClick={() => setCurrentView('udp-transfer')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                currentView === 'udp-transfer'
+                  ? 'bg-yellow-600 text-white'
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              }`}
+            >
+              <Zap className="w-4 h-4" />
+              UDP 傳輸測試
+            </button>
+            
+            <button
+              onClick={() => setCurrentView('protocol-filter')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                currentView === 'protocol-filter'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              }`}
+            >
+              <Filter className="w-4 h-4" />
+              通訊協定過濾器測試
+            </button>
+            
             <button
               onClick={() => setCurrentView('learning')}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all duration-200 ${
@@ -48,8 +95,8 @@ function App() {
                   : 'bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white'
               }`}
             >
-              <BookOpen className="w-5 h-5" />
-              <span className="font-medium">📖 學習</span>
+              <AlertTriangle className="w-4 h-4" />
+              異常偵測測試
             </button>
           </div>
         </div>

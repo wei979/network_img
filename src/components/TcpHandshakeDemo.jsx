@@ -12,7 +12,7 @@ const TcpHandshakeDemo = () => {
   const lastTickRef = useRef(performance.now())
 
   useEffect(() => {
-    // 創建 TCP 握手動畫控制器
+    // 建立 TCP 握手動畫控制器
     const controller = ProtocolAnimationController.createTcpHandshake(
       'demo-tcp-handshake-192.168.1.100-80-192.168.1.200-12345',
       {
@@ -99,7 +99,7 @@ const TcpHandshakeDemo = () => {
 
   const handleSeek = (progress) => {
     if (controllerRef.current) {
-      // 根据进度设置动画时间
+      // 根據進度設定動畫時間
       controllerRef.current.seekToProgress(progress)
       setRenderState(controllerRef.current.getRenderableState())
     }
@@ -205,7 +205,7 @@ const TcpHandshakeDemo = () => {
         </svg>
       </div>
 
-      {/* 时间轴控制面板 */}
+      {/* 時間軸控制面板 */}
       <TimelineControl
         isPlaying={isPlaying}
         onPlay={handlePlay}

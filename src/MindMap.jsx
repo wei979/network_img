@@ -14,7 +14,10 @@ import {
   Pause,
   Play,
   Eye,
-  EyeOff
+  EyeOff,
+  BookOpen,
+  GraduationCap,
+  X
 } from 'lucide-react'
 import { ProtocolAnimationController } from './lib/ProtocolAnimationController'
 import { getProtocolColor } from './lib/ProtocolStates'
@@ -23,6 +26,16 @@ import PacketParticleSystem from './lib/PacketParticleSystem'
 import BatchPacketViewer from './components/BatchPacketViewer'
 import TimelineControls from './components/TimelineControls'
 import FloodParticleSystem from './components/FloodParticleSystem'
+
+// 學習模組導入
+import { LearningModeProvider, useLearningModeOptional } from './learning/LearningModeProvider'
+import { LearningStorage } from './learning/LearningStorage'
+import { useLearningActionDetector } from './learning/useLearningActionDetector'
+import TutorialOverlay from './learning/TutorialOverlay'
+import CourseSidebar from './learning/CourseSidebar'
+import TheoryModal from './learning/TheoryModal'
+import QuizModal from './learning/QuizModal'
+import { getCourse, courseList } from './learning/courses'
 
 const API_TIMELINES_URL = '/api/timelines'
 const STATIC_TIMELINES_URL = '/data/protocol_timeline_sample.json'
@@ -915,7 +928,7 @@ const protocolColor = (protocol, protocolType) => {
   return PROTOCOL_COLORS[protocol?.toLowerCase()] || '#94a3b8'
 }
 
-export default function MindMap() {
+export default function MindMap({ isLearningMode = false }) {
   const [timelines, setTimelines] = useState([])
   const [sourceFiles, setSourceFiles] = useState([])
   const [generatedAt, setGeneratedAt] = useState(null)
@@ -923,6 +936,40 @@ export default function MindMap() {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
   const [attackAnalysis, setAttackAnalysis] = useState(null) // 攻擊分析數據
+
+  // ========== 學習模式狀態 ==========
+  const [showLearningUI, setShowLearningUI] = useState(isLearningMode)
+  const [currentCourse, setCurrentCourse] = useState(null)
+  const [currentLevelId, setCurrentLevelId] = useState('level1')
+  const [currentLessonIndex, setCurrentLessonIndex] = useState(0)
+  const [currentStepIndex, setCurrentStepIndex] = useState(0)
+  const [showTutorialOverlay, setShowTutorialOverlay] = useState(isLearningMode)
+  const [showCourseSidebar, setShowCourseSidebar] = useState(isLearningMode)
+  const [showTheoryModal, setShowTheoryModal] = useState(false)
+  const [theoryComponent, setTheoryComponent] = useState(null)
+  const [showQuizModal, setShowQuizModal] = useState(false)
+  const [currentQuiz, setCurrentQuiz] = useState(null)
+  const [quizResults, setQuizResults] = useState({})
+  const learningStartTimeRef = useRef(null)
+
+  // 同步外部 isLearningMode 屬性
+  useEffect(() => {
+    setShowLearningUI(isLearningMode)
+    setShowTutorialOverlay(isLearningMode)
+    setShowCourseSidebar(isLearningMode)
+    if (isLearningMode) {
+      // 載入進度
+      const progress = LearningStorage.getProgress()
+      setCurrentLevelId(`level${progress.currentLevel}`)
+      setCurrentLessonIndex(progress.currentLesson)
+      setCurrentStepIndex(progress.currentStep)
+      // 載入課程
+      const course = getCourse(`level${progress.currentLevel}`)
+      setCurrentCourse(course)
+      // 記錄開始時間
+      learningStartTimeRef.current = Date.now()
+    }
+  }, [isLearningMode])
   const controllersRef = useRef(new Map())
   const [renderStates, setRenderStates] = useState({})
   const rafRef = useRef(null)
@@ -1012,6 +1059,198 @@ export default function MindMap() {
   // 動畫控制狀態
   const [isPaused, setIsPaused] = useState(false)
   const [isFocusMode, setIsFocusMode] = useState(false)
+
+  // ========== 學習模式導航處理 ==========
+  const getCurrentStep = useCallback(() => {
+    if (!currentCourse) return null
+    const lesson = currentCourse.lessons[currentLessonIndex]
+    if (!lesson) return null
+    return lesson.steps[currentStepIndex] || null
+  }, [currentCourse, currentLessonIndex, currentStepIndex])
+
+  const getCurrentLesson = useCallback(() => {
+    if (!currentCourse) return null
+    return currentCourse.lessons[currentLessonIndex] || null
+  }, [currentCourse, currentLessonIndex])
+
+  const getTotalStepsInLesson = useCallback(() => {
+    const lesson = getCurrentLesson()
+    return lesson ? lesson.steps.length : 0
+  }, [getCurrentLesson])
+
+  const handleLearningNext = useCallback(() => {
+    if (!currentCourse) return
+
+    const lesson = currentCourse.lessons[currentLessonIndex]
+    if (!lesson) return
+
+    // 還有下一步
+    if (currentStepIndex < lesson.steps.length - 1) {
+      setCurrentStepIndex(prev => prev + 1)
+      LearningStorage.updatePosition(
+        parseInt(currentLevelId.replace('level', '')),
+        currentLessonIndex,
+        currentStepIndex + 1
+      )
+    } else {
+      // 課節完成，進入下一課節
+      LearningStorage.markLessonComplete(currentLevelId, lesson.id)
+      if (currentLessonIndex < currentCourse.lessons.length - 1) {
+        setCurrentLessonIndex(prev => prev + 1)
+        setCurrentStepIndex(0)
+        LearningStorage.updatePosition(
+          parseInt(currentLevelId.replace('level', '')),
+          currentLessonIndex + 1,
+          0
+        )
+      } else {
+        // 整個關卡完成
+        const nextLevel = parseInt(currentLevelId.replace('level', '')) + 1
+        LearningStorage.unlockLevel(nextLevel)
+        // TODO: 顯示完成畫面
+        console.log('關卡完成！')
+      }
+    }
+  }, [currentCourse, currentLessonIndex, currentStepIndex, currentLevelId])
+
+  const handleLearningPrev = useCallback(() => {
+    if (currentStepIndex > 0) {
+      setCurrentStepIndex(prev => prev - 1)
+      LearningStorage.updatePosition(
+        parseInt(currentLevelId.replace('level', '')),
+        currentLessonIndex,
+        currentStepIndex - 1
+      )
+    } else if (currentLessonIndex > 0) {
+      // 返回上一課節的最後一步
+      setCurrentLessonIndex(prev => prev - 1)
+      if (currentCourse) {
+        const prevLesson = currentCourse.lessons[currentLessonIndex - 1]
+        if (prevLesson) {
+          setCurrentStepIndex(prevLesson.steps.length - 1)
+          LearningStorage.updatePosition(
+            parseInt(currentLevelId.replace('level', '')),
+            currentLessonIndex - 1,
+            prevLesson.steps.length - 1
+          )
+        }
+      }
+    }
+  }, [currentCourse, currentLessonIndex, currentStepIndex, currentLevelId])
+
+  const handleLearningSkip = useCallback(() => {
+    handleLearningNext()
+  }, [handleLearningNext])
+
+  // 顯示理論課彈窗
+  const handleShowTheory = useCallback((componentName) => {
+    if (componentName) {
+      setTheoryComponent(componentName)
+      setShowTheoryModal(true)
+    }
+  }, [])
+
+  // 關閉理論課彈窗
+  const handleCloseTheory = useCallback(() => {
+    setShowTheoryModal(false)
+    setTheoryComponent(null)
+  }, [])
+
+  // 理論課完成後進入下一步
+  const handleTheoryComplete = useCallback(() => {
+    handleLearningNext()
+  }, [handleLearningNext])
+
+  // ========== 測驗相關處理 ==========
+
+  // 開始測驗
+  const handleStartQuiz = useCallback((quiz, levelId) => {
+    if (quiz) {
+      setCurrentQuiz({ ...quiz, levelId })
+      setShowQuizModal(true)
+    }
+  }, [])
+
+  // 關閉測驗彈窗
+  const handleCloseQuiz = useCallback(() => {
+    setShowQuizModal(false)
+    setCurrentQuiz(null)
+  }, [])
+
+  // 測驗完成
+  const handleQuizComplete = useCallback((result) => {
+    if (!result || !currentQuiz?.levelId) return
+
+    // 儲存測驗結果
+    setQuizResults(prev => ({
+      ...prev,
+      [currentQuiz.levelId]: {
+        ...result,
+        date: new Date().toISOString()
+      }
+    }))
+
+    // 儲存到 localStorage
+    LearningStorage.saveQuizScore(
+      currentQuiz.id,
+      result.percentage,
+      result.passed
+    )
+
+    // 如果通過，解鎖下一關並標記當前關卡完成
+    if (result.passed) {
+      const levelNumber = parseInt(currentQuiz.levelId.replace('level', ''))
+      LearningStorage.unlockLevel(levelNumber + 1)
+      LearningStorage.markLevelComplete(currentQuiz.levelId)
+    }
+
+    setShowQuizModal(false)
+    setCurrentQuiz(null)
+  }, [currentQuiz])
+
+  const handleSelectLevel = useCallback((levelId) => {
+    const course = getCourse(levelId)
+    if (course) {
+      setCurrentLevelId(levelId)
+      setCurrentCourse(course)
+      setCurrentLessonIndex(0)
+      setCurrentStepIndex(0)
+      LearningStorage.updatePosition(parseInt(levelId.replace('level', '')), 0, 0)
+    }
+  }, [])
+
+  const handleSelectLesson = useCallback((lessonIndex) => {
+    setCurrentLessonIndex(lessonIndex)
+    setCurrentStepIndex(0)
+    LearningStorage.updatePosition(
+      parseInt(currentLevelId.replace('level', '')),
+      lessonIndex,
+      0
+    )
+  }, [currentLevelId])
+
+  const handleCloseLearning = useCallback(() => {
+    // 儲存學習時間
+    if (learningStartTimeRef.current) {
+      const elapsed = Date.now() - learningStartTimeRef.current
+      LearningStorage.addLearningTime(elapsed)
+    }
+    setShowTutorialOverlay(false)
+  }, [])
+
+  // ========== 學習操作偵測 ==========
+  // 監聽使用者操作並自動進入下一步
+  useLearningActionDetector({
+    currentStep: getCurrentStep(),
+    onActionComplete: handleLearningNext,
+    appState: {
+      selectedConnectionId,
+      hoveredConnectionId,
+      draggingNodeId,
+      viewTransform
+    },
+    isActive: showLearningUI && showTutorialOverlay
+  })
 
   // 力導向圖狀態
   const velocitiesRef = useRef(new Map())
@@ -2091,16 +2330,73 @@ export default function MindMap() {
   }, [needsFitToView, nodesComputed, fitToView])
 
   return (
-    <div className="bg-slate-950 text-slate-100">
-      <header className="px-8 pt-6">
+    <div className="bg-slate-950 text-slate-100 flex min-h-screen">
+      {/* ========== 學習模式：課程側邊欄 ========== */}
+      {showLearningUI && showCourseSidebar && (
+        <CourseSidebar
+          currentLevelId={currentLevelId}
+          currentLessonIndex={currentLessonIndex}
+          onSelectLevel={handleSelectLevel}
+          onSelectLesson={handleSelectLesson}
+          onStartQuiz={handleStartQuiz}
+          quizResults={quizResults}
+          isVisible={showCourseSidebar}
+        />
+      )}
+
+      {/* ========== 主要內容區域 ========== */}
+      <div className="flex-1 overflow-auto">
+      <header className="mindmap-header px-8 pt-6">
         <div className="max-w-6xl mx-auto flex flex-col gap-6">
-          <div>
-            <h2 className="text-xl font-bold text-slate-100">
-              協議時間軸分析
-            </h2>
-            <p className="text-sm text-slate-400 mt-2 max-w-2xl">
-              上傳 Wireshark 擷取檔，觀察心智圖沿著時間軸動畫呈現 TCP 交握、UDP 傳輸與其他協定事件。
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+                {showLearningUI && (
+                  <span className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-600/30 text-emerald-300 rounded-lg text-sm">
+                    <GraduationCap className="w-4 h-4" />
+                    學習模式
+                  </span>
+                )}
+                協議時間軸分析
+              </h2>
+              <p className="text-sm text-slate-400 mt-2 max-w-2xl">
+                {showLearningUI
+                  ? '跟隨教學引導，一步步學習網路協議分析技能。'
+                  : '上傳 Wireshark 擷取檔，觀察心智圖沿著時間軸動畫呈現 TCP 交握、UDP 傳輸與其他協定事件。'
+                }
+              </p>
+            </div>
+
+            {/* 學習模式控制按鈕 */}
+            {showLearningUI && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCourseSidebar(prev => !prev)}
+                  className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+                    showCourseSidebar
+                      ? 'bg-emerald-600/30 text-emerald-300'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                >
+                  <BookOpen className="w-4 h-4" />
+                  {showCourseSidebar ? '隱藏目錄' : '顯示目錄'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowTutorialOverlay(prev => !prev)}
+                  className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+                    showTutorialOverlay
+                      ? 'bg-cyan-600/30 text-cyan-300'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                >
+                  {showTutorialOverlay ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showTutorialOverlay ? '隱藏引導' : '顯示引導'}
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -2108,7 +2404,7 @@ export default function MindMap() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="inline-flex items-center gap-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="upload-button inline-flex items-center gap-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
               {uploading ? '正在上傳...' : '上傳 PCAP／PCAPNG'}
@@ -2234,7 +2530,7 @@ export default function MindMap() {
                     <svg
                       viewBox="0 0 100 100"
                       preserveAspectRatio="xMidYMid meet"
-                      className="w-full h-[480px] rounded-2xl"
+                      className="mindmap-svg-container w-full h-[480px] rounded-2xl"
                       style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}
                     >
                       <defs>
@@ -2735,6 +3031,7 @@ export default function MindMap() {
                     return (
                       <g
                         key={connection.id}
+                        className="mindmap-connection"
                         onMouseEnter={(e) => {
                           setHoveredConnectionId(connection.id)
                           const rect = svgRef.current?.getBoundingClientRect()
@@ -3071,7 +3368,7 @@ export default function MindMap() {
                     const strokeWidth = node.isCenter ? 0.55 : 0.45
 
                     return (
-                      <g key={node.id} onMouseDown={(e) => { e.stopPropagation(); setDraggingNodeId(node.id) }} style={{ cursor: node.isCenter ? 'default' : 'grab' }}>
+                      <g key={node.id} className="mindmap-node" onMouseDown={(e) => { e.stopPropagation(); setDraggingNodeId(node.id) }} style={{ cursor: node.isCenter ? 'default' : 'grab' }}>
                         <circle cx={node.x} cy={node.y} r={outerRadius} fill={outerFill} stroke="#1f2937" strokeWidth={strokeWidth} />
                         <circle cx={node.x} cy={node.y} r={innerRadius} fill="#1f2937" stroke="#38bdf8" strokeWidth={strokeWidth} filter="url(#nodeGlow)" />
                         <text
@@ -3140,7 +3437,7 @@ export default function MindMap() {
             )}
           </section>
 
-          <aside className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6 backdrop-blur">
+          <aside className="sidebar-timeline-list rounded-3xl border border-slate-800 bg-slate-900/40 p-6 backdrop-blur">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
               <Activity className="w-4 h-4 text-cyan-300" />
               時間軸串流列表
@@ -3212,7 +3509,7 @@ export default function MindMap() {
                         }
                       }
                     }}
-                    className={`rounded-lg border p-4 transition-all duration-300 cursor-pointer ${
+                    className={`sidebar-timeline-item rounded-lg border p-4 transition-all duration-300 cursor-pointer ${
                       isSelected
                         ? 'border-cyan-400 bg-cyan-900/40 shadow-lg shadow-cyan-500/20 ring-2 ring-cyan-400/50'
                         : isCompleted
@@ -3331,6 +3628,46 @@ export default function MindMap() {
         className="hidden"
         onChange={handleFileUpload}
       />
+      </div>
+      {/* end of flex-1 overflow-auto container */}
+
+      {/* ========== 學習模式：教學引導覆蓋層 ========== */}
+      {showLearningUI && showTutorialOverlay && (
+        <TutorialOverlay
+          step={getCurrentStep()}
+          stepIndex={currentStepIndex}
+          totalSteps={getTotalStepsInLesson()}
+          lessonTitle={getCurrentLesson()?.title}
+          onNext={handleLearningNext}
+          onPrev={handleLearningPrev}
+          onSkip={handleLearningSkip}
+          onShowTheory={handleShowTheory}
+          onClose={handleCloseLearning}
+          isVisible={showTutorialOverlay}
+        />
+      )}
+
+      {/* ========== 學習模式：理論課彈窗 ========== */}
+      {showLearningUI && (
+        <TheoryModal
+          componentName={theoryComponent}
+          stepTitle={getCurrentStep()?.title}
+          stepContent={getCurrentStep()?.content}
+          onClose={handleCloseTheory}
+          onComplete={handleTheoryComplete}
+          isVisible={showTheoryModal}
+        />
+      )}
+
+      {/* ========== 學習模式：測驗彈窗 ========== */}
+      {showLearningUI && (
+        <QuizModal
+          quiz={currentQuiz}
+          onClose={handleCloseQuiz}
+          onComplete={handleQuizComplete}
+          isVisible={showQuizModal}
+        />
+      )}
     </div>
   )
 }

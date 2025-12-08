@@ -16,8 +16,12 @@ import {
   ChevronLeft,
   BookOpen,
   Target,
-  Award
+  Award,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react'
+import { LearningStorage } from './LearningStorage'
 
 /**
  * 單一問題組件
@@ -129,15 +133,16 @@ function QuestionCard({
 /**
  * 結果頁面組件
  */
-function ResultPage({ score, totalQuestions, passingScore, onRetry, onClose }) {
+function ResultPage({ score, totalQuestions, passingScore, onRetry, onClose, wrongAnswerList = [] }) {
   const percentage = Math.round((score / totalQuestions) * 100)
   const passed = percentage >= passingScore
+  const [showWrongAnswers, setShowWrongAnswers] = useState(true)
 
   return (
-    <div className="flex flex-col items-center justify-center py-8 space-y-6">
+    <div className="flex flex-col items-center py-6 space-y-5">
       {/* 結果圖示 */}
       <div className={`
-        w-24 h-24 rounded-full flex items-center justify-center
+        w-20 h-20 rounded-full flex items-center justify-center
         ${passed
           ? 'bg-gradient-to-br from-emerald-500 to-cyan-500'
           : 'bg-gradient-to-br from-amber-500 to-orange-500'
@@ -145,18 +150,18 @@ function ResultPage({ score, totalQuestions, passingScore, onRetry, onClose }) {
         shadow-lg ${passed ? 'shadow-emerald-500/30' : 'shadow-amber-500/30'}
       `}>
         {passed ? (
-          <Trophy className="w-12 h-12 text-white" />
+          <Trophy className="w-10 h-10 text-white" />
         ) : (
-          <Target className="w-12 h-12 text-white" />
+          <Target className="w-10 h-10 text-white" />
         )}
       </div>
 
       {/* 結果文字 */}
-      <div className="text-center space-y-2">
-        <h3 className={`text-2xl font-bold ${passed ? 'text-emerald-400' : 'text-amber-400'}`}>
+      <div className="text-center space-y-1">
+        <h3 className={`text-xl font-bold ${passed ? 'text-emerald-400' : 'text-amber-400'}`}>
           {passed ? '恭喜通過！🎉' : '再接再厲！💪'}
         </h3>
-        <p className="text-slate-400">
+        <p className="text-slate-400 text-sm">
           {passed
             ? '你已經掌握了這個章節的知識'
             : `需要 ${passingScore}% 才能通過測驗`
@@ -164,48 +169,106 @@ function ResultPage({ score, totalQuestions, passingScore, onRetry, onClose }) {
         </p>
       </div>
 
-      {/* 分數顯示 */}
-      <div className="flex items-center gap-8">
+      {/* 分數顯示 - 緊湊版 */}
+      <div className="flex items-center gap-6">
         <div className="text-center">
-          <div className="text-4xl font-bold text-white">{score}</div>
-          <div className="text-sm text-slate-500">正確題數</div>
+          <div className="text-3xl font-bold text-white">{score}</div>
+          <div className="text-xs text-slate-500">正確題數</div>
         </div>
-        <div className="text-4xl text-slate-600">/</div>
+        <div className="text-3xl text-slate-600">/</div>
         <div className="text-center">
-          <div className="text-4xl font-bold text-slate-400">{totalQuestions}</div>
-          <div className="text-sm text-slate-500">總題數</div>
+          <div className="text-3xl font-bold text-slate-400">{totalQuestions}</div>
+          <div className="text-xs text-slate-500">總題數</div>
+        </div>
+        <div className="pl-4 border-l border-slate-700">
+          <div className={`text-3xl font-bold ${passed ? 'text-emerald-400' : 'text-amber-400'}`}>
+            {percentage}%
+          </div>
+          <div className="text-xs text-slate-500">得分率</div>
         </div>
       </div>
 
-      {/* 百分比進度條 */}
-      <div className="w-full max-w-xs">
-        <div className="flex justify-between text-sm mb-2">
-          <span className="text-slate-400">得分率</span>
-          <span className={passed ? 'text-emerald-400' : 'text-amber-400'}>{percentage}%</span>
+      {/* 錯題區域 */}
+      {wrongAnswerList.length > 0 && (
+        <div className="w-full max-w-2xl">
+          {/* 錯題標題 - 可收合 */}
+          <button
+            onClick={() => setShowWrongAnswers(prev => !prev)}
+            className="w-full flex items-center justify-between p-3 rounded-t-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-red-400" />
+              <span className="text-red-300 font-medium">
+                錯誤題目 ({wrongAnswerList.length} 題)
+              </span>
+            </div>
+            {showWrongAnswers ? (
+              <ChevronUp className="w-5 h-5 text-red-400" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-red-400" />
+            )}
+          </button>
+
+          {/* 錯題列表 */}
+          {showWrongAnswers && (
+            <div className="border border-t-0 border-red-500/30 rounded-b-xl bg-slate-800/50 max-h-60 overflow-y-auto">
+              {wrongAnswerList.map((wrong, idx) => (
+                <div
+                  key={wrong.questionId}
+                  className={`p-4 ${idx > 0 ? 'border-t border-slate-700' : ''}`}
+                >
+                  {/* 題目 */}
+                  <p className="text-white text-sm font-medium mb-3">
+                    <span className="text-slate-500 mr-2">Q{idx + 1}.</span>
+                    {wrong.question}
+                  </p>
+
+                  {/* 答案對比 */}
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-start gap-2">
+                      <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-slate-500">你的答案：</span>
+                        <span className="text-red-300 ml-1">
+                          {wrong.options[wrong.userAnswer] || '未作答'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-slate-500">正確答案：</span>
+                        <span className="text-emerald-300 ml-1">
+                          {wrong.options[wrong.correctAnswer]}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 解釋 */}
+                  {wrong.explanation && (
+                    <div className="mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                      <div className="flex items-start gap-2">
+                        <BookOpen className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                        <p className="text-amber-200 text-xs leading-relaxed">
+                          {wrong.explanation}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all duration-1000 ${
-              passed
-                ? 'bg-gradient-to-r from-emerald-500 to-cyan-500'
-                : 'bg-gradient-to-r from-amber-500 to-orange-500'
-            }`}
-            style={{ width: `${percentage}%` }}
-          />
-        </div>
-        <div className="flex justify-between text-xs mt-1">
-          <span className="text-slate-600">0%</span>
-          <span className="text-slate-600">及格線 {passingScore}%</span>
-          <span className="text-slate-600">100%</span>
-        </div>
-      </div>
+      )}
 
       {/* 操作按鈕 */}
-      <div className="flex gap-4 pt-4">
+      <div className="flex gap-4 pt-2">
         {!passed && (
           <button
             onClick={onRetry}
-            className="px-6 py-3 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-700 transition-colors flex items-center gap-2"
+            className="px-5 py-2.5 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-700 transition-colors flex items-center gap-2 text-sm"
           >
             <RotateCcw className="w-4 h-4" />
             重新測驗
@@ -214,7 +277,7 @@ function ResultPage({ score, totalQuestions, passingScore, onRetry, onClose }) {
         <button
           onClick={onClose}
           className={`
-            px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2
+            px-5 py-2.5 rounded-xl font-semibold transition-all flex items-center gap-2 text-sm
             ${passed
               ? 'bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white shadow-lg shadow-emerald-500/25'
               : 'bg-slate-700 hover:bg-slate-600 text-white'
@@ -248,6 +311,7 @@ export default function QuizModal({
   const [answers, setAnswers] = useState({})  // { questionId: answerIndex }
   const [showResults, setShowResults] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [wrongAnswerList, setWrongAnswerList] = useState([])  // 本次測驗的錯題列表
 
   // 計算分數
   const score = useMemo(() => {
@@ -288,7 +352,28 @@ export default function QuizModal({
   const handleSubmit = useCallback(() => {
     setSubmitted(true)
     setShowResults(true)
-  }, [])
+
+    // 收集並儲存錯題
+    if (quiz?.questions && quiz?.id) {
+      const wrongAnswers = quiz.questions
+        .filter(q => answers[q.id] !== q.correctAnswer)
+        .map(q => ({
+          questionId: q.id,
+          question: q.question,
+          options: q.options,
+          userAnswer: answers[q.id],
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation
+        }))
+
+      // 設定到 state 以便在結果畫面顯示
+      setWrongAnswerList(wrongAnswers)
+
+      if (wrongAnswers.length > 0) {
+        LearningStorage.saveWrongAnswers(quiz.id, wrongAnswers)
+      }
+    }
+  }, [quiz, answers])
 
   // 重新測驗
   const handleRetry = useCallback(() => {
@@ -296,6 +381,7 @@ export default function QuizModal({
     setCurrentQuestionIndex(0)
     setShowResults(false)
     setSubmitted(false)
+    setWrongAnswerList([])
   }, [])
 
   // 完成並關閉
@@ -368,6 +454,7 @@ export default function QuizModal({
               passingScore={quiz.passingScore || 70}
               onRetry={handleRetry}
               onClose={handleComplete}
+              wrongAnswerList={wrongAnswerList}
             />
           ) : currentQuestion ? (
             <QuestionCard

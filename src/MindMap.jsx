@@ -35,6 +35,7 @@ import TutorialOverlay from './learning/TutorialOverlay'
 import CourseSidebar from './learning/CourseSidebar'
 import TheoryModal from './learning/TheoryModal'
 import QuizModal from './learning/QuizModal'
+import WrongAnswerReview from './learning/WrongAnswerReview'
 import { getCourse, courseList } from './learning/courses'
 
 const API_TIMELINES_URL = '/api/timelines'
@@ -950,6 +951,7 @@ export default function MindMap({ isLearningMode = false }) {
   const [showQuizModal, setShowQuizModal] = useState(false)
   const [currentQuiz, setCurrentQuiz] = useState(null)
   const [quizResults, setQuizResults] = useState({})
+  const [showWrongAnswerReview, setShowWrongAnswerReview] = useState(false)
   const learningStartTimeRef = useRef(null)
 
   // 同步外部 isLearningMode 屬性
@@ -2339,6 +2341,7 @@ export default function MindMap({ isLearningMode = false }) {
           onSelectLevel={handleSelectLevel}
           onSelectLesson={handleSelectLesson}
           onStartQuiz={handleStartQuiz}
+          onOpenWrongAnswers={() => setShowWrongAnswerReview(true)}
           quizResults={quizResults}
           isVisible={showCourseSidebar}
         />
@@ -3666,6 +3669,14 @@ export default function MindMap({ isLearningMode = false }) {
           onClose={handleCloseQuiz}
           onComplete={handleQuizComplete}
           isVisible={showQuizModal}
+        />
+      )}
+
+      {/* ========== 學習模式：錯題回顧 ========== */}
+      {showLearningUI && (
+        <WrongAnswerReview
+          isVisible={showWrongAnswerReview}
+          onClose={() => setShowWrongAnswerReview(false)}
         />
       )}
     </div>

@@ -7,8 +7,8 @@
  * - 學習統計
  */
 
-import React, { useState } from 'react'
-import { ChevronDown, ChevronRight, Check, Lock, Clock, BookOpen, Trophy, FileQuestion, Star } from 'lucide-react'
+import React, { useState, useMemo } from 'react'
+import { ChevronDown, ChevronRight, Check, Lock, Clock, BookOpen, Trophy, FileQuestion, Star, AlertCircle } from 'lucide-react'
 import { courseList, getCourse } from './courses'
 import { LearningStorage } from './LearningStorage'
 
@@ -21,11 +21,17 @@ export default function CourseSidebar({
   onSelectLevel,
   onSelectLesson,
   onStartQuiz,         // 新增：開始測驗回調
+  onOpenWrongAnswers,  // 新增：開啟錯題本回調
   quizResults = {},    // 新增：測驗結果
   isVisible = true
 }) {
   const [expandedLevels, setExpandedLevels] = useState({ [currentLevelId]: true })
   const progress = LearningStorage.getProgress()
+
+  // 取得錯題統計
+  const wrongAnswerStats = useMemo(() => {
+    return LearningStorage.getWrongAnswerStats()
+  }, [])
 
   // 切換關卡展開狀態
   const toggleLevel = (levelId) => {
@@ -246,6 +252,46 @@ export default function CourseSidebar({
           )
         })}
       </div>
+
+      {/* 錯題本入口 */}
+      {wrongAnswerStats.total > 0 && (
+        <div className="px-4 py-3 border-t border-slate-700">
+          <button
+            onClick={onOpenWrongAnswers}
+            className="w-full flex items-center gap-3 p-3 rounded-xl transition-all
+              bg-gradient-to-r from-red-500/10 to-amber-500/10
+              border border-red-500/30 hover:border-red-500/50
+              hover:from-red-500/20 hover:to-amber-500/20"
+          >
+            <div className="relative">
+              <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-red-400" />
+              </div>
+              {/* 未掌握數量徽章 */}
+              {wrongAnswerStats.unmastered > 0 && (
+                <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
+                  <span className="text-[10px] font-bold text-white">
+                    {wrongAnswerStats.unmastered > 9 ? '9+' : wrongAnswerStats.unmastered}
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="flex-1 text-left">
+              <div className="text-sm font-medium text-white">錯題本</div>
+              <div className="text-xs text-slate-400">
+                {wrongAnswerStats.unmastered > 0
+                  ? `${wrongAnswerStats.unmastered} 題待複習`
+                  : '全部已掌握 ✓'
+                }
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-lg font-bold text-amber-400">{wrongAnswerStats.masteryRate}%</div>
+              <div className="text-[10px] text-slate-500">掌握率</div>
+            </div>
+          </button>
+        </div>
+      )}
 
       {/* 學習統計 */}
       <div className="p-4 border-t border-slate-700 mt-auto">

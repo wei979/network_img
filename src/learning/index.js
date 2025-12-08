@@ -15,6 +15,7 @@ export { default as TutorialOverlay } from './TutorialOverlay'
 export { default as CourseSidebar } from './CourseSidebar'
 export { default as TheoryModal } from './TheoryModal'
 export { default as QuizModal } from './QuizModal'
+export { default as WrongAnswerReview } from './WrongAnswerReview'
 
 // Hooks
 export { useLearningActionDetector } from './useLearningActionDetector'

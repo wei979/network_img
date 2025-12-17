@@ -580,6 +580,12 @@ async def get_packet_statistics(
     elif rst_ratio > 0.4 and total_packets > 100:
         attack_type = 'RST Attack'
         threat_level = 'high' if rst_ratio > 0.6 else 'medium'
+    elif ack_ratio > 0.8 and syn_ratio < 0.1 and total_packets > 100:
+        # ACK Flood: Extremely high ACK ratio with minimal SYN packets
+        # Attackers send massive ACK packets to consume bandwidth and server resources
+        # Normal traffic has balanced SYN-ACK ratios; pure ACK flood lacks initial handshakes
+        attack_type = 'ACK Flood'
+        threat_level = 'high'
     elif peak_rate > 1000:
         attack_type = 'High Volume Attack'
         threat_level = 'medium'
@@ -609,6 +615,9 @@ async def get_packet_statistics(
     # PSH Flood: High PSH ratio without other indicators is anomalous
     if psh_ratio > 0.5 and syn_ratio < 0.4:
         anomaly_score += min(25, (psh_ratio - 0.5) * 50)
+    # ACK Flood: Extremely high ACK ratio with minimal SYN is anomalous
+    if ack_ratio > 0.8 and syn_ratio < 0.1:
+        anomaly_score += min(25, (ack_ratio - 0.8) * 125)
     anomaly_score = min(100, round(anomaly_score))
 
     return {

@@ -424,6 +424,9 @@ export default function AttackTimelineChart({
               {summary.attack_type === 'RST Attack' && (
                 <>⚠️ RST 封包比例過高 ({summary.rst_ratio || 0}%)，符合 RST 攻擊特徵。攻擊者大量發送 RST 封包強制關閉連線，可能導致服務中斷。</>
               )}
+              {summary.attack_type === 'ACK Flood' && (
+                <>⚠️ ACK 封包比例極高 ({summary.ack_ratio || 0}%) 但 SYN 比例極低 ({summary.syn_ratio}%)，符合 ACK Flood 攻擊特徵。攻擊者發送大量 ACK 封包消耗頻寬與伺服器資源，正常流量應有對稱的 SYN-ACK 比例。</>
+              )}
               {summary.attack_type === 'High Volume Attack' && (
                 <>⚠️ 封包速率異常 ({formatNumber(summary.peak_rate)}/s)，可能為高流量 DDoS 攻擊或網路掃描行為。</>
               )}

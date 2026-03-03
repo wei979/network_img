@@ -286,8 +286,9 @@ export class PacketParticleSystem {
         ? packetTravelTime / totalDurationSeconds
         : 0.05 // 備用值
 
-      // 設定較小的最小值（5%）以避免粒子佔據過多時間軸空間
-      const displayDuration = Math.max(0.05, calculatedDuration)
+      // 範圍 [0.05, 0.999)：下限避免粒子消失，上限確保不超過一個循環週期
+      // 上限是 wrap-around 條件正確性的必要不變量：displayDuration >= 1.0 會造成顯示空隙
+      const displayDuration = Math.max(0.05, Math.min(calculatedDuration, 0.999))
 
       // 判斷封包方向
       let isForward = true // 預設為前向

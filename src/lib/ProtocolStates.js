@@ -84,81 +84,72 @@ export const PROTOCOL_STATES = {
   // DNS 查詢
   'dns-query': {
     stages: [
-      { 
-        step: 'Query', 
+      {
+        step: 'Query',
         label: 'DNS 查詢中',
-        direction: 'forward', 
+        direction: 'forward',
         color: '#8b5cf6', // 紫色
-        duration: 100,
+        duration: 400,
         icon: '→'
       },
-      { 
-        step: 'Resolving', 
+      {
+        step: 'Resolving',
         label: '解析中...',
-        direction: 'wait', 
-        color: '#8b5cf6', 
-        duration: 200,
+        direction: 'wait',
+        color: '#8b5cf6',
+        duration: 800,
         icon: '⟳',
         spinning: true
       },
-      { 
-        step: 'Response', 
+      {
+        step: 'Response',
         label: '解析成功',
-        direction: 'backward', 
-        color: '#8b5cf6', 
-        duration: 100,
+        direction: 'backward',
+        color: '#8b5cf6',
+        duration: 400,
         icon: '←'
       }
     ],
     finalState: 'resolved',
     finalColor: '#10b981',
-    totalDuration: 400,
+    totalDuration: 1600,
     description: 'DNS 域名解析查詢',
     successEffect: 'flash-green' // 成功時閃爍綠光
   },
 
-  // HTTP/HTTPS 請求
+  // HTTP 請求（明文，port 80）
   'http-request': {
     stages: [
-      { 
-        step: 'TLS Handshake', 
-        label: 'TLS 握手',
-        direction: 'both', 
-        color: '#fbbf24', // 金色
-        duration: 800,
-        icon: '⇄',
-        isSecure: true
-      },
-      { 
-        step: 'GET', 
+      {
+        step: 'Request',
         label: '發送請求',
-        direction: 'forward', 
+        direction: 'forward',
         color: '#06b6d4', // 藍色
-        duration: 200,
+        duration: 400,
         icon: '→'
       },
-      { 
-        step: 'Processing', 
+      {
+        step: 'Processing',
         label: '等待回應',
-        direction: 'wait', 
-        color: '#06b6d4', 
-        duration: 300,
+        direction: 'wait',
+        color: '#06b6d4',
+        duration: 600,
         icon: '⋯',
         pulsing: true
       },
-      { 
-        step: '200 OK', 
+      {
+        step: '200 OK',
         label: '200 OK',
-        direction: 'backward', 
+        direction: 'backward',
         color: '#10b981', // 綠色 (2xx)
-        duration: 200,
+        duration: 400,
         icon: '←',
         statusCode: 200
       }
     ],
     finalState: 'completed',
-    totalDuration: 1500,
-    description: 'HTTP/HTTPS 請求回應',
+    totalDuration: 1400,
+    description: 'HTTP 請求回應（明文）',
     statusCodeColors: {
       '2xx': '#10b981', // 綠色
       '3xx': '#3b82f6', // 藍色
@@ -380,28 +371,26 @@ export const PROTOCOL_STATES = {
   // ICMP Ping
   'icmp-ping': {
     stages: [
-      { 
-        step: 'Echo Request', 
+      {
+        step: 'Echo Request',
         label: 'Ping...',
-        direction: 'forward', 
+        direction: 'forward',
         color: '#f8fafc', // 白色
-        duration: 50,
-        icon: '→',
-        speed: 2.0
+        duration: 800,
+        icon: '→'
       },
-      { 
-        step: 'Echo Reply', 
+      {
+        step: 'Echo Reply',
         label: 'Pong!',
-        direction: 'backward', 
-        color: '#f8fafc', 
-        duration: 50,
-        icon: '←',
-        speed: 2.0
+        direction: 'backward',
+        color: '#f8fafc',
+        duration: 800,
+        icon: '←'
       }
     ],
     finalState: 'completed',
     finalColor: '#10b981',
-    totalDuration: 100,
+    totalDuration: 1600,
     description: 'ICMP Ping 測試',
     successEffect: 'flash-green',
     showRTT: true
@@ -492,7 +481,7 @@ export const PROTOCOL_STATES = {
         step: 'FIN-Burst',
         label: 'FIN 洪水',
         direction: 'forward',
-        color: '#f97316', // 橙紅
+        color: '#dc2626', // 深紅（與 tcp-teardown 橘色 #f97316 區隔）
         duration: 250,
         icon: '⚡',
         blinking: true
@@ -501,14 +490,14 @@ export const PROTOCOL_STATES = {
         step: 'Overload',
         label: '強制關閉連線',
         direction: 'forward',
-        color: '#ef4444',
+        color: '#b91c1c',
         duration: 350,
         icon: '🔥',
         pulsing: true
       }
     ],
     finalState: 'attack',
-    finalColor: '#ef4444',
+    finalColor: '#dc2626',
     totalDuration: 600,
     description: 'FIN 洪水攻擊 — 強制終止連線',
     warningEffect: 'pulse-red',

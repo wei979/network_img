@@ -256,8 +256,7 @@ export class PacketParticleSystem {
    */
   _extractTcpFlags(packet) {
     if (!packet.headers?.tcp?.flags) return null
-    const flags = packet.headers.tcp.flags
-    return Array.isArray(flags) ? flags.join('|') : String(flags)
+    return String(packet.headers.tcp.flags)
   }
 
   /**
@@ -381,12 +380,19 @@ export class PacketParticleSystem {
         } else if (packet.headers?.tcp) {
           const flagsStr = tcpFlags || ''
 
-          if (flagsStr.includes('SYN')) {
-            color = '#22c55e' // SYN 綠色
-          } else if (flagsStr.includes('FIN') || flagsStr.includes('RST')) {
-            color = '#f59e0b' // FIN/RST 橙色
-          } else if (flagsStr.includes('URG') || flagsStr.includes('PSH')) {
-            color = '#ef4444' // URG/PSH 攻擊類 - 紅色
+          // RFC 793: SYN（client 發起）vs SYN|ACK（server 回應）語意相反，顏色區分
+          if (flagsStr.includes('SYN') && flagsStr.includes('ACK')) {
+            color = '#14b8a6' // SYN|ACK — 青綠色（server→client，backward）
+          } else if (flagsStr.includes('SYN')) {
+            color = '#22c55e' // 純 SYN — 綠色（client→server，forward）
+          } else if (flagsStr.includes('RST')) {
+            color = '#dc2626' // RST — 深紅色（強制中斷，與 FIN 正常關閉區分）
+          } else if (flagsStr.includes('FIN')) {
+            color = '#f59e0b' // FIN — 橙色（正常四次揮手）
+          } else if (flagsStr.includes('URG')) {
+            color = '#ef4444' // URG — 紅色（緊急指標，真正異常）
+          } else if (flagsStr.includes('PSH')) {
+            color = '#a78bfa' // PSH/PSH|ACK — 紫色（正常資料推送，非攻擊）
           }
         } else if (packet.headers?.udp) {
           color = '#a855f7' // UDP 紫色

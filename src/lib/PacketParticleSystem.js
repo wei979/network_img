@@ -38,6 +38,7 @@ export class PacketParticleSystem {
     this.isPlaying = true
     this.currentTime = 0 // 當前動畫時間（毫秒）
     this.duration = 0 // 總時長
+    this.realDurationSeconds = 0 // 實際 PCAP 捕獲時長（秒），供 UI 顯示
     this.lastUpdateTime = performance.now()
 
     // 解析連線 ID 以取得連線的起點和終點
@@ -80,8 +81,9 @@ export class PacketParticleSystem {
    *
    * 實現策略：
    * 1. 保留真實封包的相對時間比例
-   * 2. 將整個時間軸拉長到可觀察的長度（至少 20 秒）
-   * 3. 確保所有封包都有足夠的顯示時間
+   * 2. 動態最小時長：max(3s, 封包數 × 0.5s)，不同連線反映真實時長差異
+   * 3. 傳輸時間上限為封包間距的 70%，確保因果順序（A 結束後 B 才出現）
+   * 4. tail buffer 確保最後封包的顯示窗口完整在 [0, 1.0) 範圍內
    */
   _initializeTimeline() {
     if (this.packets.length === 0) {
@@ -100,13 +102,18 @@ export class PacketParticleSystem {
     // 真實時間跨度（秒）
     const realDurationSeconds = maxTime - minTime
 
+    // 共用常數（兩條路徑都使用相同語意）
+    const MIN_TRAVEL_RATIO = 0.04   // 傳輸時間的相對下限：總時長的 4%，確保動畫可見
+    const TAIL_BUFFER_FACTOR = 1.05 // tail buffer：最後封包傳輸時間再加 5%，避免顯示窗口截斷
+
     // 如果所有封包時間戳相同，使用等間隔模式
     if (realDurationSeconds === 0) {
       // 動態最小時長：每個封包 0.5s，整體至少 3s
       const minDurationSec = Math.max(3.0, this.packets.length * 0.5)
       this.duration = minDurationSec * 1000
-      const travelTime = minDurationSec * 0.04
+      this.realDurationSeconds = 0 // 所有時間戳相同，實際捕獲時長為 0
 
+      const travelTime = minDurationSec * MIN_TRAVEL_RATIO
       // 等間隔分布，除以 length（保留末端空間給 tail buffer）
       this.packets.forEach((packet, index) => {
         packet._normalizedTime = this.packets.length > 1
@@ -132,10 +139,10 @@ export class PacketParticleSystem {
 
       const stretchedIntervalSeconds = realIntervalSeconds * stretchFactor
 
-      // 傳輸時間上限為間距的 70%（確保因果順序：A 結束前 B 不會出現）
-      // 相對下限為總時長的 4%（確保動畫可見）；絕對上限 3s
+      // 傳輸時間上限為間距的 70%（確保因果順序：A 完成後 B 才觸發）
+      // 注意：此保證對近乎同時的封包（realInterval ≈ 0）不成立，此時由 MIN_TRAVEL_RATIO 下限接管
       const travelTime = Math.max(
-        stretchedDurationSeconds * 0.04,
+        stretchedDurationSeconds * MIN_TRAVEL_RATIO,
         Math.min(stretchedIntervalSeconds * 0.70, 3.0)
       )
       packet._travelTime = travelTime
@@ -143,7 +150,7 @@ export class PacketParticleSystem {
 
     // 加入 tail buffer：最後封包需要展示空間（超出 stretchedDuration 的部分）
     const lastTravelTime = this.packets[this.packets.length - 1]._travelTime
-    const totalSeconds = stretchedDurationSeconds + lastTravelTime * 1.05
+    const totalSeconds = stretchedDurationSeconds + lastTravelTime * TAIL_BUFFER_FACTOR
 
     // 壓縮 _normalizedTime 到 [0, normScale]，確保最後封包的顯示窗口在 1.0 前完整結束
     // normScale = stretchedDuration / totalSeconds，使最後封包的 normalizedTime < 1.0

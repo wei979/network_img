@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { PacketParticleSystem } from '../lib/PacketParticleSystem'
 
-// TCP 握手封包：SYN→SYN-ACK→ACK，時間跨度 0.24ms（會被拉長到 20s）
-// 歸一化後：SYN≈0.0, SYN-ACK≈0.5, ACK≈1.0
+// TCP 握手封包：SYN→SYN-ACK→ACK，時間跨度 0.24ms
+// 動態最小時長：max(3.0s, 3×0.5s) = 3.0s，加 tail buffer 後約 3.22s
+// 歸一化後（normScale ≈ 0.93）：SYN≈0.0, SYN-ACK≈0.466, ACK≈0.93
 function makeTcpHandshakePackets() {
   return [
     { timestamp: 0.000000, length: 60, headers: { tcp: { flags: 'SYN' } },
@@ -129,9 +130,12 @@ describe('PacketParticleSystem.getActiveParticles — wrap-around bug', () => {
     })
 
     const ackNorm = ps.packets[2]._normalizedTime
-    // normScale < 1.0, so ackNorm is in (0.8, 1.0) — not exactly 1.0
+    // normScale = stretchedDuration / totalSeconds = 3.0 / (3.0 + lastTravelTime * 1.05)
+    // For this fixture, lastTravelTime ≈ 0.21s → normScale ≈ 0.93 (deterministic)
     expect(ackNorm).toBeGreaterThan(0.8)
     expect(ackNorm).toBeLessThan(1.0)
+    // Verify relative ratio still holds: ackNorm = normScale * 1.0; synAckNorm = normScale * 0.5
+    expect(ps.packets[1]._normalizedTime / ackNorm).toBeCloseTo(0.5, 3)
 
     // Slightly after trigger → ACK should appear
     ps.currentTime = ps.duration * (ackNorm + 0.01)

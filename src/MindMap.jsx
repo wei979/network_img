@@ -2059,11 +2059,11 @@ export default function MindMap({ isLearningMode = false }) {
         }
       )
 
-      // 更新全局時間範圍以包含這個連線的封包
+      // 同步全局時間軸長度到封包系統的實際時長
+      // 必須無條件同步（而非只在更大時才更新），否則 scrubber 與封包動畫循環週期不一致
       const particleDuration = particleSystemRef.current.duration // 毫秒
-      if (particleDuration > globalDuration) {
+      if (particleDuration > 0) {
         setGlobalDuration(particleDuration)
-        // 同時更新全局時間戳範圍（使用封包的時間範圍）
         globalStartTimestamp.current = particleSystemRef.current.startTimestamp
         globalEndTimestamp.current = particleSystemRef.current.endTimestamp
       }
@@ -2084,6 +2084,28 @@ export default function MindMap({ isLearningMode = false }) {
       }
     }
   }, [connectionPackets, particleSpeed, isParticleAnimationPlaying])
+
+  // 取消選擇連線時還原全局時長回 timelines 計算值
+  // 防止粒子系統的時長殘留在 scrubber 上
+  useEffect(() => {
+    if (connectionPackets) return // 有選中連線時由粒子系統接管
+    if (!timelines.length) return
+    let minTime = Infinity
+    let maxTime = -Infinity
+    timelines.forEach(timeline => {
+      if (!Array.isArray(timeline.stages)) return
+      timeline.stages.forEach(stage => {
+        if (stage.startTime !== undefined) minTime = Math.min(minTime, stage.startTime)
+        if (stage.endTime !== undefined) maxTime = Math.max(maxTime, stage.endTime)
+      })
+    })
+    if (minTime === Infinity || maxTime === -Infinity) {
+      setGlobalDuration(10000)
+    } else {
+      const duration = (maxTime - minTime) * 1000
+      setGlobalDuration(duration > 0 ? duration : 1000)
+    }
+  }, [connectionPackets, timelines])
 
   // 時間軸控制函數
   // 全局時間軸控制（統一控制所有動畫）

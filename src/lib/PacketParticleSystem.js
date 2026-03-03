@@ -187,8 +187,8 @@ export class PacketParticleSystem {
 
     const globalProgress = globalDuration > 0 ? globalTime / globalDuration : 0
 
-    // 直接將全局進度映射到本連線的時間
-    this.currentTime = globalProgress * this.duration
+    // 直接將全局進度映射到本連線的時間（clamp 防止浮點誤差越界）
+    this.currentTime = Math.max(0, Math.min(this.duration, globalProgress * this.duration))
   }
 
   /**

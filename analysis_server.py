@@ -708,6 +708,34 @@ async def get_connection_packets(
     }
 
 
+def _analyze_pcap_sync(pcap_path: Path, session_dir: Path) -> Dict[str, Any]:
+    """Synchronous analysis pipeline — intended to run in a thread pool via asyncio.to_thread."""
+    analyzer = NetworkAnalyzer(str(pcap_path))
+    if not analyzer.load_packets():
+        message = analyzer.last_error or 'Failed to load packets'
+        raise ValueError(message)
+
+    analyzer.basic_statistics()
+    analyzer.detect_packet_loss()
+    analyzer.analyze_latency()
+    analyzer.detect_attacks()
+    analyzer.build_mind_map()
+    analyzer.generate_protocol_timelines()
+
+    analyzer.save_results(
+        output_file=str(session_dir / 'network_analysis_results.json'),
+        public_output_dir=str(session_dir),
+    )
+
+    return {
+        'packet_count': len(analyzer.packets),
+        'timeline_count': len(analyzer.protocol_timelines) if hasattr(analyzer, 'protocol_timelines') else 0,
+    }
+
+
+MAX_PCAP_SIZE = 50 * 1024 * 1024  # 50 MB
+
+
 @app.post('/api/analyze')
 async def analyze_capture(
     request: Request,
@@ -730,6 +758,9 @@ async def analyze_capture(
     if not data:
         raise HTTPException(status_code=400, detail='Upload is empty')
 
+    if len(data) > MAX_PCAP_SIZE:
+        raise HTTPException(status_code=413, detail='PCAP file too large (max 50 MB)')
+
     # Get session directory and clean up old files
     session_dir = get_session_data_dir(request)
 
@@ -746,49 +777,20 @@ async def analyze_capture(
     print(f"[DEBUG] File saved successfully")
 
     try:
-        # Run analysis and save results to session directory
-        print(f"[DEBUG] Creating NetworkAnalyzer...")
-        analyzer = NetworkAnalyzer(str(pcap_path))
-        print(f"[DEBUG] Loading packets...")
-        if not analyzer.load_packets():
-            message = analyzer.last_error or 'Failed to load packets'
-            raise ValueError(message)
-        print(f"[DEBUG] Loaded {len(analyzer.packets)} packets")
+        # Run blocking analysis in a thread pool so the event loop stays responsive
+        print(f"[DEBUG] Starting analysis in thread pool...")
+        analysis_result = await asyncio.to_thread(_analyze_pcap_sync, pcap_path, session_dir)
+        print(f"[DEBUG] Analysis complete: {analysis_result}")
 
-        print(f"[DEBUG] Running basic_statistics...")
-        analyzer.basic_statistics()
-        print(f"[DEBUG] Running detect_packet_loss...")
-        analyzer.detect_packet_loss()
-        print(f"[DEBUG] Running analyze_latency...")
-        analyzer.analyze_latency()
-        print(f"[DEBUG] Running detect_attacks...")
-        analyzer.detect_attacks()
-        print(f"[DEBUG] Running build_mind_map...")
-        analyzer.build_mind_map()
-        print(f"[DEBUG] Running generate_protocol_timelines...")
-        analyzer.generate_protocol_timelines()
-        print(f"[DEBUG] Generated {len(analyzer.protocol_timelines)} timelines")
-
-        # Save results to session directory
-        print(f"[DEBUG] Saving results to {session_dir}...")
-        analyzer.save_results(
-            output_file=str(session_dir / 'network_analysis_results.json'),
-            public_output_dir=str(session_dir),
-        )
-        print(f"[DEBUG] Results saved successfully")
-
-        result = {
+        return {
             'message': 'PCAP file analyzed successfully',
             'session_id': session_id,
-            'packet_count': len(analyzer.packets),
-            'timeline_count': len(analyzer.protocol_timelines) if hasattr(analyzer, 'protocol_timelines') else 0
+            **analysis_result,
         }
-        print(f"[DEBUG] Returning result: {result}")
-        return result
     except Exception as exc:
         import traceback
         error_detail = f"{type(exc).__name__}: {str(exc)}\n{traceback.format_exc()}"
-        print(f"ERROR in /api/analyze: {error_detail}")  # Print to console
+        print(f"ERROR in /api/analyze: {error_detail}")
         raise HTTPException(status_code=500, detail=f"{type(exc).__name__}: {str(exc)}") from exc
 
 

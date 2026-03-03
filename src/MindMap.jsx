@@ -976,6 +976,7 @@ export default function MindMap({ isLearningMode = false }) {
   const [renderStates, setRenderStates] = useState({})
   const rafRef = useRef(null)
   const lastTickRef = useRef(performance.now())
+  const lastUIUpdateRef = useRef(0)
   const fileInputRef = useRef(null)
 
   // 視圖與節點拖曳狀態
@@ -1724,7 +1725,7 @@ export default function MindMap({ isLearningMode = false }) {
     lastTickRef.current = performance.now()
 
     const tick = (timestamp) => {
-      const delta = timestamp - lastTickRef.current
+      const delta = Math.min(timestamp - lastTickRef.current, 100)
       lastTickRef.current = timestamp
 
       // 更新全局時間（統一時間軸）- 使用 ref 避免觸發重新渲染
@@ -1738,9 +1739,11 @@ export default function MindMap({ isLearningMode = false }) {
           globalTimeRef.current += globalDuration
         }
 
-        // 每 10 幀更新一次 UI 顯示（降低更新頻率）
-        if (Math.random() < 0.1) {
+        // 每 100ms 更新一次 UI 時間顯示（確定性節流，避免每幀 setState）
+        const nowMs = performance.now()
+        if (nowMs - lastUIUpdateRef.current > 100) {
           setGlobalTimeDisplay(globalTimeRef.current)
+          lastUIUpdateRef.current = nowMs
         }
       }
 
@@ -1753,17 +1756,16 @@ export default function MindMap({ isLearningMode = false }) {
           globalDuration
         )
 
-        // 更新時間資訊以觸發 UI 重新渲染（降低頻率）
-        const timeInfo = particleSystemRef.current.getTimeInfo()
+        // 更新時間資訊以觸發 UI 重新渲染（確定性節流）
         const globalProgress = globalDuration > 0 ? globalTimeRef.current / globalDuration : 0
-
-        // 降低 UI 更新頻率
-        if (Math.random() < 0.1) {
+        const nowMs2 = performance.now()
+        if (nowMs2 - lastUIUpdateRef.current > 100) {
           setParticleTimeInfo({
             current: (globalTimeRef.current / 1000).toFixed(2),
             total: (globalDuration / 1000).toFixed(2),
             progress: globalProgress
           })
+          lastUIUpdateRef.current = nowMs2
         }
 
         // 更新活躍粒子索引（用於側邊欄高亮同步）- 每幀都更新確保同步
@@ -2349,8 +2351,8 @@ export default function MindMap({ isLearningMode = false }) {
 
       {/* ========== 主要內容區域 ========== */}
       <div className="flex-1 overflow-auto">
-      <header className="mindmap-header px-8 pt-6">
-        <div className="max-w-6xl mx-auto flex flex-col gap-6">
+      <header className="mindmap-header px-6 pt-6">
+        <div className="flex flex-col gap-5">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
@@ -2403,33 +2405,35 @@ export default function MindMap({ isLearningMode = false }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            {/* 上傳按鈕 - Primary */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="upload-button inline-flex items-center gap-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="upload-button btn-primary inline-flex items-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
             >
               {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
               {uploading ? '正在上傳...' : '上傳 PCAP／PCAPNG'}
             </button>
 
+            {/* Reload 按鈕 - Ghost */}
             <button
               type="button"
               onClick={loadTimelines}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800/60"
+              className="btn-ghost inline-flex items-center gap-2 text-sm hover-lift"
             >
               <RefreshCcw className="w-4 h-4" />
               Reload
             </button>
 
-            {/* 暫停/播放按鈕 */}
+            {/* 暫停/播放按鈕 - 狀態切換 */}
             <button
               type="button"
               onClick={() => setIsPaused(!isPaused)}
-              className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium ${
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-300 hover-lift ${
                 isPaused
-                  ? 'border-green-500/40 bg-green-500/10 text-green-200 hover:bg-green-500/20'
-                  : 'border-amber-500/40 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20'
+                  ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/25'
+                  : 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/25'
               }`}
             >
               {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
@@ -2446,10 +2450,10 @@ export default function MindMap({ isLearningMode = false }) {
                     setIsPaused(true) // 進入焦點模式時自動暫停
                   }
                 }}
-                className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium ${
+                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-300 hover-lift ${
                   isFocusMode
-                    ? 'border-cyan-500/40 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20'
-                    : 'border-purple-500/40 bg-purple-500/10 text-purple-200 hover:bg-purple-500/20'
+                    ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-500/25'
+                    : 'bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-lg shadow-purple-500/25'
                 }`}
               >
                 {isFocusMode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -2481,15 +2485,15 @@ export default function MindMap({ isLearningMode = false }) {
         </div>
       </header>
 
-      <main className="px-8 pb-12">
-        <div className="max-w-6xl mx-auto mt-8 grid gap-6 lg:grid-cols-[2fr_1fr]">
-          <section className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6 backdrop-blur">
+      <main className="px-6 pb-8">
+        <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_320px]">
+          <section className="glass-card rounded-2xl p-6">
             {loading ? (
-              <div className="flex h-[480px] items-center justify-center">
+              <div className="flex h-[calc(100vh-260px)] min-h-[400px] items-center justify-center">
                 <Loader2 className="h-10 w-10 animate-spin text-slate-500" />
               </div>
             ) : connections.length === 0 ? (
-              <div className="flex h-[480px] items-center justify-center text-sm text-slate-500">
+              <div className="flex h-[calc(100vh-260px)] min-h-[400px] items-center justify-center text-sm text-slate-500">
                 目前沒有協定時間軸資料。請上傳 PCAP/PCAPNG 擷取檔開始分析。
               </div>
             ) : showBatchViewer && batchViewerConnection ? (
@@ -2533,7 +2537,7 @@ export default function MindMap({ isLearningMode = false }) {
                     <svg
                       viewBox="0 0 100 100"
                       preserveAspectRatio="xMidYMid meet"
-                      className="mindmap-svg-container w-full h-[480px] rounded-2xl"
+                      className="mindmap-svg-container w-full h-[calc(100vh-260px)] min-h-[400px] rounded-2xl"
                       style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}
                     >
                       <defs>
@@ -2860,7 +2864,7 @@ export default function MindMap({ isLearningMode = false }) {
                 <svg
                   ref={svgRef}
                   viewBox={`0 0 ${canvasSize} ${canvasSize}`}
-                  className="w-full h-[480px] text-slate-400"
+                  className="w-full h-[calc(100vh-260px)] min-h-[400px] text-slate-400"
                   onWheel={handleWheelZoom}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
@@ -3440,13 +3444,15 @@ export default function MindMap({ isLearningMode = false }) {
             )}
           </section>
 
-          <aside className="sidebar-timeline-list rounded-3xl border border-slate-800 bg-slate-900/40 p-6 backdrop-blur">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
-              <Activity className="w-4 h-4 text-cyan-300" />
-              時間軸串流列表
+          <aside className="sidebar-timeline-list glass-card rounded-2xl p-5">
+            <div className="flex items-center gap-2.5 text-sm font-semibold text-slate-100">
+              <div className="p-1.5 rounded-lg bg-cyan-500/20">
+                <Activity className="w-4 h-4 text-cyan-400" />
+              </div>
+              <span className="text-gradient-primary">時間軸串流列表</span>
             </div>
 
-            <div className="mt-4 space-y-3 max-h-[450px] overflow-y-auto pr-2">
+            <div className="mt-4 space-y-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
               {/* 連線列表 - 威脅分析已移至 BatchPacketViewer 統一顯示 */}
               {connections.map((connection) => {
                 const renderState = renderStates[connection.originalId] // 使用 originalId 匹配 timeline.id
@@ -3512,61 +3518,68 @@ export default function MindMap({ isLearningMode = false }) {
                         }
                       }
                     }}
-                    className={`sidebar-timeline-item rounded-lg border p-4 transition-all duration-300 cursor-pointer ${
+                    className={`sidebar-item rounded-xl p-4 transition-all duration-300 cursor-pointer hover-lift ${
                       isSelected
-                        ? 'border-cyan-400 bg-cyan-900/40 shadow-lg shadow-cyan-500/20 ring-2 ring-cyan-400/50'
+                        ? 'sidebar-item-selected animate-glow-pulse'
                         : isCompleted
-                          ? 'border-green-500/60 bg-green-900/20 hover:bg-green-900/30'
-                          : 'border-slate-700/60 bg-slate-900/40 hover:bg-slate-900/60'
+                          ? 'border-emerald-500/40 bg-emerald-500/5'
+                          : ''
                     }`}
                   >
-                    <div className="flex items-center justify-between text-xs text-slate-400">
-                      <span className="font-mono text-slate-300">{connection.id}</span>
-                      <div className="flex items-center gap-1">
+                    {/* 標題列 */}
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[11px] text-slate-400 truncate max-w-[140px]">{connection.id}</span>
+                      <div className={`protocol-badge ${
+                        protocolType?.includes('tcp') ? 'protocol-badge-tcp' :
+                        protocolType?.includes('udp') ? 'protocol-badge-udp' :
+                        protocolType?.includes('http') && !protocolType?.includes('https') ? 'protocol-badge-http' :
+                        protocolType?.includes('https') ? 'protocol-badge-https' :
+                        protocolType?.includes('dns') ? 'protocol-badge-dns' :
+                        protocolType?.includes('timeout') ? 'protocol-badge-timeout' :
+                        'protocol-badge-tcp'
+                      }`}>
                         {getProtocolIcon(connection.protocol, protocolType)}
-                        <span className={`font-semibold ${
-                          isCompleted ? 'text-green-300' : 'text-cyan-300'
-                        }`}>
-                          {(protocolType || protocol).toUpperCase()}
-                        </span>
+                        <span className="ml-1">{(protocolType || protocol).toUpperCase().replace('-', ' ')}</span>
                       </div>
                     </div>
 
-                    <div className="mt-3 space-y-2">
-                      <div className="flex items-center justify-between text-xs text-slate-400">
-                        <span>階段</span>
-                        <div className="flex items-center gap-1">
-                          {visualEffects.blinking && <span className="text-yellow-400">⚡</span>}
-                          {visualEffects.pulsing && <span className="text-blue-400">💫</span>}
-                          <span className={`${isCompleted ? 'text-green-200' : 'text-slate-200'}`}>
-                            {stageLabel} {isCompleted && '✓'}
+                    {/* 狀態區塊 */}
+                    <div className="mt-3 space-y-2.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-500">階段</span>
+                        <div className="flex items-center gap-1.5">
+                          {visualEffects.blinking && <span className="text-amber-400 animate-pulse">⚡</span>}
+                          {visualEffects.pulsing && <span className="text-cyan-400 animate-pulse">●</span>}
+                          <span className={`font-medium ${isCompleted ? 'text-emerald-400' : 'text-slate-200'}`}>
+                            {stageLabel}
+                            {isCompleted && <span className="ml-1 text-emerald-400">✓</span>}
                           </span>
                         </div>
                       </div>
-                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+
+                      {/* 進度條 */}
+                      <div className="progress-bar">
                         <div
-                          className={`h-full transition-all duration-300 ${
-                            isCompleted
-                              ? 'bg-gradient-to-r from-green-400 to-emerald-500'
-                              : 'bg-gradient-to-r from-cyan-400 to-blue-500'
-                          }`}
+                          className={`progress-bar-fill ${isCompleted ? '!bg-gradient-to-r !from-emerald-500 !to-green-400' : ''}`}
                           style={{ width: `${stageProgress}%` }}
                         />
                       </div>
-                      <div className="flex items-center justify-between text-xs text-slate-500">
-                        <span>往返延遲 (RTT)</span>
-                        <span>{connection.metrics?.rttMs ? `${connection.metrics.rttMs} ms` : '—'}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-slate-500">
-                        <span>封包數</span>
-                        <span>{connection.metrics?.packetCount ?? '—'}</span>
-                      </div>
-                      {protocolType && protocolType !== connection.protocol && (
-                        <div className="flex items-center justify-between text-xs text-slate-500">
-                          <span>協議類型</span>
-                          <span className="text-cyan-300">{protocolType}</span>
+
+                      {/* 指標數據 */}
+                      <div className="grid grid-cols-2 gap-2 pt-1">
+                        <div className="text-[10px]">
+                          <span className="text-slate-500">RTT</span>
+                          <span className="ml-2 font-mono text-slate-300">
+                            {connection.metrics?.rttMs ? `${connection.metrics.rttMs}ms` : '—'}
+                          </span>
                         </div>
-                      )}
+                        <div className="text-[10px] text-right">
+                          <span className="text-slate-500">封包</span>
+                          <span className="ml-2 font-mono text-slate-300">
+                            {connection.metrics?.packetCount ?? '—'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )

@@ -915,23 +915,43 @@ class NetworkAnalyzer:
         return timelines
 
     def detect_packet_loss(self):
-        """Detect basic packet loss indicators (retransmissions, sequence gaps)."""
+        """Detect basic packet loss indicators (retransmissions, sequence gaps).
+
+        Retransmission: sequence number moves backward in the 32-bit modular space,
+        excluding control-only packets (pure ACK with no payload and no SYN/FIN).
+
+        Sequence gap: the next observed sequence number is much higher than
+        expected based on the previous packet's payload size, indicating lost packets.
+        Both checks use modular arithmetic to handle 32-bit sequence wraparound.
+        """
         tcp_streams = defaultdict(list)
         packet_loss_indicators = []
 
+        _SEQ_MAX = 2 ** 32
+        _SEQ_HALF = _SEQ_MAX // 2
+
         for index, packet in enumerate(self.packets):
-            if packet.haslayer(TCP) and packet.haslayer(IP):
-                tcp_layer = packet[TCP]
-                ip_layer = packet[IP]
-                stream_id = f"{ip_layer.src}:{tcp_layer.sport}-{ip_layer.dst}:{tcp_layer.dport}"
-                tcp_streams[stream_id].append({
-                    'packet_index': index,
-                    'seq': tcp_layer.seq,
-                    'ack': tcp_layer.ack,
-                    'flags': tcp_layer.flags,
-                    'time': float(packet.time),
-                    'len': len(packet)
-                })
+            if not packet.haslayer(TCP) or not packet.haslayer(IP):
+                continue
+            tcp_layer = packet[TCP]
+            ip_layer = packet[IP]
+            flags = int(tcp_layer.flags)
+            syn = bool(flags & 0x02)
+            fin = bool(flags & 0x01)
+            # Actual TCP payload length from IP/TCP headers (handles variable TCP options)
+            ip_payload = ip_layer.len - (ip_layer.ihl * 4)
+            tcp_hdr = tcp_layer.dataofs * 4
+            data_len = max(0, ip_payload - tcp_hdr)
+            # SYN and FIN each consume one sequence number even without data
+            seq_advance = data_len + (1 if syn else 0) + (1 if fin else 0)
+
+            stream_id = f"{ip_layer.src}:{tcp_layer.sport}-{ip_layer.dst}:{tcp_layer.dport}"
+            tcp_streams[stream_id].append({
+                'packet_index': index,
+                'seq': tcp_layer.seq,
+                'time': float(packet.time),
+                'seq_advance': seq_advance,
+            })
 
         for stream_id, stream_packets in tcp_streams.items():
             if len(stream_packets) < 3:
@@ -939,27 +959,40 @@ class NetworkAnalyzer:
 
             stream_packets.sort(key=lambda item: item['time'])
 
-            seq_numbers = [entry['seq'] for entry in stream_packets]
-            for idx in range(1, len(seq_numbers)):
-                if seq_numbers[idx] <= seq_numbers[idx - 1]:
+            # Retransmission detection using 32-bit modular arithmetic
+            for idx in range(1, len(stream_packets)):
+                curr = stream_packets[idx]
+                prev = stream_packets[idx - 1]
+                # Skip control-only packets (pure ACK, no payload, no SYN/FIN)
+                if curr['seq_advance'] == 0:
+                    continue
+                # Positive modular diff means forward; > half means wrapped backward
+                diff = (curr['seq'] - prev['seq']) % _SEQ_MAX
+                if diff > _SEQ_HALF:
                     packet_loss_indicators.append({
                         'type': 'retransmission',
                         'stream': stream_id,
-                        'packet_index': stream_packets[idx]['packet_index'],
-                        'time': stream_packets[idx]['time']
+                        'packet_index': curr['packet_index'],
+                        'time': curr['time']
                     })
 
+            # Sequence gap detection: skip sender-side no-advance packets
             for idx in range(1, len(stream_packets)):
                 prev = stream_packets[idx - 1]
-                expected_seq = prev['seq'] + max(1, prev['len'] - 54)
-                actual_seq = stream_packets[idx]['seq']
-                if actual_seq > expected_seq + 1000:
+                curr = stream_packets[idx]
+                if prev['seq_advance'] == 0:
+                    continue  # Previous packet didn't advance seq, no gap to measure
+                expected_seq = (prev['seq'] + prev['seq_advance']) % _SEQ_MAX
+                actual_seq = curr['seq']
+                gap = (actual_seq - expected_seq) % _SEQ_MAX
+                # Gap is a forward jump of more than 1000 bytes (not wraparound)
+                if 0 < gap < _SEQ_HALF and gap > 1000:
                     packet_loss_indicators.append({
                         'type': 'sequence_gap',
                         'stream': stream_id,
-                        'packet_index': stream_packets[idx]['packet_index'],
-                        'time': stream_packets[idx]['time'],
-                        'gap_size': actual_seq - expected_seq
+                        'packet_index': curr['packet_index'],
+                        'time': curr['time'],
+                        'gap_size': gap
                     })
 
         self.analysis_results['packet_loss'] = packet_loss_indicators
@@ -999,11 +1032,13 @@ class NetworkAnalyzer:
                 connection_id = f"{ip_layer.src}:{tcp_layer.sport}-{ip_layer.dst}:{tcp_layer.dport}"
 
                 flags = int(tcp_layer.flags)
-                if flags == 0x02:  # SYN
+                is_syn = bool(flags & 0x02)
+                is_ack = bool(flags & 0x10)
+                if is_syn and not is_ack:  # SYN (ECN bits tolerated)
                     tcp_handshakes[connection_id] = {'syn_time': float(packet.time)}
-                elif flags == 0x12 and connection_id in tcp_handshakes:  # SYN-ACK
+                elif is_syn and is_ack and connection_id in tcp_handshakes:  # SYN-ACK
                     tcp_handshakes[connection_id]['syn_ack_time'] = float(packet.time)
-                elif flags == 0x10 and connection_id in tcp_handshakes:  # ACK
+                elif is_ack and not is_syn and connection_id in tcp_handshakes:  # ACK
                     handshake = tcp_handshakes[connection_id]
                     if 'syn_ack_time' in handshake:
                         total_time = float(packet.time) - handshake['syn_time']

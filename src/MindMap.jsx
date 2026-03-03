@@ -2085,10 +2085,11 @@ export default function MindMap({ isLearningMode = false }) {
     }
   }, [connectionPackets, particleSpeed, isParticleAnimationPlaying])
 
-  // 取消選擇連線時還原全局時長回 timelines 計算值
-  // 防止粒子系統的時長殘留在 scrubber 上
+  // 取消選擇連線時還原全局時長、時間戳 refs 和 scrubber 位置到 timelines 計算值
+  // 防止粒子系統的時長與絕對時間戳殘留，導致 scrubber 顯示 >100%
   useEffect(() => {
-    if (connectionPackets) return // 有選中連線時由粒子系統接管
+    // 有選中連線時由粒子系統接管，不干預
+    if (connectionPackets) return
     if (!timelines.length) return
     let minTime = Infinity
     let maxTime = -Infinity
@@ -2100,11 +2101,18 @@ export default function MindMap({ isLearningMode = false }) {
       })
     })
     if (minTime === Infinity || maxTime === -Infinity) {
+      globalStartTimestamp.current = 0
+      globalEndTimestamp.current = 10
       setGlobalDuration(10000)
     } else {
+      globalStartTimestamp.current = minTime
+      globalEndTimestamp.current = maxTime
       const duration = (maxTime - minTime) * 1000
       setGlobalDuration(duration > 0 ? duration : 1000)
     }
+    // 重置 scrubber 位置，避免殘留粒子系統的大時間值導致顯示 >100%
+    globalTimeRef.current = 0
+    setGlobalTimeDisplay(0)
   }, [connectionPackets, timelines])
 
   // 時間軸控制函數

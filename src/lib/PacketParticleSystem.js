@@ -322,26 +322,24 @@ export class PacketParticleSystem {
             // 反向：從 1 移動到 0
             particlePosition = Math.max(0, Math.min(1, 1.0 - travelProgress))
           }
-        } else if (progress < packetProgress && progress + 1.0 >= packetProgress + displayDuration) {
-          // 循環播放：如果當前進度在下一輪，且粒子應該顯示
+        } else if (packetProgress + displayDuration > 1.0
+                   && progress < (packetProgress + displayDuration - 1.0)) {
+          // 跨越邊界的循環補顯：僅當顯示視窗確實跨越 1.0 邊界時才觸發
+          // 正確條件：packetProgress + displayDuration > 1.0（視窗跨越邊界）
+          //           progress < (packetProgress + displayDuration - 1.0)（在下一輪的補顯範圍內）
+          //
+          // 舊條件：progress + 1.0 >= packetProgress + displayDuration
+          // 等價於：progress >= packetProgress + displayDuration - 1.0（對大多數封包幾乎恆成立）
+          // → 導致每個封包在其觸發點之前的全段時間內都觸發 wrap，使封包在一輪內重複出現多次
           shouldShow = true
           const adjustedProgress = progress + 1.0
           const travelProgress = (adjustedProgress - packetProgress) / displayDuration
 
           if (isForward) {
-            particlePosition = travelProgress
+            particlePosition = Math.max(0, Math.min(1, travelProgress))
           } else {
-            particlePosition = 1.0 - travelProgress
+            particlePosition = Math.max(0, Math.min(1, 1.0 - travelProgress))
           }
-
-          // 處理循環邊界並限制在 [0, 1] 範圍
-          while (particlePosition > 1.0) {
-            particlePosition = particlePosition - 1.0
-          }
-          while (particlePosition < 0) {
-            particlePosition = particlePosition + 1.0
-          }
-          particlePosition = Math.max(0, Math.min(1, particlePosition))
         }
       } else {
         // 非循環模式：只在封包時間點附近顯示

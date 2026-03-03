@@ -19,9 +19,11 @@ const COLOR_SYN_ACK = '#14b8a6'
 const COLOR_DEFAULT = '#60a5fa' // 純 ACK / 一般封包預設藍色
 
 describe('PacketParticleSystem._initializeTimeline', () => {
-  it('stretches short captures to at least 20 seconds', () => {
+  it('stretches short captures to a packet-count-aware minimum (not fixed 20s)', () => {
+    // 3 packets → MIN = max(3.0, 3×0.5) = 3.0s; plus tail buffer → duration slightly > 3s
     const ps = new PacketParticleSystem(makeTcpHandshakePackets(), null, { loop: true })
-    expect(ps.duration).toBeGreaterThanOrEqual(20000)
+    expect(ps.duration).toBeGreaterThanOrEqual(3000)
+    expect(ps.duration).toBeLessThan(20000) // no longer forced to 20s
   })
 
   it('assigns distinct normalizedTime values preserving temporal order', () => {
@@ -30,7 +32,9 @@ describe('PacketParticleSystem._initializeTimeline', () => {
     expect(times[0]).toBeLessThan(times[1])
     expect(times[1]).toBeLessThan(times[2])
     expect(times[0]).toBeCloseTo(0.0)
-    expect(times[1]).toBeCloseTo(0.5)
+    // With tail buffer, normScale < 1.0, so times[2] < 1.0.
+    // But relative ratios are preserved: times[1] / times[2] ≈ 0.5
+    expect(times[1] / times[2]).toBeCloseTo(0.5, 3)
   })
 })
 
@@ -114,27 +118,27 @@ describe('PacketParticleSystem.getActiveParticles — wrap-around bug', () => {
     expect(synAckParticles.length).toBeGreaterThan(0)
   })
 
-  it('ACK at normalizedTime=1.0 appears at start of cycle via wrap, absent mid-cycle', () => {
-    // ACK gets _normalizedTime = 1.0 (last packet at maxTime).
-    // Normal window [1.0, 1.0+displayDuration) is unreachable (progress is always < 1.0).
-    // Wrap branch: 1.0 + displayDuration > 1.0 is always true, so ACK wraps to the
-    // beginning of each cycle and shows during progress ∈ [0, displayDuration).
+  it('last packet normalizedTime is below 1.0 (tail buffer), appears only in its normal window', () => {
+    // With tail buffer: totalSeconds = stretchedDuration + lastTravelTime * 1.05
+    // normScale = stretchedDuration / totalSeconds < 1.0
+    // So the last packet's _normalizedTime = normScale * 1.0 < 1.0 — it no longer needs to wrap.
+    // Its full display window [ackNorm, ackNorm+displayDuration) fits within [0, 1.0).
     const ps = new PacketParticleSystem(makeTcpHandshakePackets(), null, {
       loop: true,
       connectionId: 'tcp-192.168.1.1-12345-10.0.0.1-80',
     })
 
     const ackNorm = ps.packets[2]._normalizedTime
-    expect(ackNorm).toBeCloseTo(1.0)
+    // normScale < 1.0, so ackNorm is in (0.8, 1.0) — not exactly 1.0
+    expect(ackNorm).toBeGreaterThan(0.8)
+    expect(ackNorm).toBeLessThan(1.0)
 
-    const ackDisplayDuration = ps.packets[2]._travelTime / (ps.duration / 1000)
+    // Slightly after trigger → ACK should appear
+    ps.currentTime = ps.duration * (ackNorm + 0.01)
+    const particlesAfter = ps.getActiveParticles().filter(p => p.color === COLOR_DEFAULT && p.index === 2)
+    expect(particlesAfter.length).toBeGreaterThan(0)
 
-    // Inside wrap window (progress = half of displayDuration) → ACK should appear
-    ps.currentTime = ps.duration * (ackDisplayDuration * 0.5)
-    const particlesWrapped = ps.getActiveParticles().filter(p => p.color === COLOR_DEFAULT && p.index === 2)
-    expect(particlesWrapped.length).toBeGreaterThan(0)
-
-    // Mid-cycle (past wrap window, before 1.0 normal window) → ACK absent
+    // Before trigger (mid-cycle) → ACK absent
     ps.currentTime = ps.duration * 0.5
     const particlesMid = ps.getActiveParticles().filter(p => p.color === COLOR_DEFAULT && p.index === 2)
     expect(particlesMid.length).toBe(0)
@@ -150,7 +154,10 @@ describe('PacketParticleSystem.getActiveParticles — wrap-around bug', () => {
     }]
     const ps = new PacketParticleSystem(packets, null, { loop: true })
     ps.packets[0]._normalizedTime = 0.97
-    ps.packets[0]._travelTime = 1.0 // 1s / 20s total → displayDuration = 0.05
+    ps.packets[0]._travelTime = 1.0
+    // Fix ps.duration to 20s so displayDuration = 1.0 / 20.0 = 0.05
+    // (wrap window: [0, 0.02); outside window: 0.04 > 0.02 → absent)
+    ps.duration = 20000
 
     // Inside the wrap window (0.0 → 0.02) → should show
     ps.currentTime = ps.duration * 0.01

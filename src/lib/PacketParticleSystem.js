@@ -102,48 +102,58 @@ export class PacketParticleSystem {
 
     // 如果所有封包時間戳相同，使用等間隔模式
     if (realDurationSeconds === 0) {
-      this.duration = 20000 // 拉長到 20 秒
+      // 動態最小時長：每個封包 0.5s，整體至少 3s
+      const minDurationSec = Math.max(3.0, this.packets.length * 0.5)
+      this.duration = minDurationSec * 1000
+      const travelTime = minDurationSec * 0.04
 
-      // 等間隔分布所有封包
+      // 等間隔分布，除以 length（保留末端空間給 tail buffer）
       this.packets.forEach((packet, index) => {
         packet._normalizedTime = this.packets.length > 1
-          ? index / (this.packets.length - 1)
+          ? index / this.packets.length
           : 0
-        packet._travelTime = 0.5 // 每個封包 500ms 傳輸時間
+        packet._travelTime = travelTime
       })
       return
     }
 
     // === 關鍵：等比例拉長時間軸 ===
-    // 目標拉長倍數：確保拉長後的時長至少 20 秒
-    const MIN_STRETCHED_DURATION_SECONDS = 20
-    const stretchFactor = Math.max(1, MIN_STRETCHED_DURATION_SECONDS / realDurationSeconds)
-
-    // 拉長後的總時長（毫秒）
+    // 動態最小時長：每個封包 0.5s，整體至少 3s（保留真實比例差異）
+    const MIN_DURATION_SECONDS = Math.max(3.0, this.packets.length * 0.5)
+    const stretchFactor = Math.max(1, MIN_DURATION_SECONDS / realDurationSeconds)
     const stretchedDurationSeconds = realDurationSeconds * stretchFactor
-    this.duration = stretchedDurationSeconds * 1000
 
-    // 為每個封包計算歸一化時間 (0-1) 和拉長後的傳輸時間
+    // 第一遍：計算每個封包的傳輸時間（_travelTime）
     this.packets.forEach((packet, index) => {
-      // 歸一化時間：保持相對位置不變（0-1）
-      packet._normalizedTime = realDurationSeconds > 0
-        ? (packet.timestamp - this.startTimestamp) / realDurationSeconds
-        : 0
-
-      // 計算到下一個封包的真實時間間隔（秒）
       const nextPacket = this.packets[index + 1]
       const realIntervalSeconds = nextPacket
         ? nextPacket.timestamp - packet.timestamp
         : realDurationSeconds * 0.1 // 最後一個封包使用總時長的 10%
 
-      // 拉長後的間隔時間
       const stretchedIntervalSeconds = realIntervalSeconds * stretchFactor
 
-      // 傳輸時間：使用拉長後間隔的 30%，確保有足夠的間隙
-      // 最小 0.3 秒，最大 2 秒
-      const travelTime = Math.max(0.3, Math.min(stretchedIntervalSeconds * 0.3, 2.0))
+      // 傳輸時間上限為間距的 70%（確保因果順序：A 結束前 B 不會出現）
+      // 相對下限為總時長的 4%（確保動畫可見）；絕對上限 3s
+      const travelTime = Math.max(
+        stretchedDurationSeconds * 0.04,
+        Math.min(stretchedIntervalSeconds * 0.70, 3.0)
+      )
       packet._travelTime = travelTime
     })
+
+    // 加入 tail buffer：最後封包需要展示空間（超出 stretchedDuration 的部分）
+    const lastTravelTime = this.packets[this.packets.length - 1]._travelTime
+    const totalSeconds = stretchedDurationSeconds + lastTravelTime * 1.05
+
+    // 壓縮 _normalizedTime 到 [0, normScale]，確保最後封包的顯示窗口在 1.0 前完整結束
+    // normScale = stretchedDuration / totalSeconds，使最後封包的 normalizedTime < 1.0
+    const normScale = stretchedDurationSeconds / totalSeconds
+    this.packets.forEach((packet) => {
+      packet._normalizedTime = normScale * (packet.timestamp - this.startTimestamp) / realDurationSeconds
+    })
+
+    this.duration = totalSeconds * 1000
+    this.realDurationSeconds = realDurationSeconds // 供 UI 顯示實際捕獲時長
   }
 
   /**

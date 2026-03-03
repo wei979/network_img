@@ -236,21 +236,23 @@ export default function TutorialOverlay({
       {/* 教學提示卡片 */}
       <div
         ref={cardRef}
-        className="absolute w-80 bg-slate-800/95 backdrop-blur-sm rounded-xl border border-cyan-500/50 shadow-2xl pointer-events-auto"
+        className="absolute w-[340px] glass-card rounded-2xl border border-cyan-500/30 shadow-2xl shadow-cyan-500/10 pointer-events-auto animate-fade-in-scale"
         style={tooltipStyle}
       >
         {/* 卡片標題列 */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-          <div className="flex items-center gap-2">
-            <Lightbulb className="w-4 h-4 text-yellow-400" />
-            <span className="text-xs text-cyan-400 font-semibold">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-yellow-500/20 to-amber-500/10 border border-yellow-500/30">
+              <Lightbulb className="w-4 h-4 text-yellow-400" />
+            </div>
+            <span className="text-sm text-cyan-400 font-semibold tracking-wide">
               步驟 {stepIndex + 1} / {totalSteps}
             </span>
           </div>
           {onClose && (
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-white transition-colors"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-all"
             >
               <X className="w-4 h-4" />
             </button>
@@ -258,40 +260,40 @@ export default function TutorialOverlay({
         </div>
 
         {/* 卡片內容 */}
-        <div className="p-4">
+        <div className="p-5">
           {/* 課節標題 */}
           {lessonTitle && (
-            <div className="text-xs text-slate-400 mb-1">{lessonTitle}</div>
+            <div className="text-xs text-slate-400 mb-1.5 font-medium">{lessonTitle}</div>
           )}
 
           {/* 步驟標題 */}
-          <h3 className="text-lg font-bold text-white mb-2">{step.title}</h3>
+          <h3 className="text-xl font-bold text-white mb-3 leading-tight">{step.title}</h3>
 
           {/* 步驟說明 */}
-          <p className="text-sm text-slate-300 mb-4 leading-relaxed">{step.content}</p>
+          <p className="text-sm text-slate-300 mb-5 leading-relaxed">{step.content}</p>
 
           {/* 提示訊息 */}
           {step.hint && (
-            <div className="flex items-start gap-2 mb-4 p-2 bg-slate-700/50 rounded-lg">
-              <span className="text-yellow-400 mt-0.5">💡</span>
-              <p className="text-xs text-slate-400">{step.hint}</p>
+            <div className="flex items-start gap-3 mb-5 p-3 bg-gradient-to-r from-yellow-500/10 to-amber-500/5 rounded-xl border border-yellow-500/20">
+              <span className="text-yellow-400 mt-0.5 text-lg">💡</span>
+              <p className="text-xs text-slate-300 leading-relaxed">{step.hint}</p>
             </div>
           )}
 
           {/* 步驟類型標籤 */}
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-2">
             {isActionStep && (
-              <span className="px-2 py-0.5 text-xs bg-green-600/30 text-green-300 rounded-full">
+              <span className="px-3 py-1 text-xs font-medium bg-gradient-to-r from-green-500/20 to-emerald-500/10 text-green-300 rounded-lg border border-green-500/30">
                 👆 操作步驟
               </span>
             )}
             {isObserveStep && (
-              <span className="px-2 py-0.5 text-xs bg-blue-600/30 text-blue-300 rounded-full">
+              <span className="px-3 py-1 text-xs font-medium bg-gradient-to-r from-blue-500/20 to-cyan-500/10 text-blue-300 rounded-lg border border-blue-500/30">
                 👁 觀察步驟
               </span>
             )}
             {isTheoryStep && (
-              <span className="px-2 py-0.5 text-xs bg-purple-600/30 text-purple-300 rounded-full">
+              <span className="px-3 py-1 text-xs font-medium bg-gradient-to-r from-purple-500/20 to-pink-500/10 text-purple-300 rounded-lg border border-purple-500/30">
                 📖 理論課
               </span>
             )}
@@ -299,15 +301,15 @@ export default function TutorialOverlay({
         </div>
 
         {/* 卡片底部按鈕 */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-slate-700 bg-slate-800/50 rounded-b-xl">
+        <div className="flex items-center justify-between px-5 py-4 border-t border-white/5 bg-black/20 rounded-b-2xl">
           {/* 左側：上一步 */}
           <button
             onClick={onPrev}
             disabled={stepIndex === 0}
-            className={`flex items-center gap-1 text-sm transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
               stepIndex === 0
                 ? 'text-slate-600 cursor-not-allowed'
-                : 'text-slate-400 hover:text-white'
+                : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
           >
             <ChevronLeft className="w-4 h-4" />
@@ -319,7 +321,7 @@ export default function TutorialOverlay({
             {hasTheoryComponent && (
               <button
                 onClick={() => onShowTheory?.(step.theoryComponent)}
-                className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-sm rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-purple-500/25 transition-all hover-lift"
               >
                 <BookOpen className="w-4 h-4" />
                 查看原理
@@ -327,7 +329,7 @@ export default function TutorialOverlay({
             )}
             <button
               onClick={onSkip}
-              className="flex items-center gap-1 text-sm text-slate-400 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
             >
               <SkipForward className="w-4 h-4" />
               跳過
@@ -337,7 +339,7 @@ export default function TutorialOverlay({
           {/* 右側：下一步 */}
           <button
             onClick={onNext}
-            className="flex items-center gap-1 px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white text-sm rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-cyan-500/25 transition-all hover-lift"
           >
             下一步
             <ChevronRight className="w-4 h-4" />
@@ -346,16 +348,16 @@ export default function TutorialOverlay({
       </div>
 
       {/* 進度指示器 */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-1.5 pointer-events-none">
+      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center gap-2 pointer-events-none glass-card px-4 py-2.5 rounded-full">
         {Array.from({ length: totalSteps }).map((_, i) => (
           <div
             key={i}
-            className={`w-2 h-2 rounded-full transition-all duration-300 ${
+            className={`h-2 rounded-full transition-all duration-500 ${
               i < stepIndex
-                ? 'bg-cyan-400'
+                ? 'w-2 bg-gradient-to-r from-cyan-400 to-emerald-400 shadow-sm shadow-cyan-500/50'
                 : i === stepIndex
-                  ? 'bg-cyan-400 w-6'
-                  : 'bg-slate-600'
+                  ? 'w-8 bg-gradient-to-r from-cyan-400 to-blue-400 shadow-md shadow-cyan-500/40 animate-pulse'
+                  : 'w-2 bg-slate-600/50'
             }`}
           />
         ))}

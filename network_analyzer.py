@@ -190,12 +190,14 @@ class NetworkAnalyzer:
         udp_transfers = self._extract_udp_transfers()
         http_requests = self._detect_http_requests()
         timeouts = self._detect_timeouts()
+        icmp_pings = self._extract_icmp_pings()
 
         timelines.extend(tcp_handshakes)
         timelines.extend(tcp_teardowns)
         timelines.extend(udp_transfers)
         timelines.extend(http_requests)
         timelines.extend(timeouts)
+        timelines.extend(icmp_pings)
 
         # Fallback: 如果沒有檢測到任何特定協議，使用通用 TCP 連線檢測
         if len(timelines) == 0 and len(self.packets) > 0:
@@ -250,35 +252,64 @@ class NetworkAnalyzer:
                     syn_ack_time = info['syn_ack_time']
                     ack_time = ts
 
-                    timeline = {
-                        'id': f"tcp-{client_key[0]}-{client_key[1]}-{client_key[2]}-{client_key[3]}",
-                        'protocol': 'tcp',
-                        'protocolType': 'tcp-handshake',  # 明確標示為 TCP 握手
-                        'startEpochMs': int(syn_time * 1000),
-                        'endEpochMs': int(ack_time * 1000),
-                        'stages': [
+                    is_dns_tcp = (client_key[3] == 53)
+                    d1 = max(800, int((syn_ack_time - syn_time) * 1000))
+                    d2 = max(800, int((ack_time - syn_ack_time) * 1000))
+                    if is_dns_tcp:
+                        stages = [
+                            {
+                                'key': 'query',
+                                'label': 'DNS Query',
+                                'direction': 'forward',
+                                'durationMs': d1,
+                                'packetRefs': [info['syn_packet']]
+                            },
+                            {
+                                'key': 'resolving',
+                                'label': 'Resolving...',
+                                'direction': 'wait',
+                                'durationMs': d2,
+                                'packetRefs': [info.get('syn_ack_packet', info['syn_packet'])]
+                            },
+                            {
+                                'key': 'response',
+                                'label': 'DNS Response',
+                                'direction': 'backward',
+                                'durationMs': max(800, 1),
+                                'packetRefs': [index]
+                            }
+                        ]
+                    else:
+                        stages = [
                             {
                                 'key': 'syn',
                                 'label': 'SYN Sent',
                                 'direction': 'forward',
-                                'durationMs': max(800, int((syn_ack_time - syn_time) * 1000)),  # 最小 800ms
+                                'durationMs': d1,
                                 'packetRefs': [info['syn_packet']]
                             },
                             {
                                 'key': 'syn-ack',
                                 'label': 'SYN-ACK Received',
                                 'direction': 'backward',
-                                'durationMs': max(800, int((ack_time - syn_ack_time) * 1000)),  # 最小 800ms
+                                'durationMs': d2,
                                 'packetRefs': [info.get('syn_ack_packet', info['syn_packet'])]
                             },
                             {
                                 'key': 'ack',
                                 'label': 'ACK Confirmed',
                                 'direction': 'forward',
-                                'durationMs': max(800, 1),  # 最小 800ms
+                                'durationMs': max(800, 1),
                                 'packetRefs': [index]
                             }
-                        ],
+                        ]
+                    timeline = {
+                        'id': f"tcp-{client_key[0]}-{client_key[1]}-{client_key[2]}-{client_key[3]}",
+                        'protocol': 'dns' if is_dns_tcp else 'tcp',
+                        'protocolType': 'dns-query' if is_dns_tcp else 'tcp-handshake',
+                        'startEpochMs': int(syn_time * 1000),
+                        'endEpochMs': int(ack_time * 1000),
+                        'stages': stages,
                         'metrics': {
                             'rttMs': max(1, int((ack_time - syn_time) * 1000)),
                             'packetCount': 3
@@ -286,6 +317,66 @@ class NetworkAnalyzer:
                     }
                     timelines.append(timeline)
                     handshakes.pop(client_key, None)
+
+        return timelines
+
+    def _extract_icmp_pings(self):
+        """偵測 ICMP Echo Request (type 8) / Echo Reply (type 0) 配對，產出 icmp-ping timeline。"""
+        timelines = []
+        pending = {}  # key: (icmp.id, icmp.seq, src_ip, dst_ip) -> request info
+
+        for index, packet in enumerate(self.packets):
+            if not packet.haslayer(IP) or not packet.haslayer(ICMP):
+                continue
+            ip = packet[IP]
+            icmp = packet[ICMP]
+            ts = float(packet.time)
+
+            if icmp.type == 8:  # Echo Request
+                pair_key = (icmp.id, icmp.seq, ip.src, ip.dst)
+                pending[pair_key] = {
+                    'request_time': ts,
+                    'request_index': index,
+                    'src_ip': ip.src,
+                    'dst_ip': ip.dst,
+                }
+            elif icmp.type == 0:  # Echo Reply — reverse direction to find the request
+                pair_key = (icmp.id, icmp.seq, ip.dst, ip.src)
+                info = pending.pop(pair_key, None)
+                if info is None:
+                    continue
+                rtt_ms = (ts - info['request_time']) * 1000
+                half_ms = max(800, int(rtt_ms * 0.5))
+                timelines.append({
+                    'id': f"icmp-{info['src_ip']}-{icmp.seq}-{info['dst_ip']}-0",
+                    'protocol': 'icmp',
+                    'protocolType': 'icmp-ping',
+                    'startEpochMs': int(info['request_time'] * 1000),
+                    'endEpochMs': int(ts * 1000),
+                    'stages': [
+                        {
+                            'key': 'echo-request',
+                            'label': 'Echo Request',
+                            'direction': 'forward',
+                            'durationMs': half_ms,
+                            'packetRefs': [info['request_index']],
+                        },
+                        {
+                            'key': 'echo-reply',
+                            'label': f'Echo Reply ({rtt_ms:.1f}ms)',
+                            'direction': 'backward',
+                            'durationMs': half_ms,
+                            'packetRefs': [index],
+                        },
+                    ],
+                    'metrics': {
+                        'rttMs': round(rtt_ms, 2),
+                        'packetCount': 2,
+                    },
+                    'options': {
+                        'rttMs': round(rtt_ms, 2),
+                    },
+                })
 
         return timelines
 

@@ -84,81 +84,72 @@ export const PROTOCOL_STATES = {
   // DNS 查詢
   'dns-query': {
     stages: [
-      { 
-        step: 'Query', 
+      {
+        step: 'Query',
         label: 'DNS 查詢中',
-        direction: 'forward', 
+        direction: 'forward',
         color: '#8b5cf6', // 紫色
-        duration: 100,
+        duration: 400,
         icon: '→'
       },
-      { 
-        step: 'Resolving', 
+      {
+        step: 'Resolving',
         label: '解析中...',
-        direction: 'wait', 
-        color: '#8b5cf6', 
-        duration: 200,
+        direction: 'wait',
+        color: '#8b5cf6',
+        duration: 800,
         icon: '⟳',
         spinning: true
       },
-      { 
-        step: 'Response', 
+      {
+        step: 'Response',
         label: '解析成功',
-        direction: 'backward', 
-        color: '#8b5cf6', 
-        duration: 100,
+        direction: 'backward',
+        color: '#8b5cf6',
+        duration: 400,
         icon: '←'
       }
     ],
     finalState: 'resolved',
     finalColor: '#10b981',
-    totalDuration: 400,
+    totalDuration: 1600,
     description: 'DNS 域名解析查詢',
     successEffect: 'flash-green' // 成功時閃爍綠光
   },
 
-  // HTTP/HTTPS 請求
+  // HTTP 請求（明文，port 80）
   'http-request': {
     stages: [
-      { 
-        step: 'TLS Handshake', 
-        label: 'TLS 握手',
-        direction: 'both', 
-        color: '#fbbf24', // 金色
-        duration: 800,
-        icon: '⇄',
-        isSecure: true
-      },
-      { 
-        step: 'GET', 
+      {
+        step: 'Request',
         label: '發送請求',
-        direction: 'forward', 
+        direction: 'forward',
         color: '#06b6d4', // 藍色
-        duration: 200,
+        duration: 400,
         icon: '→'
       },
-      { 
-        step: 'Processing', 
+      {
+        step: 'Processing',
         label: '等待回應',
-        direction: 'wait', 
-        color: '#06b6d4', 
-        duration: 300,
+        direction: 'wait',
+        color: '#06b6d4',
+        duration: 600,
         icon: '⋯',
         pulsing: true
       },
-      { 
-        step: '200 OK', 
+      {
+        step: '200 OK',
         label: '200 OK',
-        direction: 'backward', 
+        direction: 'backward',
         color: '#10b981', // 綠色 (2xx)
-        duration: 200,
+        duration: 400,
         icon: '←',
         statusCode: 200
       }
     ],
     finalState: 'completed',
-    totalDuration: 1500,
-    description: 'HTTP/HTTPS 請求回應',
+    totalDuration: 1400,
+    description: 'HTTP 請求回應（明文）',
     statusCodeColors: {
       '2xx': '#10b981', // 綠色
       '3xx': '#3b82f6', // 藍色
@@ -380,28 +371,26 @@ export const PROTOCOL_STATES = {
   // ICMP Ping
   'icmp-ping': {
     stages: [
-      { 
-        step: 'Echo Request', 
+      {
+        step: 'Echo Request',
         label: 'Ping...',
-        direction: 'forward', 
+        direction: 'forward',
         color: '#f8fafc', // 白色
-        duration: 50,
-        icon: '→',
-        speed: 2.0
+        duration: 800,
+        icon: '→'
       },
-      { 
-        step: 'Echo Reply', 
+      {
+        step: 'Echo Reply',
         label: 'Pong!',
-        direction: 'backward', 
-        color: '#f8fafc', 
-        duration: 50,
-        icon: '←',
-        speed: 2.0
+        direction: 'backward',
+        color: '#f8fafc',
+        duration: 800,
+        icon: '←'
       }
     ],
     finalState: 'completed',
     finalColor: '#10b981',
-    totalDuration: 100,
+    totalDuration: 1600,
     description: 'ICMP Ping 測試',
     successEffect: 'flash-green',
     showRTT: true
@@ -410,29 +399,29 @@ export const PROTOCOL_STATES = {
   // SSH/TLS 加密連線
   'ssh-secure': {
     stages: [
-      { 
-        step: 'Handshake', 
+      {
+        step: 'Handshake',
         label: '加密握手中',
-        direction: 'both', 
+        direction: 'both',
         color: '#fbbf24', // 金色
         duration: 1000,
         icon: '🔒',
         secure: true,
         blinking: true
       },
-      { 
-        step: 'Established', 
+      {
+        step: 'Established',
         label: '建立安全通道',
-        direction: 'none', 
-        color: '#10b981', 
+        direction: 'none',
+        color: '#10b981',
         duration: 500,
         icon: '🔐'
       },
-      { 
-        step: 'Transfer', 
+      {
+        step: 'Transfer',
         label: '加密傳輸中',
-        direction: 'both', 
-        color: '#10b981', 
+        direction: 'both',
+        color: '#10b981',
         duration: 2000,
         icon: '🛡️',
         encrypted: true
@@ -444,6 +433,270 @@ export const PROTOCOL_STATES = {
     description: 'SSH/TLS 安全連線',
     connectionStyle: 'encrypted', // 帶有加密圖案的線條
     securityLevel: 'high'
+  },
+
+  // SYN Flood 攻擊 — 大量 SYN 不完成握手
+  'syn-flood': {
+    stages: [
+      {
+        step: 'SYN-Burst',
+        label: 'SYN 洪水',
+        direction: 'forward',
+        color: '#ef4444', // 紅色
+        duration: 200,
+        icon: '⚡',
+        blinking: true
+      },
+      {
+        step: 'No-ACK',
+        label: '不回覆 ACK',
+        direction: 'wait',
+        color: '#dc2626', // 深紅
+        duration: 300,
+        icon: '✗',
+        pulsing: true
+      },
+      {
+        step: 'Overload',
+        label: '連線佇列溢位',
+        direction: 'forward',
+        color: '#b91c1c',
+        duration: 200,
+        icon: '🔥',
+        blinking: true
+      }
+    ],
+    finalState: 'attack',
+    finalColor: '#ef4444',
+    totalDuration: 700,
+    description: 'SYN 洪水攻擊 — 耗盡半開連線資源',
+    warningEffect: 'pulse-red',
+    isAttack: true
+  },
+
+  // FIN Flood 攻擊 — 大量 FIN 封包
+  'fin-flood': {
+    stages: [
+      {
+        step: 'FIN-Burst',
+        label: 'FIN 洪水',
+        direction: 'forward',
+        color: '#dc2626', // 深紅（與 tcp-teardown 橘色 #f97316 區隔）
+        duration: 250,
+        icon: '⚡',
+        blinking: true
+      },
+      {
+        step: 'Overload',
+        label: '強制關閉連線',
+        direction: 'forward',
+        color: '#b91c1c',
+        duration: 350,
+        icon: '🔥',
+        pulsing: true
+      }
+    ],
+    finalState: 'attack',
+    finalColor: '#dc2626',
+    totalDuration: 600,
+    description: 'FIN 洪水攻擊 — 強制終止連線',
+    warningEffect: 'pulse-red',
+    isAttack: true
+  },
+
+  // TCP Flood 攻擊 — 通用 TCP 洪水
+  'tcp-flood': {
+    stages: [
+      {
+        step: 'Burst',
+        label: 'TCP 洪水',
+        direction: 'forward',
+        color: '#dc2626',
+        duration: 200,
+        icon: '⚡',
+        blinking: true
+      },
+      {
+        step: 'Flooding',
+        label: '洪水攻擊中',
+        direction: 'forward',
+        color: '#b91c1c',
+        duration: 300,
+        icon: '💥',
+        pulsing: true
+      },
+      {
+        step: 'Overload',
+        label: '目標過載',
+        direction: 'forward',
+        color: '#7f1d1d',
+        duration: 200,
+        icon: '🔥',
+        blinking: true
+      }
+    ],
+    finalState: 'attack',
+    finalColor: '#dc2626',
+    totalDuration: 700,
+    description: 'TCP 洪水攻擊 — 高頻封包癱瘓目標',
+    warningEffect: 'pulse-red',
+    isAttack: true
+  },
+
+  // ACK Flood 攻擊 — 大量純 ACK 封包
+  'ack-flood': {
+    stages: [
+      {
+        step: 'ACK-Burst',
+        label: 'ACK 洪水',
+        direction: 'forward',
+        color: '#dc2626', // 深紅
+        duration: 200,
+        icon: '⚡',
+        blinking: true
+      },
+      {
+        step: 'Flood',
+        label: '洪水攻擊中',
+        direction: 'forward',
+        color: '#b91c1c',
+        duration: 350,
+        icon: '💥',
+        pulsing: true
+      },
+      {
+        step: 'Overload',
+        label: '連線佇列溢位',
+        direction: 'forward',
+        color: '#7f1d1d',
+        duration: 200,
+        icon: '🔥',
+        blinking: true
+      }
+    ],
+    finalState: 'attack',
+    finalColor: '#dc2626',
+    totalDuration: 750,
+    description: 'ACK 洪水攻擊 — 大量純 ACK 封包耗盡資源',
+    warningEffect: 'pulse-red',
+    isAttack: true
+  },
+
+  // RST Flood 攻擊 — 大量 RST 封包強制重置連線
+  'rst-flood': {
+    stages: [
+      {
+        step: 'RST-Burst',
+        label: 'RST 洪水',
+        direction: 'forward',
+        color: '#f43f5e', // 玫紅
+        duration: 200,
+        icon: '⚡',
+        blinking: true
+      },
+      {
+        step: 'Reset',
+        label: '強制重置連線',
+        direction: 'forward',
+        color: '#e11d48',
+        duration: 350,
+        icon: '✗',
+        pulsing: true
+      },
+      {
+        step: 'Overload',
+        label: '連線耗盡',
+        direction: 'forward',
+        color: '#be123c',
+        duration: 200,
+        icon: '🔥',
+        blinking: true
+      }
+    ],
+    finalState: 'attack',
+    finalColor: '#f43f5e',
+    totalDuration: 750,
+    description: 'RST 洪水攻擊 — 強制終止大量連線',
+    warningEffect: 'pulse-red',
+    isAttack: true
+  },
+
+  // ACK+FIN 複合 Flag 攻擊
+  'ack-fin-flood': {
+    stages: [
+      {
+        step: 'ACK-FIN-Burst',
+        label: 'ACK+FIN 複合攻擊',
+        direction: 'forward',
+        color: '#9f1239', // 深玫紅
+        duration: 200,
+        icon: '⚡',
+        blinking: true
+      },
+      {
+        step: 'Flood',
+        label: '複合旗標洪水',
+        direction: 'forward',
+        color: '#881337',
+        duration: 400,
+        icon: '💥',
+        pulsing: true
+      },
+      {
+        step: 'Overload',
+        label: '連線狀態混亂',
+        direction: 'forward',
+        color: '#4c0519',
+        duration: 200,
+        icon: '🔥',
+        blinking: true
+      }
+    ],
+    finalState: 'attack',
+    finalColor: '#9f1239',
+    totalDuration: 800,
+    description: 'ACK+FIN 複合旗標攻擊 — 混淆 TCP 狀態機導致連線異常終止',
+    warningEffect: 'pulse-red',
+    isAttack: true
+  },
+
+  // URG+PSH+FIN 複合 Flag 攻擊
+  'urg-psh-fin-flood': {
+    stages: [
+      {
+        step: 'Multi-Flag',
+        label: 'URG+PSH+FIN 攻擊',
+        direction: 'forward',
+        color: '#9f1239', // 深玫紅
+        duration: 200,
+        icon: '⚡',
+        blinking: true
+      },
+      {
+        step: 'Flood',
+        label: '複合旗標洪水',
+        direction: 'forward',
+        color: '#881337',
+        duration: 400,
+        icon: '💥',
+        pulsing: true
+      },
+      {
+        step: 'Overload',
+        label: '堆疊耗盡',
+        direction: 'forward',
+        color: '#4c0519',
+        duration: 200,
+        icon: '🔥',
+        blinking: true
+      }
+    ],
+    finalState: 'attack',
+    finalColor: '#9f1239',
+    totalDuration: 800,
+    description: 'URG+PSH+FIN 複合旗標攻擊 — 混淆 TCP 狀態機',
+    warningEffect: 'pulse-red',
+    isAttack: true
   }
 }
 

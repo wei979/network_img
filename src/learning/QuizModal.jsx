@@ -36,37 +36,37 @@ function QuestionCard({
   isCorrect
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* 問題標題 */}
-      <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center">
-          <span className="text-cyan-400 font-bold text-sm">{questionNumber}</span>
+      <div className="flex items-start gap-4">
+        <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/25 to-pink-500/15 border border-purple-500/30 flex items-center justify-center">
+          <span className="text-purple-400 font-bold">{questionNumber}</span>
         </div>
-        <div className="flex-1">
-          <p className="text-white text-lg font-medium leading-relaxed">
+        <div className="flex-1 pt-1.5">
+          <p className="text-white text-lg font-semibold leading-relaxed">
             {question.question}
           </p>
         </div>
       </div>
 
       {/* 選項列表 */}
-      <div className="space-y-2 pl-11">
+      <div className="space-y-3 pl-14">
         {question.options.map((option, index) => {
           const isSelected = selectedAnswer === index
           const isCorrectAnswer = question.correctAnswer === index
 
-          let optionStyle = 'border-slate-600 hover:border-cyan-500/50 hover:bg-slate-700/50'
+          let optionStyle = 'border-white/10 bg-white/[0.02] hover:border-purple-500/40 hover:bg-purple-500/10'
 
           if (showResult) {
             if (isCorrectAnswer) {
-              optionStyle = 'border-emerald-500 bg-emerald-500/20'
+              optionStyle = 'border-emerald-500/50 bg-gradient-to-r from-emerald-500/15 to-green-500/10'
             } else if (isSelected && !isCorrectAnswer) {
-              optionStyle = 'border-red-500 bg-red-500/20'
+              optionStyle = 'border-red-500/50 bg-gradient-to-r from-red-500/15 to-orange-500/10'
             } else {
-              optionStyle = 'border-slate-700 opacity-50'
+              optionStyle = 'border-slate-700/50 opacity-40'
             }
           } else if (isSelected) {
-            optionStyle = 'border-cyan-500 bg-cyan-500/20'
+            optionStyle = 'border-purple-500/50 bg-gradient-to-r from-purple-500/15 to-pink-500/10'
           }
 
           return (
@@ -75,17 +75,17 @@ function QuestionCard({
               onClick={() => !showResult && onSelectAnswer(index)}
               disabled={showResult}
               className={`
-                w-full p-4 rounded-xl border-2 transition-all duration-200
-                flex items-center gap-3 text-left
+                w-full p-4 rounded-xl border transition-all duration-300
+                flex items-center gap-4 text-left
                 ${optionStyle}
-                ${showResult ? 'cursor-default' : 'cursor-pointer'}
+                ${showResult ? 'cursor-default' : 'cursor-pointer hover-lift'}
               `}
             >
               <div className={`
-                w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0
-                ${isSelected ? 'border-cyan-400' : 'border-slate-500'}
-                ${showResult && isCorrectAnswer ? 'border-emerald-400 bg-emerald-400' : ''}
-                ${showResult && isSelected && !isCorrectAnswer ? 'border-red-400 bg-red-400' : ''}
+                w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all
+                ${isSelected && !showResult ? 'border-purple-400 bg-purple-500/20' : 'border-slate-500'}
+                ${showResult && isCorrectAnswer ? 'border-emerald-400 bg-emerald-500' : ''}
+                ${showResult && isSelected && !isCorrectAnswer ? 'border-red-400 bg-red-500' : ''}
               `}>
                 {showResult && isCorrectAnswer && (
                   <CheckCircle2 className="w-4 h-4 text-white" />
@@ -94,11 +94,11 @@ function QuestionCard({
                   <XCircle className="w-4 h-4 text-white" />
                 )}
                 {!showResult && isSelected && (
-                  <div className="w-3 h-3 rounded-full bg-cyan-400" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-purple-400" />
                 )}
               </div>
-              <span className={`
-                ${showResult && isCorrectAnswer ? 'text-emerald-300 font-medium' : ''}
+              <span className={`text-sm font-medium
+                ${showResult && isCorrectAnswer ? 'text-emerald-300' : ''}
                 ${showResult && isSelected && !isCorrectAnswer ? 'text-red-300' : ''}
                 ${!showResult ? 'text-slate-200' : ''}
               `}>
@@ -112,15 +112,15 @@ function QuestionCard({
       {/* 解釋（答題後顯示）*/}
       {showResult && question.explanation && (
         <div className={`
-          ml-11 p-4 rounded-xl border
+          ml-14 p-4 rounded-xl border
           ${isCorrect
-            ? 'bg-emerald-500/10 border-emerald-500/30'
-            : 'bg-amber-500/10 border-amber-500/30'
+            ? 'bg-gradient-to-r from-emerald-500/10 to-green-500/5 border-emerald-500/30'
+            : 'bg-gradient-to-r from-amber-500/10 to-orange-500/5 border-amber-500/30'
           }
         `}>
-          <div className="flex items-start gap-2">
-            <BookOpen className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isCorrect ? 'text-emerald-400' : 'text-amber-400'}`} />
-            <p className={`text-sm ${isCorrect ? 'text-emerald-200' : 'text-amber-200'}`}>
+          <div className="flex items-start gap-3">
+            <BookOpen className={`w-5 h-5 mt-0.5 flex-shrink-0 ${isCorrect ? 'text-emerald-400' : 'text-amber-400'}`} />
+            <p className={`text-sm leading-relaxed ${isCorrect ? 'text-emerald-200' : 'text-amber-200'}`}>
               {question.explanation}
             </p>
           </div>
@@ -395,51 +395,52 @@ export default function QuizModal({
   if (!isVisible || !quiz) return null
 
   return (
-    <div className="fixed inset-0 z-[9998] flex items-center justify-center">
+    <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4">
       {/* 背景遮罩 */}
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/85 backdrop-blur-md"
         onClick={onClose}
       />
 
       {/* 彈窗內容 */}
-      <div className="relative w-[90vw] max-w-3xl max-h-[90vh] bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col">
+      <div className="relative w-full max-w-3xl max-h-[90vh] glass-card rounded-2xl border border-purple-500/30 shadow-2xl shadow-purple-500/10 overflow-hidden flex flex-col animate-fade-in-scale">
         {/* 標題列 */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700 bg-slate-800/50">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-500/20 rounded-lg">
-              <Target className="w-5 h-5 text-purple-400" />
+        <div className="flex items-center justify-between px-6 py-5 border-b border-white/5">
+          <div className="flex items-center gap-4">
+            <div className="p-2.5 bg-gradient-to-br from-purple-500/25 to-pink-500/15 rounded-xl border border-purple-500/30">
+              <Target className="w-6 h-6 text-purple-400" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-purple-400 font-semibold">課程測驗</span>
-              </div>
-              <h2 className="text-lg font-bold text-white">{quiz.title}</h2>
+              <span className="text-xs text-purple-400 font-semibold uppercase tracking-wider">課程測驗</span>
+              <h2 className="text-xl font-bold text-white mt-0.5">{quiz.title}</h2>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-slate-700 transition-colors"
+            className="p-2 rounded-xl hover:bg-white/10 transition-all"
           >
-            <X className="w-5 h-5 text-slate-400" />
+            <X className="w-5 h-5 text-slate-400 hover:text-white" />
           </button>
         </div>
 
         {/* 進度條 */}
         {!showResults && (
-          <div className="px-6 py-3 bg-slate-800/30 border-b border-slate-700/50">
-            <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-slate-400">
-                問題 {currentQuestionIndex + 1} / {totalQuestions}
+          <div className="px-6 py-4 border-b border-white/5">
+            <div className="flex items-center justify-between text-sm mb-3">
+              <span className="text-slate-300 font-medium">
+                問題 <span className="text-purple-400">{currentQuestionIndex + 1}</span> / {totalQuestions}
               </span>
-              <span className="text-slate-400">
+              <span className="text-slate-400 text-xs bg-white/5 px-3 py-1 rounded-full">
                 已答 {Object.keys(answers).length} 題
               </span>
             </div>
-            <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+            <div className="progress-bar">
               <div
-                className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all duration-300"
-                style={{ width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%` }}
+                className="progress-bar-fill"
+                style={{
+                  width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%`,
+                  background: 'linear-gradient(90deg, var(--color-primary-500) 0%, #a855f7 100%)'
+                }}
               />
             </div>
           </div>
@@ -471,15 +472,15 @@ export default function QuizModal({
 
         {/* 底部操作列 */}
         {!showResults && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-700 bg-slate-800/50">
+          <div className="flex items-center justify-between px-6 py-4 border-t border-white/5 bg-black/20">
             <button
               onClick={handlePrev}
               disabled={currentQuestionIndex === 0}
               className={`
-                px-4 py-2 rounded-lg flex items-center gap-2 transition-colors
+                px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm font-medium transition-all
                 ${currentQuestionIndex === 0
                   ? 'text-slate-600 cursor-not-allowed'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                  : 'text-slate-300 hover:text-white hover:bg-white/10'
                 }
               `}
             >
@@ -487,18 +488,18 @@ export default function QuizModal({
               上一題
             </button>
 
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               {quiz.questions.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentQuestionIndex(index)}
                   className={`
-                    w-8 h-8 rounded-lg text-xs font-medium transition-all
+                    w-8 h-8 rounded-lg text-xs font-semibold transition-all
                     ${index === currentQuestionIndex
-                      ? 'bg-cyan-500 text-white'
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30'
                       : answers[quiz.questions[index].id] !== undefined
-                        ? 'bg-slate-600 text-white'
-                        : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'
                     }
                   `}
                 >
@@ -512,10 +513,10 @@ export default function QuizModal({
                 onClick={handleSubmit}
                 disabled={!allAnswered}
                 className={`
-                  px-6 py-2 rounded-lg font-semibold flex items-center gap-2 transition-all
+                  px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2 text-sm transition-all
                   ${allAnswered
-                    ? 'bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white shadow-lg shadow-cyan-500/25'
-                    : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-lg shadow-purple-500/30 hover-lift'
+                    : 'bg-slate-700/50 text-slate-500 cursor-not-allowed'
                   }
                 `}
               >
@@ -525,7 +526,7 @@ export default function QuizModal({
             ) : (
               <button
                 onClick={handleNext}
-                className="px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 flex items-center gap-2 transition-colors"
+                className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 flex items-center gap-2 transition-all"
               >
                 下一題
                 <ChevronRight className="w-4 h-4" />

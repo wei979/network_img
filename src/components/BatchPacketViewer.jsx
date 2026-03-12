@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { X, Database, Clock, AlertTriangle, ChevronDown, ChevronUp, Loader, Network, BarChart3 } from 'lucide-react'
 import AttackTimelineChart from './AttackTimelineChart'
+import PacketInspector from './PacketInspector'
 
 /**
  * BatchPacketViewer - 批量封包檢視器
@@ -40,8 +41,57 @@ export default function BatchPacketViewer({
   const [error, setError] = useState(null)
   const [expandedConnections, setExpandedConnections] = useState(new Set())
 
+  const [inspectedPacket, setInspectedPacket] = useState(null) // deep detail for PacketInspector
+  const [inspectLoading, setInspectLoading] = useState(false)
+
   const scrollContainerRef = useRef(null)
   const packetRefsMap = useRef(new Map()) // 存儲封包元素的 ref
+
+  // Fetch deep packet detail when a packet is selected
+  const fetchPacketDetail = useCallback(async (connectionId, packetIndex) => {
+    setInspectLoading(true)
+    try {
+      const resp = await fetch(`/api/packet-detail/${encodeURIComponent(connectionId)}/${packetIndex}`, {
+        credentials: 'include'
+      })
+      if (!resp.ok) {
+        console.warn(`[BatchPacketViewer] Failed to fetch packet detail: ${resp.status}`)
+        setInspectedPacket(null)
+        return
+      }
+      const data = await resp.json()
+      setInspectedPacket(data.packet_detail)
+    } catch (err) {
+      console.warn('[BatchPacketViewer] Packet detail fetch error:', err)
+      setInspectedPacket(null)
+    } finally {
+      setInspectLoading(false)
+    }
+  }, [])
+
+  // When selectedPacketIndex changes, fetch the deep detail
+  useEffect(() => {
+    if (selectedPacketIndex === null) {
+      setInspectedPacket(null)
+      return
+    }
+    // Determine connection_id for this packet
+    let connId = null
+    if (preloadedPackets?.connectionId) {
+      connId = preloadedPackets.connectionId
+    } else {
+      // Find from batchData
+      for (const [cid, cdata] of Object.entries(batchData)) {
+        if (cdata.packets?.some(p => p.index === selectedPacketIndex)) {
+          connId = cid
+          break
+        }
+      }
+    }
+    if (connId) {
+      fetchPacketDetail(connId, selectedPacketIndex)
+    }
+  }, [selectedPacketIndex, batchData, preloadedPackets, fetchPacketDetail])
 
   // 當選中的封包索引變化時，自動滾動到該封包並展開其所屬連線
   useEffect(() => {
@@ -404,6 +454,7 @@ export default function BatchPacketViewer({
           </div>
         </div>
         <button
+          aria-label="Close packet viewer"
           onClick={onClose}
           className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
         >
@@ -647,6 +698,26 @@ export default function BatchPacketViewer({
             {!preloadedPackets?.packets?.length && !hasMore && loadedCount > 0 && (
               <div className="text-center py-4 text-slate-400 text-sm">
                 已載入全部 {loadedCount} 條連線
+              </div>
+            )}
+
+            {/* Packet Inspector - 封包深度檢視 */}
+            {selectedPacketIndex !== null && (
+              <div className="mt-4 border-t border-slate-700 pt-4">
+                {inspectLoading ? (
+                  <div className="flex items-center justify-center gap-2 py-8 text-slate-400">
+                    <Loader className="w-4 h-4 animate-spin" />
+                    <span className="text-sm">載入封包詳情...</span>
+                  </div>
+                ) : inspectedPacket ? (
+                  <PacketInspector
+                    packetDetail={inspectedPacket}
+                    onClose={() => {
+                      setInspectedPacket(null)
+                      onPacketSelect?.(null)
+                    }}
+                  />
+                ) : null}
               </div>
             )}
           </div>

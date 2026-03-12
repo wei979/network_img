@@ -38,6 +38,7 @@ export class PacketParticleSystem {
     this.isPlaying = true
     this.currentTime = 0 // 當前動畫時間（毫秒）
     this.duration = 0 // 總時長
+    this.realDurationSeconds = 0 // 實際 PCAP 捕獲時長（秒），供 UI 顯示
     this.lastUpdateTime = performance.now()
 
     // 解析連線 ID 以取得連線的起點和終點
@@ -49,7 +50,8 @@ export class PacketParticleSystem {
 
   /**
    * 解析連線 ID 來取得連線的起點和終點
-   * 連線 ID 格式：protocol-srcIp-srcPort-dstIp-dstPort
+   * 連線 ID 格式：[protocol[-subtype]-]srcIp-srcPort-dstIp-dstPort
+   * 使用正則從尾端擷取兩組 IP:port，相容含 subtype 的 ID（如 tcp-teardown-...）
    */
   _parseConnectionEndpoints() {
     if (!this.options.connectionId) {
@@ -58,15 +60,11 @@ export class PacketParticleSystem {
       return
     }
 
-    const parts = this.options.connectionId.split('-')
-    if (parts.length >= 5) {
-      // 格式：protocol-srcIp-srcPort-dstIp-dstPort
-      const protocol = parts[0]
-      const srcIp = parts[1]
-      const srcPort = parts[2]
-      const dstIp = parts[3]
-      const dstPort = parts[4]
-
+    // 從 ID 尾端匹配 srcIp-srcPort-dstIp-dstPort，忽略前置的 protocol/subtype 前綴
+    const ipPortPattern = /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-(\d+)-(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-(\d+)$/
+    const match = this.options.connectionId.match(ipPortPattern)
+    if (match) {
+      const [, srcIp, srcPort, dstIp, dstPort] = match
       this.connectionSource = `${srcIp}:${srcPort}`
       this.connectionDest = `${dstIp}:${dstPort}`
     } else {
@@ -80,8 +78,9 @@ export class PacketParticleSystem {
    *
    * 實現策略：
    * 1. 保留真實封包的相對時間比例
-   * 2. 將整個時間軸拉長到可觀察的長度（至少 20 秒）
-   * 3. 確保所有封包都有足夠的顯示時間
+   * 2. 動態最小時長：max(3s, 封包數 × 0.5s)，不同連線反映真實時長差異
+   * 3. 傳輸時間上限為封包間距的 70%，確保因果順序（A 結束後 B 才出現）
+   * 4. tail buffer 確保最後封包的顯示窗口完整在 [0, 1.0) 範圍內
    */
   _initializeTimeline() {
     if (this.packets.length === 0) {
@@ -100,50 +99,65 @@ export class PacketParticleSystem {
     // 真實時間跨度（秒）
     const realDurationSeconds = maxTime - minTime
 
+    // 共用常數（兩條路徑都使用相同語意）
+    const MIN_TRAVEL_RATIO = 0.04   // 傳輸時間的相對下限：總時長的 4%，確保動畫可見
+    const TAIL_BUFFER_FACTOR = 1.05 // tail buffer：最後封包傳輸時間再加 5%，避免顯示窗口截斷
+
     // 如果所有封包時間戳相同，使用等間隔模式
     if (realDurationSeconds === 0) {
-      this.duration = 20000 // 拉長到 20 秒
+      // 動態最小時長：每個封包 0.5s，整體至少 3s
+      const minDurationSec = Math.max(3.0, this.packets.length * 0.5)
+      this.duration = minDurationSec * 1000
+      this.realDurationSeconds = 0 // 所有時間戳相同，實際捕獲時長為 0
 
-      // 等間隔分布所有封包
+      const travelTime = minDurationSec * MIN_TRAVEL_RATIO
+      // 等間隔分布，除以 length（保留末端空間給 tail buffer）
       this.packets.forEach((packet, index) => {
         packet._normalizedTime = this.packets.length > 1
-          ? index / (this.packets.length - 1)
+          ? index / this.packets.length
           : 0
-        packet._travelTime = 0.5 // 每個封包 500ms 傳輸時間
+        packet._travelTime = travelTime
       })
       return
     }
 
     // === 關鍵：等比例拉長時間軸 ===
-    // 目標拉長倍數：確保拉長後的時長至少 20 秒
-    const MIN_STRETCHED_DURATION_SECONDS = 20
-    const stretchFactor = Math.max(1, MIN_STRETCHED_DURATION_SECONDS / realDurationSeconds)
-
-    // 拉長後的總時長（毫秒）
+    // 動態最小時長：每個封包 0.5s，整體至少 3s（保留真實比例差異）
+    const MIN_DURATION_SECONDS = Math.max(3.0, this.packets.length * 0.5)
+    const stretchFactor = Math.max(1, MIN_DURATION_SECONDS / realDurationSeconds)
     const stretchedDurationSeconds = realDurationSeconds * stretchFactor
-    this.duration = stretchedDurationSeconds * 1000
 
-    // 為每個封包計算歸一化時間 (0-1) 和拉長後的傳輸時間
+    // 第一遍：計算每個封包的傳輸時間（_travelTime）
     this.packets.forEach((packet, index) => {
-      // 歸一化時間：保持相對位置不變（0-1）
-      packet._normalizedTime = realDurationSeconds > 0
-        ? (packet.timestamp - this.startTimestamp) / realDurationSeconds
-        : 0
-
-      // 計算到下一個封包的真實時間間隔（秒）
       const nextPacket = this.packets[index + 1]
       const realIntervalSeconds = nextPacket
         ? nextPacket.timestamp - packet.timestamp
         : realDurationSeconds * 0.1 // 最後一個封包使用總時長的 10%
 
-      // 拉長後的間隔時間
       const stretchedIntervalSeconds = realIntervalSeconds * stretchFactor
 
-      // 傳輸時間：使用拉長後間隔的 30%，確保有足夠的間隙
-      // 最小 0.3 秒，最大 2 秒
-      const travelTime = Math.max(0.3, Math.min(stretchedIntervalSeconds * 0.3, 2.0))
+      // 傳輸時間上限為間距的 70%（確保因果順序：A 完成後 B 才觸發）
+      // 注意：此保證對近乎同時的封包（realInterval ≈ 0）不成立，此時由 MIN_TRAVEL_RATIO 下限接管
+      const travelTime = Math.max(
+        stretchedDurationSeconds * MIN_TRAVEL_RATIO,
+        Math.min(stretchedIntervalSeconds * 0.70, 3.0)
+      )
       packet._travelTime = travelTime
     })
+
+    // 加入 tail buffer：最後封包需要展示空間（超出 stretchedDuration 的部分）
+    const lastTravelTime = this.packets[this.packets.length - 1]._travelTime
+    const totalSeconds = stretchedDurationSeconds + lastTravelTime * TAIL_BUFFER_FACTOR
+
+    // 壓縮 _normalizedTime 到 [0, normScale]，確保最後封包的顯示窗口在 1.0 前完整結束
+    // normScale = stretchedDuration / totalSeconds，使最後封包的 normalizedTime < 1.0
+    const normScale = stretchedDurationSeconds / totalSeconds
+    this.packets.forEach((packet) => {
+      packet._normalizedTime = normScale * (packet.timestamp - this.startTimestamp) / realDurationSeconds
+    })
+
+    this.duration = totalSeconds * 1000
+    this.realDurationSeconds = realDurationSeconds // 供 UI 顯示實際捕獲時長
   }
 
   /**
@@ -187,8 +201,8 @@ export class PacketParticleSystem {
 
     const globalProgress = globalDuration > 0 ? globalTime / globalDuration : 0
 
-    // 直接將全局進度映射到本連線的時間
-    this.currentTime = globalProgress * this.duration
+    // 直接將全局進度映射到本連線的時間（clamp 防止浮點誤差越界）
+    this.currentTime = Math.max(0, Math.min(this.duration, globalProgress * this.duration))
   }
 
   /**
@@ -256,8 +270,7 @@ export class PacketParticleSystem {
    */
   _extractTcpFlags(packet) {
     if (!packet.headers?.tcp?.flags) return null
-    const flags = packet.headers.tcp.flags
-    return Array.isArray(flags) ? flags.join('|') : String(flags)
+    return String(packet.headers.tcp.flags)
   }
 
   /**
@@ -287,8 +300,9 @@ export class PacketParticleSystem {
         ? packetTravelTime / totalDurationSeconds
         : 0.05 // 備用值
 
-      // 設定較小的最小值（5%）以避免粒子佔據過多時間軸空間
-      const displayDuration = Math.max(0.05, calculatedDuration)
+      // 範圍 [0.05, 0.999)：下限避免粒子消失，上限確保不超過一個循環週期
+      // 上限是 wrap-around 條件正確性的必要不變量：displayDuration >= 1.0 會造成顯示空隙
+      const displayDuration = Math.max(0.05, Math.min(calculatedDuration, 0.999))
 
       // 判斷封包方向
       let isForward = true // 預設為前向
@@ -323,26 +337,24 @@ export class PacketParticleSystem {
             // 反向：從 1 移動到 0
             particlePosition = Math.max(0, Math.min(1, 1.0 - travelProgress))
           }
-        } else if (progress < packetProgress && progress + 1.0 >= packetProgress + displayDuration) {
-          // 循環播放：如果當前進度在下一輪，且粒子應該顯示
+        } else if (packetProgress + displayDuration > 1.0
+                   && progress < (packetProgress + displayDuration - 1.0)) {
+          // 跨越邊界的循環補顯：僅當顯示視窗確實跨越 1.0 邊界時才觸發
+          // 正確條件：packetProgress + displayDuration > 1.0（視窗跨越邊界）
+          //           progress < (packetProgress + displayDuration - 1.0)（在下一輪的補顯範圍內）
+          //
+          // 舊條件：progress + 1.0 >= packetProgress + displayDuration
+          // 等價於：progress >= packetProgress + displayDuration - 1.0（對大多數封包幾乎恆成立）
+          // → 導致每個封包在其觸發點之前的全段時間內都觸發 wrap，使封包在一輪內重複出現多次
           shouldShow = true
           const adjustedProgress = progress + 1.0
           const travelProgress = (adjustedProgress - packetProgress) / displayDuration
 
           if (isForward) {
-            particlePosition = travelProgress
+            particlePosition = Math.max(0, Math.min(1, travelProgress))
           } else {
-            particlePosition = 1.0 - travelProgress
+            particlePosition = Math.max(0, Math.min(1, 1.0 - travelProgress))
           }
-
-          // 處理循環邊界並限制在 [0, 1] 範圍
-          while (particlePosition > 1.0) {
-            particlePosition = particlePosition - 1.0
-          }
-          while (particlePosition < 0) {
-            particlePosition = particlePosition + 1.0
-          }
-          particlePosition = Math.max(0, Math.min(1, particlePosition))
         }
       } else {
         // 非循環模式：只在封包時間點附近顯示
@@ -365,7 +377,9 @@ export class PacketParticleSystem {
         const baseSize = minSize + (Math.log(packet.length + 1) / Math.log(65536)) * (maxSize - minSize)
 
         // 計算生命週期狀態
-        const lifecycleState = this._calculateLifecycleState(particlePosition)
+        // backward 封包（B→A）使用反轉位置，確保 SPAWN（發送）在出發點、ARRIVE（收到）在目的地
+        const lifecyclePosition = isForward ? particlePosition : (1.0 - particlePosition)
+        const lifecycleState = this._calculateLifecycleState(lifecyclePosition)
         const size = baseSize * lifecycleState.scale
 
         // 計算粒子顏色（基於協議或錯誤狀態）
@@ -381,12 +395,19 @@ export class PacketParticleSystem {
         } else if (packet.headers?.tcp) {
           const flagsStr = tcpFlags || ''
 
-          if (flagsStr.includes('SYN')) {
-            color = '#22c55e' // SYN 綠色
-          } else if (flagsStr.includes('FIN') || flagsStr.includes('RST')) {
-            color = '#f59e0b' // FIN/RST 橙色
-          } else if (flagsStr.includes('URG') || flagsStr.includes('PSH')) {
-            color = '#ef4444' // URG/PSH 攻擊類 - 紅色
+          // RFC 793: SYN（client 發起）vs SYN|ACK（server 回應）語意相反，顏色區分
+          if (flagsStr.includes('SYN') && flagsStr.includes('ACK')) {
+            color = '#14b8a6' // SYN|ACK — 青綠色（server→client，backward）
+          } else if (flagsStr.includes('SYN')) {
+            color = '#22c55e' // 純 SYN — 綠色（client→server，forward）
+          } else if (flagsStr.includes('RST')) {
+            color = '#dc2626' // RST — 深紅色（強制中斷，與 FIN 正常關閉區分）
+          } else if (flagsStr.includes('FIN')) {
+            color = '#f59e0b' // FIN — 橙色（正常四次揮手）
+          } else if (flagsStr.includes('URG')) {
+            color = '#ef4444' // URG — 紅色（緊急指標，真正異常）
+          } else if (flagsStr.includes('PSH')) {
+            color = '#a78bfa' // PSH/PSH|ACK — 紫色（正常資料推送，非攻擊）
           }
         } else if (packet.headers?.udp) {
           color = '#a855f7' // UDP 紫色

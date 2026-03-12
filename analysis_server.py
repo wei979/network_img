@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
+import re
+import threading
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, Dict
@@ -16,8 +19,62 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from network_analyzer import NetworkAnalyzer
 
+logger = logging.getLogger(__name__)
+
 # Load environment variables from .env file
 load_dotenv()
+
+# ── PCAP Session Cache ──────────────────────────────────────────────
+# Caches loaded NetworkAnalyzer instances per session to avoid re-reading
+# the PCAP file on every /api/packet-detail request.
+# Key: session_id, Value: (pcap_mtime, NetworkAnalyzer, matched_indices_cache)
+#   matched_indices_cache: Dict[connection_id, set] — cached packet index lookups
+_analyzer_cache: Dict[str, tuple] = {}
+_analyzer_cache_lock = threading.Lock()
+_ANALYZER_CACHE_MAX = 8  # max concurrent sessions cached
+
+# Regex for validating connection_id format (protocol-ip-port-ip-port[-extra])
+_CONNECTION_ID_RE = re.compile(
+    r'^[a-zA-Z][a-zA-Z0-9_-]{0,30}'         # protocol prefix
+    r'-\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'  # src IP
+    r'-\d{1,5}'                               # src port
+    r'-\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'  # dst IP
+    r'-\d{1,5}'                               # dst port
+    r'(?:-\d+)?$'                             # optional suffix (e.g. timeout packet index)
+)
+_CONNECTION_ID_MAX_LEN = 256
+
+
+def _get_cached_analyzer(session_id: str, pcap_path: Path) -> tuple | None:
+    """Return (analyzer, matched_cache) if the PCAP hasn't changed, else None."""
+    with _analyzer_cache_lock:
+        if session_id not in _analyzer_cache:
+            return None
+        cached_mtime, analyzer, matched_cache = _analyzer_cache[session_id]
+        try:
+            current_mtime = pcap_path.stat().st_mtime
+        except OSError:
+            return None
+        if cached_mtime == current_mtime:
+            return analyzer, matched_cache
+        # PCAP changed — invalidate
+        del _analyzer_cache[session_id]
+        return None
+
+
+def _put_cached_analyzer(session_id: str, pcap_path: Path, analyzer: NetworkAnalyzer) -> None:
+    """Store an analyzer in the cache, evicting oldest if at capacity."""
+    try:
+        mtime = pcap_path.stat().st_mtime
+    except OSError:
+        logger.warning(f"Cannot stat PCAP path for caching: {pcap_path}")
+        return
+    with _analyzer_cache_lock:
+        if len(_analyzer_cache) >= _ANALYZER_CACHE_MAX and session_id not in _analyzer_cache:
+            # Evict oldest entry (first key inserted)
+            oldest_key = next(iter(_analyzer_cache))
+            del _analyzer_cache[oldest_key]
+        _analyzer_cache[session_id] = (mtime, analyzer, {})
 
 DATA_DIR = Path('public/data')
 RESULT_FILE = DATA_DIR / 'network_analysis_results.json'
@@ -180,6 +237,9 @@ def cleanup_expired_sessions(max_age_seconds: int = 14400):
             if age > max_age_seconds:
                 # Session has expired, delete it
                 shutil.rmtree(session_dir)
+                # Also evict from analyzer cache
+                with _analyzer_cache_lock:
+                    _analyzer_cache.pop(session_dir.name, None)
                 cleaned_count += 1
                 logger.info(f"Cleaned up expired session: {session_dir.name} (age: {age:.0f}s)")
         except Exception as e:
@@ -500,6 +560,13 @@ async def get_packet_statistics(
     duration_seconds = max_time - min_time
     duration_ms = int(duration_seconds * 1000)
 
+    # Flags are stored as pipe-separated full names, e.g. 'PSH', 'SYN|ACK', 'PSH|ACK'.
+    # Parse into a frozenset per packet to avoid substring false-positives
+    # (e.g. 'S' in 'PSH' == True with naive substring search).
+    def _flags_set(p):
+        raw = p.get('tcp_flags', '')
+        return frozenset(raw.split('|')) if raw and raw != 'NONE' else frozenset()
+
     # Create time buckets
     num_buckets = max(1, math.ceil(duration_ms / time_bucket_ms))
     timeline = []
@@ -510,9 +577,10 @@ async def get_packet_statistics(
 
         bucket_packets = [p for p in all_packets if bucket_start <= p['timestamp'] < bucket_end]
 
-        syn_count = sum(1 for p in bucket_packets if 'S' in p.get('tcp_flags', ''))
-        ack_count = sum(1 for p in bucket_packets if 'A' in p.get('tcp_flags', ''))
-        rst_count = sum(1 for p in bucket_packets if 'R' in p.get('tcp_flags', ''))
+        bucket_flag_sets = [_flags_set(p) for p in bucket_packets]
+        syn_count = sum(1 for f in bucket_flag_sets if 'SYN' in f)
+        ack_count = sum(1 for f in bucket_flag_sets if 'ACK' in f)
+        rst_count = sum(1 for f in bucket_flag_sets if 'RST' in f)
 
         timeline.append({
             'time_ms': i * time_bucket_ms,
@@ -527,15 +595,16 @@ async def get_packet_statistics(
     # Calculate summary statistics
     total_packets = len(all_packets)
     total_bytes = sum(p.get('length', 0) for p in all_packets)
-    total_syn = sum(1 for p in all_packets if 'S' in p.get('tcp_flags', ''))
-    total_fin = sum(1 for p in all_packets if 'F' in p.get('tcp_flags', ''))
-    total_rst = sum(1 for p in all_packets if 'R' in p.get('tcp_flags', ''))
-    total_ack = sum(1 for p in all_packets if 'A' in p.get('tcp_flags', ''))
-    total_urg = sum(1 for p in all_packets if 'U' in p.get('tcp_flags', ''))
-    total_psh = sum(1 for p in all_packets if 'P' in p.get('tcp_flags', ''))
+
+    packet_flags = [_flags_set(p) for p in all_packets]
+    total_syn = sum(1 for f in packet_flags if 'SYN' in f)
+    total_fin = sum(1 for f in packet_flags if 'FIN' in f)
+    total_rst = sum(1 for f in packet_flags if 'RST' in f)
+    total_ack = sum(1 for f in packet_flags if 'ACK' in f)
+    total_urg = sum(1 for f in packet_flags if 'URG' in f)
+    total_psh = sum(1 for f in packet_flags if 'PSH' in f)
     # URG-PSH-FIN combination: packets with all three flags set simultaneously
-    total_urg_psh_fin = sum(1 for p in all_packets
-        if all(f in p.get('tcp_flags', '') for f in ['U', 'P', 'F']))
+    total_urg_psh_fin = sum(1 for f in packet_flags if {'URG', 'PSH', 'FIN'}.issubset(f))
 
     # Calculate rates (packets per second)
     packet_counts = [b['packet_count'] for b in timeline]
@@ -580,6 +649,12 @@ async def get_packet_statistics(
     elif rst_ratio > 0.4 and total_packets > 100:
         attack_type = 'RST Attack'
         threat_level = 'high' if rst_ratio > 0.6 else 'medium'
+    elif ack_ratio > 0.8 and syn_ratio < 0.1 and total_packets > 100:
+        # ACK Flood: Extremely high ACK ratio with minimal SYN packets
+        # Attackers send massive ACK packets to consume bandwidth and server resources
+        # Normal traffic has balanced SYN-ACK ratios; pure ACK flood lacks initial handshakes
+        attack_type = 'ACK Flood'
+        threat_level = 'high'
     elif peak_rate > 1000:
         attack_type = 'High Volume Attack'
         threat_level = 'medium'
@@ -609,6 +684,9 @@ async def get_packet_statistics(
     # PSH Flood: High PSH ratio without other indicators is anomalous
     if psh_ratio > 0.5 and syn_ratio < 0.4:
         anomaly_score += min(25, (psh_ratio - 0.5) * 50)
+    # ACK Flood: Extremely high ACK ratio with minimal SYN is anomalous
+    if ack_ratio > 0.8 and syn_ratio < 0.1:
+        anomaly_score += min(25, (ack_ratio - 0.8) * 125)
     anomaly_score = min(100, round(anomaly_score))
 
     return {
@@ -639,6 +717,92 @@ async def get_packet_statistics(
             'threat_level': threat_level,
             'anomaly_score': anomaly_score
         }
+    }
+
+
+@app.get('/api/packet-detail/{connection_id}/{packet_index}')
+async def get_packet_deep_detail(
+    connection_id: str,
+    packet_index: int,
+    request: Request,
+    session_id: str = Depends(require_session),
+) -> Dict[str, Any]:
+    """Get deep dissection of a single packet with per-field byte offsets.
+
+    Returns Wireshark-style layer tree + hex dump data for the PacketDetailPane
+    and HexDumpViewer components.
+
+    Args:
+        connection_id: The connection ID (e.g., 'tcp-10.1.1.14-5434-210.71.227.211-443')
+        packet_index: The global packet index within the PCAP file
+
+    Returns:
+        Dictionary containing layers with byte ranges and raw hex dump
+    """
+    # Validate connection_id format to prevent abuse
+    if not connection_id or len(connection_id) > _CONNECTION_ID_MAX_LEN:
+        raise HTTPException(status_code=400, detail='Invalid connection_id length.')
+    if not _CONNECTION_ID_RE.match(connection_id):
+        raise HTTPException(status_code=400, detail='Invalid connection_id format.')
+
+    session_dir = get_session_data_dir(request)
+    pcap_path = session_dir / 'uploaded.pcap'
+
+    if not pcap_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail='No PCAP file found. Please upload a PCAP file first.'
+        )
+
+    # Try cache first, then load from disk
+    cached = _get_cached_analyzer(session_id, pcap_path)
+    if cached is not None:
+        analyzer, matched_cache = cached
+    else:
+        analyzer = NetworkAnalyzer(str(pcap_path))
+        if not analyzer.load_packets():
+            raise HTTPException(
+                status_code=500,
+                detail='Failed to load PCAP file.'
+            )
+        _put_cached_analyzer(session_id, pcap_path, analyzer)
+        matched_cache = {}
+        # Retrieve the cache dict from the stored tuple
+        with _analyzer_cache_lock:
+            entry = _analyzer_cache.get(session_id)
+            if entry:
+                matched_cache = entry[2]
+
+    # Use cached matched_indices or compute and cache
+    if connection_id in matched_cache:
+        matched_indices = matched_cache[connection_id]
+    else:
+        matched_indices = analyzer._find_packets_by_connection_id(connection_id)
+        matched_cache[connection_id] = matched_indices
+
+    if not matched_indices:
+        raise HTTPException(
+            status_code=404,
+            detail=f'Connection "{connection_id}" not found in PCAP.'
+        )
+
+    if packet_index not in matched_indices:
+        raise HTTPException(
+            status_code=404,
+            detail=f'Packet index {packet_index} does not belong to connection "{connection_id}".'
+        )
+
+    # Extract deep detail
+    detail = analyzer._extract_packet_deep_detail(packet_index)
+    if detail is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f'Packet index {packet_index} out of range.'
+        )
+
+    return {
+        'connection_id': connection_id,
+        'packet_detail': detail
     }
 
 
@@ -699,6 +863,34 @@ async def get_connection_packets(
     }
 
 
+def _analyze_pcap_sync(pcap_path: Path, session_dir: Path) -> Dict[str, Any]:
+    """Synchronous analysis pipeline — intended to run in a thread pool via asyncio.to_thread."""
+    analyzer = NetworkAnalyzer(str(pcap_path))
+    if not analyzer.load_packets():
+        message = analyzer.last_error or 'Failed to load packets'
+        raise ValueError(message)
+
+    analyzer.basic_statistics()
+    analyzer.detect_packet_loss()
+    analyzer.analyze_latency()
+    analyzer.detect_attacks()
+    analyzer.build_mind_map()
+    analyzer.generate_protocol_timelines()
+
+    analyzer.save_results(
+        output_file=str(session_dir / 'network_analysis_results.json'),
+        public_output_dir=str(session_dir),
+    )
+
+    return {
+        'packet_count': len(analyzer.packets),
+        'timeline_count': len(analyzer.protocol_timelines) if hasattr(analyzer, 'protocol_timelines') else 0,
+    }
+
+
+MAX_PCAP_SIZE = 50 * 1024 * 1024  # 50 MB
+
+
 @app.post('/api/analyze')
 async def analyze_capture(
     request: Request,
@@ -706,80 +898,52 @@ async def analyze_capture(
     session_id: str = Depends(require_session)
 ) -> Dict[str, Any]:
     """Upload and analyze PCAP file (requires session)"""
-    print(f"[DEBUG] /api/analyze called, session_id={session_id}")
-    print(f"[DEBUG] File received: {file.filename}")
+    logger.debug(f"/api/analyze called, session_id={session_id}, file={file.filename}")
 
     filename = file.filename or ''
     suffix = Path(filename).suffix.lower()
-    print(f"[DEBUG] File suffix: {suffix}")
 
     if suffix not in SUPPORTED_EXTENSIONS:
         raise HTTPException(status_code=400, detail='Only pcap and pcapng files are supported')
 
     data = await file.read()
-    print(f"[DEBUG] File size: {len(data)} bytes")
+    logger.debug(f"File size: {len(data)} bytes")
     if not data:
         raise HTTPException(status_code=400, detail='Upload is empty')
+
+    if len(data) > MAX_PCAP_SIZE:
+        raise HTTPException(status_code=413, detail='PCAP file too large (max 50 MB)')
 
     # Get session directory and clean up old files
     session_dir = get_session_data_dir(request)
 
     # Clean up old files in current session before saving new file
     cleanup_session_directory(session_dir)
-    print(f"[DEBUG] Cleaned up old session files")
+    # Invalidate cached analyzer for this session
+    with _analyzer_cache_lock:
+        _analyzer_cache.pop(session_id, None)
 
     # Save uploaded file to session directory
     pcap_path = session_dir / 'uploaded.pcap'
-    print(f"[DEBUG] Saving to: {pcap_path}")
 
     with open(pcap_path, 'wb') as handle:
         handle.write(data)
-    print(f"[DEBUG] File saved successfully")
+    logger.debug(f"PCAP saved to {pcap_path}")
 
     try:
-        # Run analysis and save results to session directory
-        print(f"[DEBUG] Creating NetworkAnalyzer...")
-        analyzer = NetworkAnalyzer(str(pcap_path))
-        print(f"[DEBUG] Loading packets...")
-        if not analyzer.load_packets():
-            message = analyzer.last_error or 'Failed to load packets'
-            raise ValueError(message)
-        print(f"[DEBUG] Loaded {len(analyzer.packets)} packets")
+        # Run blocking analysis in a thread pool so the event loop stays responsive
+        analysis_result = await asyncio.to_thread(_analyze_pcap_sync, pcap_path, session_dir)
+        logger.debug(f"Analysis complete: {analysis_result}")
 
-        print(f"[DEBUG] Running basic_statistics...")
-        analyzer.basic_statistics()
-        print(f"[DEBUG] Running detect_packet_loss...")
-        analyzer.detect_packet_loss()
-        print(f"[DEBUG] Running analyze_latency...")
-        analyzer.analyze_latency()
-        print(f"[DEBUG] Running detect_attacks...")
-        analyzer.detect_attacks()
-        print(f"[DEBUG] Running build_mind_map...")
-        analyzer.build_mind_map()
-        print(f"[DEBUG] Running generate_protocol_timelines...")
-        analyzer.generate_protocol_timelines()
-        print(f"[DEBUG] Generated {len(analyzer.protocol_timelines)} timelines")
-
-        # Save results to session directory
-        print(f"[DEBUG] Saving results to {session_dir}...")
-        analyzer.save_results(
-            output_file=str(session_dir / 'network_analysis_results.json'),
-            public_output_dir=str(session_dir),
-        )
-        print(f"[DEBUG] Results saved successfully")
-
-        result = {
+        return {
             'message': 'PCAP file analyzed successfully',
             'session_id': session_id,
-            'packet_count': len(analyzer.packets),
-            'timeline_count': len(analyzer.protocol_timelines) if hasattr(analyzer, 'protocol_timelines') else 0
+            **analysis_result,
         }
-        print(f"[DEBUG] Returning result: {result}")
-        return result
     except Exception as exc:
         import traceback
         error_detail = f"{type(exc).__name__}: {str(exc)}\n{traceback.format_exc()}"
-        print(f"ERROR in /api/analyze: {error_detail}")  # Print to console
+        print(f"ERROR in /api/analyze: {error_detail}")
         raise HTTPException(status_code=500, detail=f"{type(exc).__name__}: {str(exc)}") from exc
 
 

@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from collections import Counter, defaultdict
 
 try:
-    from scapy.all import rdpcap, IP, TCP, UDP, ICMP
+    from scapy.all import rdpcap, IP, TCP, UDP, ICMP, Ether, Raw
 except ImportError:  # pragma: no cover - user environment specific
     print("Please install scapy: pip install scapy")
     sys.exit(1)
@@ -190,12 +190,14 @@ class NetworkAnalyzer:
         udp_transfers = self._extract_udp_transfers()
         http_requests = self._detect_http_requests()
         timeouts = self._detect_timeouts()
+        icmp_pings = self._extract_icmp_pings()
 
         timelines.extend(tcp_handshakes)
         timelines.extend(tcp_teardowns)
         timelines.extend(udp_transfers)
         timelines.extend(http_requests)
         timelines.extend(timeouts)
+        timelines.extend(icmp_pings)
 
         # Fallback: 如果沒有檢測到任何特定協議，使用通用 TCP 連線檢測
         if len(timelines) == 0 and len(self.packets) > 0:
@@ -250,35 +252,64 @@ class NetworkAnalyzer:
                     syn_ack_time = info['syn_ack_time']
                     ack_time = ts
 
-                    timeline = {
-                        'id': f"tcp-{client_key[0]}-{client_key[1]}-{client_key[2]}-{client_key[3]}",
-                        'protocol': 'tcp',
-                        'protocolType': 'tcp-handshake',  # 明確標示為 TCP 握手
-                        'startEpochMs': int(syn_time * 1000),
-                        'endEpochMs': int(ack_time * 1000),
-                        'stages': [
+                    is_dns_tcp = (client_key[3] == 53)
+                    d1 = max(800, int((syn_ack_time - syn_time) * 1000))
+                    d2 = max(800, int((ack_time - syn_ack_time) * 1000))
+                    if is_dns_tcp:
+                        stages = [
+                            {
+                                'key': 'query',
+                                'label': 'DNS Query',
+                                'direction': 'forward',
+                                'durationMs': d1,
+                                'packetRefs': [info['syn_packet']]
+                            },
+                            {
+                                'key': 'resolving',
+                                'label': 'Resolving...',
+                                'direction': 'wait',
+                                'durationMs': d2,
+                                'packetRefs': [info.get('syn_ack_packet', info['syn_packet'])]
+                            },
+                            {
+                                'key': 'response',
+                                'label': 'DNS Response',
+                                'direction': 'backward',
+                                'durationMs': max(800, 1),
+                                'packetRefs': [index]
+                            }
+                        ]
+                    else:
+                        stages = [
                             {
                                 'key': 'syn',
                                 'label': 'SYN Sent',
                                 'direction': 'forward',
-                                'durationMs': max(800, int((syn_ack_time - syn_time) * 1000)),  # 最小 800ms
+                                'durationMs': d1,
                                 'packetRefs': [info['syn_packet']]
                             },
                             {
                                 'key': 'syn-ack',
                                 'label': 'SYN-ACK Received',
                                 'direction': 'backward',
-                                'durationMs': max(800, int((ack_time - syn_ack_time) * 1000)),  # 最小 800ms
+                                'durationMs': d2,
                                 'packetRefs': [info.get('syn_ack_packet', info['syn_packet'])]
                             },
                             {
                                 'key': 'ack',
                                 'label': 'ACK Confirmed',
                                 'direction': 'forward',
-                                'durationMs': max(800, 1),  # 最小 800ms
+                                'durationMs': max(800, 1),
                                 'packetRefs': [index]
                             }
-                        ],
+                        ]
+                    timeline = {
+                        'id': f"tcp-{client_key[0]}-{client_key[1]}-{client_key[2]}-{client_key[3]}",
+                        'protocol': 'dns' if is_dns_tcp else 'tcp',
+                        'protocolType': 'dns-query' if is_dns_tcp else 'tcp-handshake',
+                        'startEpochMs': int(syn_time * 1000),
+                        'endEpochMs': int(ack_time * 1000),
+                        'stages': stages,
                         'metrics': {
                             'rttMs': max(1, int((ack_time - syn_time) * 1000)),
                             'packetCount': 3
@@ -286,6 +317,66 @@ class NetworkAnalyzer:
                     }
                     timelines.append(timeline)
                     handshakes.pop(client_key, None)
+
+        return timelines
+
+    def _extract_icmp_pings(self):
+        """偵測 ICMP Echo Request (type 8) / Echo Reply (type 0) 配對，產出 icmp-ping timeline。"""
+        timelines = []
+        pending = {}  # key: (icmp.id, icmp.seq, src_ip, dst_ip) -> request info
+
+        for index, packet in enumerate(self.packets):
+            if not packet.haslayer(IP) or not packet.haslayer(ICMP):
+                continue
+            ip = packet[IP]
+            icmp = packet[ICMP]
+            ts = float(packet.time)
+
+            if icmp.type == 8:  # Echo Request
+                pair_key = (icmp.id, icmp.seq, ip.src, ip.dst)
+                pending[pair_key] = {
+                    'request_time': ts,
+                    'request_index': index,
+                    'src_ip': ip.src,
+                    'dst_ip': ip.dst,
+                }
+            elif icmp.type == 0:  # Echo Reply — reverse direction to find the request
+                pair_key = (icmp.id, icmp.seq, ip.dst, ip.src)
+                info = pending.pop(pair_key, None)
+                if info is None:
+                    continue
+                rtt_ms = (ts - info['request_time']) * 1000
+                half_ms = max(800, int(rtt_ms * 0.5))
+                timelines.append({
+                    'id': f"icmp-{info['src_ip']}-{icmp.seq}-{info['dst_ip']}-0",
+                    'protocol': 'icmp',
+                    'protocolType': 'icmp-ping',
+                    'startEpochMs': int(info['request_time'] * 1000),
+                    'endEpochMs': int(ts * 1000),
+                    'stages': [
+                        {
+                            'key': 'echo-request',
+                            'label': 'Echo Request',
+                            'direction': 'forward',
+                            'durationMs': half_ms,
+                            'packetRefs': [info['request_index']],
+                        },
+                        {
+                            'key': 'echo-reply',
+                            'label': f'Echo Reply ({rtt_ms:.1f}ms)',
+                            'direction': 'backward',
+                            'durationMs': half_ms,
+                            'packetRefs': [index],
+                        },
+                    ],
+                    'metrics': {
+                        'rttMs': round(rtt_ms, 2),
+                        'packetCount': 2,
+                    },
+                    'options': {
+                        'rttMs': round(rtt_ms, 2),
+                    },
+                })
 
         return timelines
 
@@ -510,6 +601,8 @@ class NetworkAnalyzer:
                     'syn_count': 0,
                     'urg_count': 0,
                     'fin_count': 0,
+                    'ack_count': 0,
+                    'rst_count': 0,
                     'unique_sports': set()  # 追蹤不同的 source ports
                 }
 
@@ -531,6 +624,12 @@ class NetworkAnalyzer:
             if flags & 0x08:  # PSH
                 fg['flags_seen'].add('PSH')
                 fg['psh_count'] += 1
+            if flags & 0x10:  # ACK
+                fg['flags_seen'].add('ACK')
+                fg['ack_count'] += 1
+            if flags & 0x04:  # RST
+                fg['flags_seen'].add('RST')
+                fg['rst_count'] += 1
 
         timelines = []
         processed_packets = set()  # 追蹤已被 Flood 檢測處理的封包
@@ -558,16 +657,27 @@ class NetworkAnalyzer:
             syn_ratio = fg['syn_count'] / total_packets if total_packets > 0 else 0
             urg_ratio = fg['urg_count'] / total_packets if total_packets > 0 else 0
             fin_ratio = fg['fin_count'] / total_packets if total_packets > 0 else 0
+            ack_ratio = fg['ack_count'] / total_packets if total_packets > 0 else 0
+            rst_ratio = fg['rst_count'] / total_packets if total_packets > 0 else 0
 
             # URG+PSH+FIN 攻擊（異常旗標組合）
             if urg_ratio > 0.5 and psh_ratio > 0.5 and fin_ratio > 0.5:
                 protocol_type = 'urg-psh-fin-flood'
+            # ACK+FIN 複合攻擊
+            elif ack_ratio > 0.5 and fin_ratio > 0.5:
+                protocol_type = 'ack-fin-flood'
             # PSH Flood
             elif psh_ratio > 0.6:
                 protocol_type = 'psh-flood'
             # SYN Flood
             elif syn_ratio > 0.8:
                 protocol_type = 'syn-flood'
+            # ACK Flood
+            elif ack_ratio > 0.8:
+                protocol_type = 'ack-flood'
+            # RST Flood
+            elif rst_ratio > 0.8:
+                protocol_type = 'rst-flood'
             # FIN Flood
             elif fin_ratio > 0.8:
                 protocol_type = 'fin-flood'
@@ -608,6 +718,14 @@ class NetworkAnalyzer:
                 }
             ]
 
+            # Sample up to 200 evenly-distributed packet indices for statistics endpoint.
+            # Stage packetRefs only cover 30 packets (animation frames); the statistics
+            # endpoint needs a larger representative sample to cross the detection threshold
+            # and compute accurate flag ratios.
+            _all_count = len(fg['packets'])
+            _step = max(1, _all_count // 200)
+            stats_packet_sample = fg['packets'][::_step][:200]
+
             timeline = {
                 'id': f"flood-{src_ip}-0-{dst_ip}-{dst_port}",  # 添加虛擬 srcPort=0 以符合前端解析格式
                 'protocol': 'tcp',
@@ -615,6 +733,7 @@ class NetworkAnalyzer:
                 'startEpochMs': int(start_time * 1000),
                 'endEpochMs': int(end_time * 1000),
                 'stages': stages,
+                'allPacketRefs': stats_packet_sample,
                 'metrics': {
                     'durationMs': duration_ms,
                     'packetCount': total_packets,
@@ -623,6 +742,10 @@ class NetworkAnalyzer:
                     'flagsSeen': list(fg['flags_seen']),
                     'pshRatio': round(psh_ratio, 3),
                     'synRatio': round(syn_ratio, 3),
+                    'finRatio': round(fin_ratio, 3),
+                    'urgRatio': round(urg_ratio, 3),
+                    'ackRatio': round(ack_ratio, 3),
+                    'rstRatio': round(rst_ratio, 3),
                     'isFlood': True
                 }
             }
@@ -692,7 +815,9 @@ class NetworkAnalyzer:
                     'durationMs': duration_ms,
                     'packetCount': len(remaining_packets),
                     'totalBytes': conn['total_bytes'],
-                    'flagsSeen': list(flags_seen)
+                    'flagsSeen': list(flags_seen),
+                    'pshRatio': round(psh_ratio, 3),
+                    'synRatio': round(syn_ratio, 3),
                 }
             }
             timelines.append(timeline)
@@ -915,23 +1040,43 @@ class NetworkAnalyzer:
         return timelines
 
     def detect_packet_loss(self):
-        """Detect basic packet loss indicators (retransmissions, sequence gaps)."""
+        """Detect basic packet loss indicators (retransmissions, sequence gaps).
+
+        Retransmission: sequence number moves backward in the 32-bit modular space,
+        excluding control-only packets (pure ACK with no payload and no SYN/FIN).
+
+        Sequence gap: the next observed sequence number is much higher than
+        expected based on the previous packet's payload size, indicating lost packets.
+        Both checks use modular arithmetic to handle 32-bit sequence wraparound.
+        """
         tcp_streams = defaultdict(list)
         packet_loss_indicators = []
 
+        _SEQ_MAX = 2 ** 32
+        _SEQ_HALF = _SEQ_MAX // 2
+
         for index, packet in enumerate(self.packets):
-            if packet.haslayer(TCP) and packet.haslayer(IP):
-                tcp_layer = packet[TCP]
-                ip_layer = packet[IP]
-                stream_id = f"{ip_layer.src}:{tcp_layer.sport}-{ip_layer.dst}:{tcp_layer.dport}"
-                tcp_streams[stream_id].append({
-                    'packet_index': index,
-                    'seq': tcp_layer.seq,
-                    'ack': tcp_layer.ack,
-                    'flags': tcp_layer.flags,
-                    'time': float(packet.time),
-                    'len': len(packet)
-                })
+            if not packet.haslayer(TCP) or not packet.haslayer(IP):
+                continue
+            tcp_layer = packet[TCP]
+            ip_layer = packet[IP]
+            flags = int(tcp_layer.flags)
+            syn = bool(flags & 0x02)
+            fin = bool(flags & 0x01)
+            # Actual TCP payload length from IP/TCP headers (handles variable TCP options)
+            ip_payload = ip_layer.len - (ip_layer.ihl * 4)
+            tcp_hdr = tcp_layer.dataofs * 4
+            data_len = max(0, ip_payload - tcp_hdr)
+            # SYN and FIN each consume one sequence number even without data
+            seq_advance = data_len + (1 if syn else 0) + (1 if fin else 0)
+
+            stream_id = f"{ip_layer.src}:{tcp_layer.sport}-{ip_layer.dst}:{tcp_layer.dport}"
+            tcp_streams[stream_id].append({
+                'packet_index': index,
+                'seq': tcp_layer.seq,
+                'time': float(packet.time),
+                'seq_advance': seq_advance,
+            })
 
         for stream_id, stream_packets in tcp_streams.items():
             if len(stream_packets) < 3:
@@ -939,27 +1084,40 @@ class NetworkAnalyzer:
 
             stream_packets.sort(key=lambda item: item['time'])
 
-            seq_numbers = [entry['seq'] for entry in stream_packets]
-            for idx in range(1, len(seq_numbers)):
-                if seq_numbers[idx] <= seq_numbers[idx - 1]:
+            # Retransmission detection using 32-bit modular arithmetic
+            for idx in range(1, len(stream_packets)):
+                curr = stream_packets[idx]
+                prev = stream_packets[idx - 1]
+                # Skip control-only packets (pure ACK, no payload, no SYN/FIN)
+                if curr['seq_advance'] == 0:
+                    continue
+                # Positive modular diff means forward; > half means wrapped backward
+                diff = (curr['seq'] - prev['seq']) % _SEQ_MAX
+                if diff > _SEQ_HALF:
                     packet_loss_indicators.append({
                         'type': 'retransmission',
                         'stream': stream_id,
-                        'packet_index': stream_packets[idx]['packet_index'],
-                        'time': stream_packets[idx]['time']
+                        'packet_index': curr['packet_index'],
+                        'time': curr['time']
                     })
 
+            # Sequence gap detection: skip sender-side no-advance packets
             for idx in range(1, len(stream_packets)):
                 prev = stream_packets[idx - 1]
-                expected_seq = prev['seq'] + max(1, prev['len'] - 54)
-                actual_seq = stream_packets[idx]['seq']
-                if actual_seq > expected_seq + 1000:
+                curr = stream_packets[idx]
+                if prev['seq_advance'] == 0:
+                    continue  # Previous packet didn't advance seq, no gap to measure
+                expected_seq = (prev['seq'] + prev['seq_advance']) % _SEQ_MAX
+                actual_seq = curr['seq']
+                gap = (actual_seq - expected_seq) % _SEQ_MAX
+                # Gap is a forward jump of more than 1000 bytes (not wraparound)
+                if 0 < gap < _SEQ_HALF and gap > 1000:
                     packet_loss_indicators.append({
                         'type': 'sequence_gap',
                         'stream': stream_id,
-                        'packet_index': stream_packets[idx]['packet_index'],
-                        'time': stream_packets[idx]['time'],
-                        'gap_size': actual_seq - expected_seq
+                        'packet_index': curr['packet_index'],
+                        'time': curr['time'],
+                        'gap_size': gap
                     })
 
         self.analysis_results['packet_loss'] = packet_loss_indicators
@@ -999,11 +1157,13 @@ class NetworkAnalyzer:
                 connection_id = f"{ip_layer.src}:{tcp_layer.sport}-{ip_layer.dst}:{tcp_layer.dport}"
 
                 flags = int(tcp_layer.flags)
-                if flags == 0x02:  # SYN
+                is_syn = bool(flags & 0x02)
+                is_ack = bool(flags & 0x10)
+                if is_syn and not is_ack:  # SYN (ECN bits tolerated)
                     tcp_handshakes[connection_id] = {'syn_time': float(packet.time)}
-                elif flags == 0x12 and connection_id in tcp_handshakes:  # SYN-ACK
+                elif is_syn and is_ack and connection_id in tcp_handshakes:  # SYN-ACK
                     tcp_handshakes[connection_id]['syn_ack_time'] = float(packet.time)
-                elif flags == 0x10 and connection_id in tcp_handshakes:  # ACK
+                elif is_ack and not is_syn and connection_id in tcp_handshakes:  # ACK
                     handshake = tcp_handshakes[connection_id]
                     if 'syn_ack_time' in handshake:
                         total_time = float(packet.time) - handshake['syn_time']
@@ -1641,6 +1801,188 @@ class NetworkAnalyzer:
 
         return details
 
+    def _extract_packet_deep_detail(self, packet_index):
+        """Extract deep dissection of a single packet with per-field byte offsets.
+
+        Returns a structure suitable for Wireshark-style layer tree + hex dump display.
+        Each field includes byteRange [start, end] (inclusive) into the raw packet bytes.
+        """
+        if packet_index < 0 or packet_index >= len(self.packets):
+            return None
+
+        packet = self.packets[packet_index]
+        raw_bytes = bytes(packet)
+        timestamp = float(packet.time)
+
+        ts_human = datetime.fromtimestamp(timestamp, tz=timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f')
+
+        layers = []
+        offset = 0  # cumulative byte offset
+
+        # Frame (meta layer — no physical bytes, but covers entire packet)
+        layers.append({
+            'name': 'Frame',
+            'displayName': f'Frame {packet_index} ({len(raw_bytes)} bytes on wire)',
+            'byteRange': [0, len(raw_bytes) - 1],
+            'fields': [
+                {'name': 'Arrival Time', 'value': ts_human, 'byteRange': None},
+                {'name': 'Frame Length', 'value': f'{len(raw_bytes)} bytes', 'byteRange': None},
+                {'name': 'Capture Length', 'value': f'{len(raw_bytes)} bytes', 'byteRange': None},
+            ]
+        })
+
+        # Ethernet layer
+        if packet.haslayer(Ether):
+            eth = packet[Ether]
+            eth_len = 14  # standard Ethernet II header
+            layers.append({
+                'name': 'Ethernet',
+                'displayName': f'Ethernet II, Src: {eth.src}, Dst: {eth.dst}',
+                'byteRange': [offset, offset + eth_len - 1],
+                'fields': [
+                    {'name': 'Destination', 'value': eth.dst, 'byteRange': [offset, offset + 5]},
+                    {'name': 'Source', 'value': eth.src, 'byteRange': [offset + 6, offset + 11]},
+                    {'name': 'Type', 'value': f'0x{eth.type:04x}', 'byteRange': [offset + 12, offset + 13]},
+                ]
+            })
+            offset += eth_len
+
+        # IP layer
+        if packet.haslayer(IP):
+            ip = packet[IP]
+            ip_hdr_len = ip.ihl * 4
+            ip_start = offset
+            fields = [
+                {'name': 'Version', 'value': str(ip.version), 'byteRange': [ip_start, ip_start]},
+                {'name': 'Header Length', 'value': f'{ip_hdr_len} bytes ({ip.ihl})', 'byteRange': [ip_start, ip_start]},
+                {'name': 'DSCP/ECN', 'value': f'0x{ip.tos:02x}', 'byteRange': [ip_start + 1, ip_start + 1]},
+                {'name': 'Total Length', 'value': str(ip.len), 'byteRange': [ip_start + 2, ip_start + 3]},
+                {'name': 'Identification', 'value': f'0x{ip.id:04x}', 'byteRange': [ip_start + 4, ip_start + 5]},
+                {'name': 'Flags', 'value': f'0x{ip.flags.value:02x}' if hasattr(ip.flags, 'value') else str(ip.flags), 'byteRange': [ip_start + 6, ip_start + 7]},
+                {'name': 'Fragment Offset', 'value': str(ip.frag), 'byteRange': [ip_start + 6, ip_start + 7]},
+                {'name': 'TTL', 'value': str(ip.ttl), 'byteRange': [ip_start + 8, ip_start + 8]},
+                {'name': 'Protocol', 'value': str(ip.proto), 'byteRange': [ip_start + 9, ip_start + 9]},
+                {'name': 'Header Checksum', 'value': f'0x{ip.chksum:04x}' if ip.chksum is not None else '0x0000', 'byteRange': [ip_start + 10, ip_start + 11]},
+                {'name': 'Source Address', 'value': ip.src, 'byteRange': [ip_start + 12, ip_start + 15]},
+                {'name': 'Destination Address', 'value': ip.dst, 'byteRange': [ip_start + 16, ip_start + 19]},
+            ]
+            if ip_hdr_len > 20:
+                fields.append({'name': 'Options', 'value': f'{ip_hdr_len - 20} bytes', 'byteRange': [ip_start + 20, ip_start + ip_hdr_len - 1]})
+
+            layers.append({
+                'name': 'IPv4',
+                'displayName': f'Internet Protocol Version 4, Src: {ip.src}, Dst: {ip.dst}',
+                'byteRange': [ip_start, ip_start + ip_hdr_len - 1],
+                'fields': fields
+            })
+            offset = ip_start + ip_hdr_len
+
+            # TCP layer
+            if packet.haslayer(TCP):
+                tcp = packet[TCP]
+                tcp_hdr_len = tcp.dataofs * 4
+                tcp_start = offset
+
+                flag_names = []
+                if tcp.flags.S: flag_names.append('SYN')
+                if tcp.flags.A: flag_names.append('ACK')
+                if tcp.flags.F: flag_names.append('FIN')
+                if tcp.flags.R: flag_names.append('RST')
+                if tcp.flags.P: flag_names.append('PSH')
+                if tcp.flags.U: flag_names.append('URG')
+                flags_str = ', '.join(flag_names) if flag_names else 'NONE'
+
+                tcp_fields = [
+                    {'name': 'Source Port', 'value': str(tcp.sport), 'byteRange': [tcp_start, tcp_start + 1]},
+                    {'name': 'Destination Port', 'value': str(tcp.dport), 'byteRange': [tcp_start + 2, tcp_start + 3]},
+                    {'name': 'Sequence Number', 'value': str(tcp.seq), 'byteRange': [tcp_start + 4, tcp_start + 7]},
+                    {'name': 'Acknowledgment Number', 'value': str(tcp.ack), 'byteRange': [tcp_start + 8, tcp_start + 11]},
+                    {'name': 'Data Offset', 'value': f'{tcp_hdr_len} bytes ({tcp.dataofs})', 'byteRange': [tcp_start + 12, tcp_start + 12]},
+                    {'name': 'Flags', 'value': f'0x{int(tcp.flags):03x} ({flags_str})', 'byteRange': [tcp_start + 12, tcp_start + 13]},
+                    {'name': 'Window', 'value': str(tcp.window), 'byteRange': [tcp_start + 14, tcp_start + 15]},
+                    {'name': 'Checksum', 'value': f'0x{tcp.chksum:04x}' if tcp.chksum is not None else '0x0000', 'byteRange': [tcp_start + 16, tcp_start + 17]},
+                    {'name': 'Urgent Pointer', 'value': str(tcp.urgptr), 'byteRange': [tcp_start + 18, tcp_start + 19]},
+                ]
+                if tcp_hdr_len > 20:
+                    tcp_fields.append({'name': 'Options', 'value': f'{tcp_hdr_len - 20} bytes', 'byteRange': [tcp_start + 20, tcp_start + tcp_hdr_len - 1]})
+
+                layers.append({
+                    'name': 'TCP',
+                    'displayName': f'TCP, Src Port: {tcp.sport}, Dst Port: {tcp.dport} [{flags_str}]',
+                    'byteRange': [tcp_start, tcp_start + tcp_hdr_len - 1],
+                    'fields': tcp_fields
+                })
+                offset = tcp_start + tcp_hdr_len
+
+            # UDP layer
+            elif packet.haslayer(UDP):
+                udp = packet[UDP]
+                udp_start = offset
+                udp_hdr_len = 8
+
+                layers.append({
+                    'name': 'UDP',
+                    'displayName': f'UDP, Src Port: {udp.sport}, Dst Port: {udp.dport}',
+                    'byteRange': [udp_start, udp_start + udp_hdr_len - 1],
+                    'fields': [
+                        {'name': 'Source Port', 'value': str(udp.sport), 'byteRange': [udp_start, udp_start + 1]},
+                        {'name': 'Destination Port', 'value': str(udp.dport), 'byteRange': [udp_start + 2, udp_start + 3]},
+                        {'name': 'Length', 'value': str(udp.len), 'byteRange': [udp_start + 4, udp_start + 5]},
+                        {'name': 'Checksum', 'value': f'0x{udp.chksum:04x}' if udp.chksum is not None else '0x0000', 'byteRange': [udp_start + 6, udp_start + 7]},
+                    ]
+                })
+                offset = udp_start + udp_hdr_len
+
+            # ICMP layer
+            elif packet.haslayer(ICMP):
+                icmp = packet[ICMP]
+                icmp_start = offset
+                icmp_hdr_len = 8
+
+                icmp_types = {0: 'Echo Reply', 3: 'Destination Unreachable', 8: 'Echo Request', 11: 'Time Exceeded'}
+                type_name = icmp_types.get(icmp.type, f'Type {icmp.type}')
+
+                layers.append({
+                    'name': 'ICMP',
+                    'displayName': f'ICMP {type_name}',
+                    'byteRange': [icmp_start, icmp_start + icmp_hdr_len - 1],
+                    'fields': [
+                        {'name': 'Type', 'value': f'{icmp.type} ({type_name})', 'byteRange': [icmp_start, icmp_start]},
+                        {'name': 'Code', 'value': str(icmp.code), 'byteRange': [icmp_start + 1, icmp_start + 1]},
+                        {'name': 'Checksum', 'value': f'0x{icmp.chksum:04x}' if icmp.chksum is not None else '0x0000', 'byteRange': [icmp_start + 2, icmp_start + 3]},
+                        {'name': 'Identifier', 'value': str(getattr(icmp, 'id', 0)), 'byteRange': [icmp_start + 4, icmp_start + 5]},
+                        {'name': 'Sequence', 'value': str(getattr(icmp, 'seq', 0)), 'byteRange': [icmp_start + 6, icmp_start + 7]},
+                    ]
+                })
+                offset = icmp_start + icmp_hdr_len
+
+        # Payload / Data layer (remaining bytes after all headers)
+        if offset < len(raw_bytes):
+            payload_len = len(raw_bytes) - offset
+            preview = raw_bytes[offset:offset + 100]
+            ascii_preview = ''.join(chr(b) if 32 <= b < 127 else '.' for b in preview)
+
+            layers.append({
+                'name': 'Data',
+                'displayName': f'Data ({payload_len} bytes)',
+                'byteRange': [offset, len(raw_bytes) - 1],
+                'fields': [
+                    {'name': 'Length', 'value': f'{payload_len} bytes', 'byteRange': [offset, len(raw_bytes) - 1]},
+                    {'name': 'Preview (ASCII)', 'value': ascii_preview[:80], 'byteRange': [offset, min(offset + len(ascii_preview) - 1, len(raw_bytes) - 1)]},
+                ]
+            })
+
+        return {
+            'index': packet_index,
+            'timestamp': timestamp,
+            'timestampHuman': ts_human,
+            'captureLength': len(raw_bytes),
+            'wireLength': len(raw_bytes),
+            'layers': layers,
+            'rawHex': raw_bytes[:65535].hex(),
+            'totalBytes': len(raw_bytes)
+        }
+
     def _find_packets_by_connection_id(self, connection_id: str) -> set:
         """Find packet indices for a connection by parsing its ID and scanning packets.
 
@@ -1735,8 +2077,13 @@ class NetworkAnalyzer:
             connection_id = timeline['id']
             packet_indices = set()
 
-            # PRIMARY: Collect all packet references from stages
-            if 'stages' in timeline:
+            # For flood connections: use allPacketRefs (larger sample) for accurate statistics.
+            # Stage packetRefs only cover 30 animation frames; allPacketRefs holds up to 200
+            # evenly-sampled indices so the statistics endpoint gets representative flag data.
+            if timeline.get('allPacketRefs'):
+                packet_indices.update(timeline['allPacketRefs'])
+            elif 'stages' in timeline:
+                # PRIMARY: Collect all packet references from stages
                 for stage in timeline['stages']:
                     if 'packetRefs' in stage:
                         packet_indices.update(stage['packetRefs'])

@@ -197,13 +197,15 @@ export class ProtocolAnimationController {
         return { x: progress, y: 0 }
       case 'backward':
         return { x: 1 - progress, y: 0 }
-      case 'both':
-        // 雙向動畫，來回移動
-        const cycle = Math.sin(progress * Math.PI * 2) * 0.5 + 0.5
+      case 'both': {
+        // 雙向動畫：從來源端（x=0）出發 → 目的端（x=1）→ 返回
+        // -cos 確保動畫從 x=0 起始，符合協議封包從 client 出發的語意
+        const cycle = (-Math.cos(progress * Math.PI * 2) + 1) * 0.5
         return { x: cycle, y: 0 }
+      }
       case 'wait':
-        // 等待狀態，停在起點而非中段
-        return { x: 0, y: 0 }
+        // 等待狀態：封包已到達目的端，停在 x=1 等待回應（如 DNS Resolving、HTTP Processing）
+        return { x: 1.0, y: 0 }
       case 'none':
         // 無移動，停在起點
         return { x: 0, y: 0 }

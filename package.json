@@ -9,9 +9,16 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
-    "backend": "python -m uvicorn analysis_server:app --host 0.0.0.0 --port 8000",
-    "backend:dev": "python -m uvicorn analysis_server:app --host 0.0.0.0 --port 8000 --reload",
-    "kill:8000": "cmd /c \"for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :8000 ^| findstr LISTENING') do taskkill /F /PID %a\""
+    "backend": "python -m uvicorn analysis_server:app --host 0.0.0.0 --port 8001",
+    "backend:dev": "python -m uvicorn analysis_server:app --host 0.0.0.0 --port 8001 --reload",
+    "kill:8001": "cmd /c \"for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :8001 ^| findstr LISTENING') do taskkill /F /PID %a\" & exit 0",
+    "kill:5173": "cmd /c \"for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :5173 ^| findstr LISTENING') do taskkill /F /PID %a\" & exit 0",
+    "kill:5174": "cmd /c \"for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :5174 ^| findstr LISTENING') do taskkill /F /PID %a\" & exit 0",
+    "kill:all": "npm run kill:8001 & npm run kill:5173 & npm run kill:5174",
+    "predev": "npm run kill:5173 2>nul & npm run kill:5174 2>nul & exit /b 0",
+    "prebackend": "npm run kill:8001 2>nul & exit /b 0",
+    "prebackend:dev": "npm run kill:8001 2>nul & exit /b 0",
+    "dev:all": "concurrently --kill-others --names \"BACKEND,FRONTEND\" --prefix-colors \"cyan,green\" \"npm run backend:dev\" \"npm run dev\""
   },
   "dependencies": {
     "lucide-react": "^0.545.0",
@@ -27,6 +34,7 @@
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.0.4",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.1",
     "eslint": "^9.37.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.23",

@@ -50,7 +50,8 @@ export class PacketParticleSystem {
 
   /**
    * 解析連線 ID 來取得連線的起點和終點
-   * 連線 ID 格式：protocol-srcIp-srcPort-dstIp-dstPort
+   * 連線 ID 格式：[protocol[-subtype]-]srcIp-srcPort-dstIp-dstPort
+   * 使用正則從尾端擷取兩組 IP:port，相容含 subtype 的 ID（如 tcp-teardown-...）
    */
   _parseConnectionEndpoints() {
     if (!this.options.connectionId) {
@@ -59,15 +60,11 @@ export class PacketParticleSystem {
       return
     }
 
-    const parts = this.options.connectionId.split('-')
-    if (parts.length >= 5) {
-      // 格式：protocol-srcIp-srcPort-dstIp-dstPort
-      const protocol = parts[0]
-      const srcIp = parts[1]
-      const srcPort = parts[2]
-      const dstIp = parts[3]
-      const dstPort = parts[4]
-
+    // 從 ID 尾端匹配 srcIp-srcPort-dstIp-dstPort，忽略前置的 protocol/subtype 前綴
+    const ipPortPattern = /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-(\d+)-(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-(\d+)$/
+    const match = this.options.connectionId.match(ipPortPattern)
+    if (match) {
+      const [, srcIp, srcPort, dstIp, dstPort] = match
       this.connectionSource = `${srcIp}:${srcPort}`
       this.connectionDest = `${dstIp}:${dstPort}`
     } else {
@@ -380,7 +377,9 @@ export class PacketParticleSystem {
         const baseSize = minSize + (Math.log(packet.length + 1) / Math.log(65536)) * (maxSize - minSize)
 
         // 計算生命週期狀態
-        const lifecycleState = this._calculateLifecycleState(particlePosition)
+        // backward 封包（B→A）使用反轉位置，確保 SPAWN（發送）在出發點、ARRIVE（收到）在目的地
+        const lifecyclePosition = isForward ? particlePosition : (1.0 - particlePosition)
+        const lifecycleState = this._calculateLifecycleState(lifecyclePosition)
         const size = baseSize * lifecycleState.scale
 
         // 計算粒子顏色（基於協議或錯誤狀態）

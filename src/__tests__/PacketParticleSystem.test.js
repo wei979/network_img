@@ -172,3 +172,133 @@ describe('PacketParticleSystem.getActiveParticles — wrap-around bug', () => {
     expect(ps.getActiveParticles().length).toBe(0)
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BUG FIX: backward packet lifecycle phase was semantically inverted.
+//
+// For a backward packet (B→A), particlePosition = 1 - travelProgress:
+//   OLD: _calculateLifecycleState(particlePosition)
+//     → travelProgress=0 (just departed B): position=1.0 → ARRIVE phase  (WRONG)
+//     → travelProgress=1 (arrived at A):    position=0.0 → SPAWN phase   (WRONG)
+//
+//   NEW: _calculateLifecycleState(1.0 - particlePosition) = _calculateLifecycleState(travelProgress)
+//     → travelProgress=0 (just departed B): lifecyclePos=0.0 → SPAWN phase  (correct: departing B)
+//     → travelProgress=1 (arrived at A):    lifecyclePos=1.0 → ARRIVE phase (correct: arrived at A)
+// ─────────────────────────────────────────────────────────────────────────────
+describe('PacketParticleSystem.getActiveParticles — backward packet lifecycle phase', () => {
+  // connectionId drives direction detection via _parseConnectionEndpoints (src = parts[1]:parts[2])
+  // connectionPath (2nd constructor arg) is for SVG rendering only — pass null
+  function makePs() {
+    return new PacketParticleSystem(
+      makeTcpHandshakePackets(),
+      null,
+      { loop: true, connectionId: 'tcp-192.168.1.1-12345-10.0.0.1-80' }
+    )
+  }
+
+  it('SYN|ACK shows spawn phase (發送) at departure (travelProgress ≈ 0)', () => {
+    const ps = makePs()
+    const synAckNorm = ps.packets[1]._normalizedTime
+    const displayDuration = ps.packets[1]._travelTime / (ps.duration / 1000)
+
+    // Set time just after SYN|ACK trigger → travelProgress ≈ 0 (packet just departed B)
+    ps.currentTime = ps.duration * (synAckNorm + displayDuration * 0.01)
+    const particles = ps.getActiveParticles()
+    const synAck = particles.find(p => p.color === COLOR_SYN_ACK)
+
+    expect(synAck).toBeDefined()
+    expect(synAck.phase).toBe('spawn')
+  })
+
+  it('SYN|ACK shows arrive phase (收到) at destination (travelProgress ≈ 1)', () => {
+    const ps = makePs()
+    const synAckNorm = ps.packets[1]._normalizedTime
+    const displayDuration = ps.packets[1]._travelTime / (ps.duration / 1000)
+
+    // Set time near end of SYN|ACK display window → travelProgress ≈ 1 (packet arriving at A)
+    ps.currentTime = ps.duration * (synAckNorm + displayDuration * 0.97)
+    const particles = ps.getActiveParticles()
+    const synAck = particles.find(p => p.color === COLOR_SYN_ACK)
+
+    expect(synAck).toBeDefined()
+    expect(synAck.phase).toBe('arrive')
+  })
+
+  it('forward SYN packet shows spawn phase at departure (travelProgress ≈ 0)', () => {
+    const ps = makePs()
+    const synNorm = ps.packets[0]._normalizedTime
+    const displayDuration = ps.packets[0]._travelTime / (ps.duration / 1000)
+
+    ps.currentTime = ps.duration * (synNorm + displayDuration * 0.01)
+    const particles = ps.getActiveParticles()
+    // SYN is forward; color is '#22c55e'
+    const syn = particles.find(p => p.color === '#22c55e')
+
+    expect(syn).toBeDefined()
+    expect(syn.phase).toBe('spawn')
+  })
+
+  it('forward SYN packet shows arrive phase at destination (travelProgress ≈ 1)', () => {
+    const ps = makePs()
+    const synNorm = ps.packets[0]._normalizedTime
+    const displayDuration = ps.packets[0]._travelTime / (ps.duration / 1000)
+
+    ps.currentTime = ps.duration * (synNorm + displayDuration * 0.97)
+    const particles = ps.getActiveParticles()
+    const syn = particles.find(p => p.color === '#22c55e')
+
+    expect(syn).toBeDefined()
+    expect(syn.phase).toBe('arrive')
+  })
+})
+
+describe('PacketParticleSystem._parseConnectionEndpoints — subtype IDs (H-5)', () => {
+  const packets = [
+    { timestamp: 0, length: 60, headers: { tcp: { flags: 'FIN,ACK' } },
+      fiveTuple: { srcIp: '10.128.0.2', srcPort: '5416', dstIp: '10.0.0.2', dstPort: '80', protocol: 'tcp' } },
+    { timestamp: 0.001, length: 60, headers: { tcp: { flags: 'ACK' } },
+      fiveTuple: { srcIp: '10.0.0.2', srcPort: '80', dstIp: '10.128.0.2', dstPort: '5416', protocol: 'tcp' } },
+  ]
+
+  it('correctly parses src/dst from a subtype ID (tcp-teardown-...)', () => {
+    const ps = new PacketParticleSystem(packets, null, {
+      connectionId: 'tcp-teardown-10.128.0.2-5416-10.0.0.2-80',
+      loop: false,
+    })
+    expect(ps.connectionSource).toBe('10.128.0.2:5416')
+    expect(ps.connectionDest).toBe('10.0.0.2:80')
+  })
+
+  it('correctly parses src/dst from an http-request subtype ID', () => {
+    const ps = new PacketParticleSystem(packets, null, {
+      connectionId: 'http-request-10.128.0.2-5416-10.0.0.2-80',
+      loop: false,
+    })
+    expect(ps.connectionSource).toBe('10.128.0.2:5416')
+    expect(ps.connectionDest).toBe('10.0.0.2:80')
+  })
+
+  it('still works for plain IDs with no subtype (tcp-...)', () => {
+    const ps = new PacketParticleSystem(packets, null, {
+      connectionId: 'tcp-10.128.0.2-5416-10.0.0.2-80',
+      loop: false,
+    })
+    expect(ps.connectionSource).toBe('10.128.0.2:5416')
+    expect(ps.connectionDest).toBe('10.0.0.2:80')
+  })
+
+  it('backward packet (FIN+ACK from dst→src) is correctly classified as backward when subtype ID used', () => {
+    const ps = new PacketParticleSystem(packets, null, {
+      connectionId: 'tcp-teardown-10.128.0.2-5416-10.0.0.2-80',
+      loop: false,
+    })
+    // Advance to show the backward ACK packet (index 1, from 10.0.0.2)
+    ps.currentProgress = packets[1].normalizedTime ?? 0.5
+    const active = ps.getActiveParticles()
+    const ack = active.find(p => p.index === 1)
+    if (ack) {
+      // Backward packet should travel from dst toward src (isForward === false)
+      expect(ack.isForward).toBe(false)
+    }
+  })
+})

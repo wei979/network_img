@@ -22,6 +22,9 @@ import {
 import { ProtocolAnimationController } from './lib/ProtocolAnimationController'
 import { getProtocolColor } from './lib/ProtocolStates'
 import PacketParticleSystem from './lib/PacketParticleSystem'
+import { parseTimelineId, clamp, calculateCanvasSize, FORCE_PARAMS, calculateDynamicForceParams, calculateForces, applyForces, buildNodeLayout } from './lib/graphLayout.js'
+import { getDepthLabel, computeSearchMatchedNodeIds, computeSearchMatchedConnectionIds } from './lib/nodeDashboard.js'
+import { computeConnectionHealth, computeNodeDegreeHealth, computeOverallHealthWithNodes, buildOverviewHealthFromDetailed, computeOverallHealthFromMapWithNodes } from './lib/connectionHealth.js'
 // PacketViewer 已整合到 BatchPacketViewer，不再單獨使用
 import BatchPacketViewer from './components/BatchPacketViewer'
 import TimelineControls from './components/TimelineControls'
@@ -45,6 +48,9 @@ const API_ANALYZE_URL = '/api/analyze'
 // 自動檢測後端 API 是否可用，不再依賴環境變數
 const ANALYZER_API_ENABLED = true
 
+// 攻擊類型嚴重度排序（越前面越嚴重），供 buildAggregatedConnections 選出 worst-case protocolType
+const FLOOD_SEVERITY_ORDER = ['urg-psh-fin-flood', 'ack-fin-flood', 'syn-flood', 'rst-flood', 'ack-flood', 'psh-flood', 'fin-flood', 'tcp-flood', 'timeout']
+
 const PROTOCOL_COLORS = {
   // 基本協議顏色
   tcp: '#38bdf8',
@@ -65,8 +71,37 @@ const PROTOCOL_COLORS = {
   'udp-transfer': '#60a5fa',    // 淡藍色 - UDP 傳輸
   'icmp-ping': '#facc15',       // 黃色 - ICMP Ping
   'ssh-secure': '#10b981',      // 綠色 - SSH 安全連線
-  'psh-flood': '#ec4899'        // 粉紅色 - PSH 洪水攻擊
+  'psh-flood': '#ec4899',       // 粉紅色 - PSH 洪水攻擊
+  'syn-flood': '#ef4444',       // 紅色 - SYN 洪水攻擊
+  'fin-flood': '#dc2626',       // 深紅色 - FIN 洪水攻擊
+  'tcp-flood': '#dc2626',       // 深紅色 - TCP 通用洪水
+  'urg-psh-fin-flood': '#9f1239', // 深玫紅 - URG+PSH+FIN 複合攻擊
+  'ack-flood': '#dc2626',       // 深紅色 - ACK 洪水攻擊
+  'rst-flood': '#f43f5e',       // 玫紅色 - RST 洪水攻擊
+  'ack-fin-flood': '#9f1239',   // 深玫紅 - ACK+FIN 複合攻擊
 }
+
+const PROTOCOL_LINE_STYLES = {
+  'tcp-handshake':  { dashArray: null,         strokeWidth: 1.2, double: false }, // 實線，綠
+  'tcp-teardown':   { dashArray: '8 4',         strokeWidth: 1.0, double: false }, // 長虛線，紅
+  'tcp-data':       { dashArray: null,          strokeWidth: 1.4, double: false }, // 實線粗，藍
+  'tcp-session':    { dashArray: null,          strokeWidth: 1.2, double: false }, // 實線，青
+  'http-request':   { dashArray: '4 2',         strokeWidth: 1.0, double: false }, // 短虛線，紫
+  'https-request':  { dashArray: null,          strokeWidth: 0.7, double: true  }, // 雙實線，藍綠
+  'dns-query':      { dashArray: '1.5 2',       strokeWidth: 0.8, double: false }, // 點線，橙
+  'udp-transfer':   { dashArray: '4 2 1.5 2',   strokeWidth: 0.8, double: false }, // 點虛線，淡藍
+  'timeout':        { dashArray: '6 6',         strokeWidth: 1.0, double: false }, // 稀疏虛線，黃橙
+  'icmp-ping':      { dashArray: '1 1.5',       strokeWidth: 0.6, double: false }, // 密點線，黃
+  'psh-flood':      { dashArray: '2 1',         strokeWidth: 2.0, double: false }, // 密虛+粗，粉紅
+  'syn-flood':      { dashArray: '3 1',         strokeWidth: 2.0, double: false }, // 密虛+粗，紅
+  'fin-flood':      { dashArray: '2 1.5',       strokeWidth: 2.0, double: false }, // 密虛+粗，深紅
+  'ack-flood':      { dashArray: '3 1',         strokeWidth: 2.0, double: false }, // 密虛+粗，深紅
+  'rst-flood':      { dashArray: '2 1',         strokeWidth: 2.0, double: false }, // 密虛+粗，玫瑰紅
+  'ack-fin-flood':  { dashArray: '1.5 1',       strokeWidth: 2.2, double: false }, // 超密虛+粗，深玫紅
+  'urg-psh-fin-flood': { dashArray: '1 1',      strokeWidth: 2.4, double: false }, // 點線+最粗，深紅
+  'tcp-flood':      { dashArray: '3 1.5',       strokeWidth: 1.8, double: false }, // 密虛+粗，深紅
+}
+const DEFAULT_LINE_STYLE = { dashArray: '2 2', strokeWidth: 0.8, double: false }
 
 const STAGE_LABEL_MAP = {
   // TCP 三次握手
@@ -92,24 +127,6 @@ const STAGE_LABEL_MAP = {
 const translateStageLabel = (label) => STAGE_LABEL_MAP[label] ?? label
 
 // 動態畫布尺寸計算（依據節點數量與複雜度）
-const calculateCanvasSize = (nodeCount, connectionCount) => {
-  // 基礎尺寸：每個節點需要的最小空間
-  const baseNodeSpace = 150 // 每個節點佔據的基礎空間
-  const connectionFactor = Math.sqrt(connectionCount / Math.max(nodeCount, 1)) // 連線密度影響因子
-
-  // 計算最小所需面積
-  const minArea = nodeCount * baseNodeSpace * (1 + connectionFactor * 0.5)
-
-  // 轉換為正方形邊長（保持比例）
-  const minSize = Math.sqrt(minArea)
-
-  // 設定最小值與最大值（避免過小或過大）
-  const size = Math.max(500, Math.min(3000, minSize))
-
-  // HiDPI 支援：返回邏輯尺寸
-  return Math.ceil(size)
-}
-
 // 初始靜態值（會在組件中動態計算）
 let VIEWBOX_SIZE = 100
 let GRID_SIZE = 1000
@@ -142,64 +159,7 @@ const MIN_NODE_DISTANCE = Math.max(
 const CONNECTION_BUNDLE_SPACING = 4
 const CONNECTION_ENDPOINT_OFFSET = 0.32
 
-// 力導向圖參數（依據用戶需求設定）
-const FORCE_PARAMS = {
-  // 基礎參數（會根據節點數量動態調整）
-  baseRepulsion: 1000,       // 節點間斥力基礎值（800-1200）
-  baseLinkDistance: 200,     // 連線長度基礎值（150-250）
-  baseGravity: 0.05,         // 中心引力基礎值（降低以保持節點分散）
-
-  // 動態調整係數
-  repulsionScale: 1.0,       // 隨節點數量調整斥力
-  linkDistanceScale: 1.0,    // 隨節點數量調整連線長度
-  gravityScale: 1.0,         // 隨節點數量調整重力
-
-  // 碰撞檢測
-  collisionRadius: 2.5,      // 碰撞半徑（基於節點大小）
-  collisionStrength: 0.8,    // 碰撞力度
-
-  // 速度與阻尼
-  damping: 0.85,             // 阻尼係數（0-1，越小越快停止）
-  maxVelocity: 0.5,          // 最大速度限制
-  minVelocity: 0.001,        // 最小速度閾值（低於此值視為靜止）
-
-  // 迭代控制
-  initialIterations: 100,    // 初始化時的迭代次數
-  stabilityThreshold: 0.01   // 穩定性閾值
-}
-
-// 動態計算力導向圖參數（綁定畫布對角線與節點數）
-const calculateDynamicForceParams = (nodeCount, canvasSize) => {
-  // 計算畫布對角線長度
-  const diagonal = Math.sqrt(2) * canvasSize
-
-  // 節點數量因子
-  const countFactor = Math.sqrt(nodeCount / 10) // 以10個節點為基準
-
-  // 畫布尺寸因子（相對於基準 1000）
-  const sizeFactor = canvasSize / 1000
-
-  return {
-    // 斥力與畫布尺寸成正比
-    repulsion: FORCE_PARAMS.baseRepulsion * sizeFactor * (1 + countFactor * 0.3),
-
-    // 連線長度約為對角線的 1/5 到 1/3
-    linkDistance: (diagonal / 6) * (1 + countFactor * 0.15),
-
-    // 重力隨畫布增大而減小（避免過度聚中心）
-    gravity: FORCE_PARAMS.baseGravity / sizeFactor * (1 - countFactor * 0.1),
-
-    // 碰撞半徑隨畫布增大
-    collisionRadius: FORCE_PARAMS.collisionRadius * sizeFactor * Math.max(1, countFactor * 0.5),
-
-    // 保存畫布資訊供邊界力使用
-    canvasSize,
-    diagonal
-  }
-}
-
-// 工具函數與數學運算
-const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+// 工具函數與數學運算（clamp, calculateCanvasSize, FORCE_PARAMS, calculateDynamicForceParams imported from ./lib/graphLayout.js）
 
 const gridToView = (value) => value * GRID_SCALE
 
@@ -348,450 +308,7 @@ const pointOnPolyline = (points, t) => {
 }
 
 
-// 力導向圖核心計算函數
-const calculateForces = (nodes, connections, params) => {
-  const forces = new Map()
-
-  // 提取畫布尺寸（避免重複宣告）
-  const canvasSize = params.canvasSize || 1000
-  const centerX = canvasSize / 2
-  const centerY = canvasSize / 2
-
-  // 初始化所有節點的力為零向量
-  nodes.forEach(node => {
-    forces.set(node.id, { x: 0, y: 0 })
-  })
-
-  // 1. 計算節點間斥力（Repulsion Force）
-  for (let i = 0; i < nodes.length; i++) {
-    for (let j = i + 1; j < nodes.length; j++) {
-      const nodeA = nodes[i]
-      const nodeB = nodes[j]
-
-      // 跳過座標無效的節點
-      if (!isFinite(nodeA.x) || !isFinite(nodeA.y) || !isFinite(nodeB.x) || !isFinite(nodeB.y)) {
-        continue
-      }
-
-      const dx = nodeB.x - nodeA.x
-      const dy = nodeB.y - nodeA.y
-      const dist = Math.hypot(dx, dy)
-      // 防止除以零，如果距離太小或為 NaN，跳過
-      if (!isFinite(dist) || dist < 0.1) {
-        continue
-      }
-
-      // 庫侖斥力：F = k / r²
-      const repulsionForce = params.repulsion / (dist * dist)
-      const fx = (dx / dist) * repulsionForce
-      const fy = (dy / dist) * repulsionForce
-
-      const forceA = forces.get(nodeA.id)
-      const forceB = forces.get(nodeB.id)
-
-      forceA.x -= fx
-      forceA.y -= fy
-      forceB.x += fx
-      forceB.y += fy
-    }
-  }
-
-  // 2. 計算連線引力（Attraction Force）
-  const nodeMap = new Map(nodes.map(n => [n.id, n]))
-
-  connections.forEach(conn => {
-    const nodeA = nodeMap.get(conn.src)
-    const nodeB = nodeMap.get(conn.dst)
-
-    if (!nodeA || !nodeB) return
-
-    // 跳過座標無效的節點
-    if (!isFinite(nodeA.x) || !isFinite(nodeA.y) || !isFinite(nodeB.x) || !isFinite(nodeB.y)) {
-      return
-    }
-
-    const dx = nodeB.x - nodeA.x
-    const dy = nodeB.y - nodeA.y
-    const dist = Math.hypot(dx, dy)
-    if (!isFinite(dist) || dist < 0.1) {
-      return
-    }
-
-    // 胡克引力：F = k * (r - r0)
-    const displacement = dist - params.linkDistance
-    const attractionForce = displacement * 0.1 // 彈簧常數
-    const fx = (dx / dist) * attractionForce
-    const fy = (dy / dist) * attractionForce
-
-    const forceA = forces.get(nodeA.id)
-    const forceB = forces.get(nodeB.id)
-
-    forceA.x += fx
-    forceA.y += fy
-    forceB.x -= fx
-    forceB.y -= fy
-  })
-
-  // 3. 計算重力（Gravity Force）- 將節點拉向畫面中心
-  // 使用動態畫布尺寸的中心，而非固定的 VIEWBOX_SIZE
-  nodes.forEach(node => {
-    // 跳過中心節點（已固定位置）
-    if (node.isCenter) return
-
-    // 跳過座標無效的節點
-    if (!isFinite(node.x) || !isFinite(node.y)) {
-      return
-    }
-
-    const dx = centerX - node.x
-    const dy = centerY - node.y
-    const dist = Math.hypot(dx, dy)
-    if (!isFinite(dist) || dist < 0.1) {
-      return
-    }
-
-    const gravityForce = params.gravity * dist
-    const fx = (dx / dist) * gravityForce
-    const fy = (dy / dist) * gravityForce
-
-    const force = forces.get(node.id)
-    force.x += fx
-    force.y += fy
-  })
-
-  // 4. 計算碰撞力（Collision Force）
-  for (let i = 0; i < nodes.length; i++) {
-    for (let j = i + 1; j < nodes.length; j++) {
-      const nodeA = nodes[i]
-      const nodeB = nodes[j]
-
-      const dx = nodeB.x - nodeA.x
-      const dy = nodeB.y - nodeA.y
-      const dist = Math.hypot(dx, dy) || 0.1
-      const minDist = params.collisionRadius * 2
-
-      if (dist < minDist) {
-        const overlap = minDist - dist
-        const collisionForce = overlap * FORCE_PARAMS.collisionStrength
-        const fx = (dx / dist) * collisionForce
-        const fy = (dy / dist) * collisionForce
-
-        const forceA = forces.get(nodeA.id)
-        const forceB = forces.get(nodeB.id)
-
-        forceA.x -= fx
-        forceA.y -= fy
-        forceB.x += fx
-        forceB.y += fy
-      }
-    }
-  }
-
-  // 5. 計算矩形邊界回彈力（Boundary Repulsion Force）
-  // 防止節點黏在角落或邊緣
-  const padding = params.collisionRadius * 3 // 邊界緩衝區
-  const boundaryStrength = params.repulsion * 0.5 // 邊界力強度
-
-  nodes.forEach(node => {
-    const force = forces.get(node.id)
-
-    // 左邊界
-    if (node.x < padding) {
-      const dist = Math.max(node.x, 1)
-      const pushForce = boundaryStrength / (dist * dist)
-      force.x += pushForce
-    }
-
-    // 右邊界
-    if (node.x > canvasSize - padding) {
-      const dist = Math.max(canvasSize - node.x, 1)
-      const pushForce = boundaryStrength / (dist * dist)
-      force.x -= pushForce
-    }
-
-    // 上邊界
-    if (node.y < padding) {
-      const dist = Math.max(node.y, 1)
-      const pushForce = boundaryStrength / (dist * dist)
-      force.y += pushForce
-    }
-
-    // 下邊界
-    if (node.y > canvasSize - padding) {
-      const dist = Math.max(canvasSize - node.y, 1)
-      const pushForce = boundaryStrength / (dist * dist)
-      force.y -= pushForce
-    }
-
-    // 角落額外推力（防止節點堆積在四角）
-    const cornerRadius = padding * 2
-    const corners = [
-      { x: 0, y: 0 },                              // 左上
-      { x: canvasSize, y: 0 },                     // 右上
-      { x: 0, y: canvasSize },                     // 左下
-      { x: canvasSize, y: canvasSize }             // 右下
-    ]
-
-    corners.forEach(corner => {
-      const dx = node.x - corner.x
-      const dy = node.y - corner.y
-      const dist = Math.hypot(dx, dy)
-
-      if (dist < cornerRadius && dist > 0.1) {
-        const pushForce = (boundaryStrength * 2) / (dist * dist)
-        force.x += (dx / dist) * pushForce
-        force.y += (dy / dist) * pushForce
-      }
-    })
-  })
-
-  return forces
-}
-
-// 應用力並更新節點位置
-const applyForces = (nodes, forces, velocities, params) => {
-  const updatedNodes = []
-  const canvasSize = params.canvasSize || 1000
-  const padding = params.collisionRadius * 2
-
-  nodes.forEach(node => {
-    // 中心節點保持固定（如果 isCenter 為 true）
-    if (node.isCenter) {
-      updatedNodes.push({ ...node })
-      return
-    }
-
-    const force = forces.get(node.id) || { x: 0, y: 0 }
-    const velocity = velocities.get(node.id) || { x: 0, y: 0 }
-
-    // 更新速度：v = v + F (假設質量為1)
-    velocity.x = (velocity.x + force.x) * params.damping
-    velocity.y = (velocity.y + force.y) * params.damping
-
-    // 限制最大速度（根據畫布大小調整）
-    const maxVel = params.maxVelocity * (canvasSize / 1000)
-    const speed = Math.hypot(velocity.x, velocity.y)
-    if (speed > maxVel) {
-      velocity.x = (velocity.x / speed) * maxVel
-      velocity.y = (velocity.y / speed) * maxVel
-    }
-
-    // 更新位置（添加 NaN 防護）
-    let newX = node.x + velocity.x
-    let newY = node.y + velocity.y
-
-    // 防止 NaN 傳播：如果座標無效，重置為畫布中心
-    if (!isFinite(newX) || !isFinite(newY)) {
-      newX = canvasSize / 2
-      newY = canvasSize / 2
-      // 同時重置速度
-      velocity.x = 0
-      velocity.y = 0
-    }
-
-    // 邊界限制（使用動態畫布尺寸）
-    newX = clamp(newX, padding, canvasSize - padding)
-    newY = clamp(newY, padding, canvasSize - padding)
-
-    velocities.set(node.id, velocity)
-
-    updatedNodes.push({
-      ...node,
-      x: newX,
-      y: newY
-    })
-  })
-
-  return updatedNodes
-}
-
-const parseTimelineId = (timeline) => {
-  if (!timeline?.id) {
-    return null
-  }
-
-  // Timeline ID 格式可能是：
-  // 1. "tcp-teardown-10.128.0.2-5416-10.0.0.2-80" (帶子類型)
-  // 2. "tcp-10.128.0.2-5416-10.0.0.2-80" (純協議)
-  // 使用正則表達式提取 IP 和 Port
-  const ipPortPattern = /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-(\d+)-(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-(\d+)$/
-  const match = timeline.id.match(ipPortPattern)
-
-  if (!match) {
-    return null
-  }
-
-  const [, srcIp, srcPort, dstIp, dstPort] = match
-
-  // 提取協議類型（IP 之前的部分）
-  const protocolPart = timeline.id.replace(ipPortPattern, '').replace(/-$/, '')
-
-  return {
-    protocol: protocolPart,
-    protocolType: timeline.protocolType || protocolPart,
-    src: { ip: srcIp, port: srcPort },
-    dst: { ip: dstIp, port: dstPort }
-  }
-}
-
-// 使用力導向圖算法初始化節點布局（協議分艙極座標播種）
-const buildNodeLayout = (timelines, canvasSize = 1000) => {
-  const endpoints = new Map()
-  const connectionCounts = new Map()
-
-  timelines.forEach((timeline) => {
-    const parsed = parseTimelineId(timeline)
-    if (!parsed) {
-      return
-    }
-
-    const addEndpoint = ({ ip, port }, protocol) => {
-      if (!ip) {
-        return
-      }
-      const existing = endpoints.get(ip) || {
-        id: ip,
-        ip,
-        ports: new Set(),
-        protocols: new Set()
-      }
-      if (port) {
-        existing.ports.add(port)
-      }
-      if (protocol) {
-        existing.protocols.add(protocol.toUpperCase())
-      }
-      endpoints.set(ip, existing)
-
-      // 計算連線數
-      connectionCounts.set(ip, (connectionCounts.get(ip) || 0) + 1)
-    }
-
-    addEndpoint(parsed.src, timeline.protocol)
-    addEndpoint(parsed.dst, timeline.protocol)
-  })
-
-  const nodes = Array.from(endpoints.values())
-
-  if (nodes.length === 0) {
-    return []
-  }
-
-  // 找出連線數最多的節點作為中心
-  let centerNode = nodes[0]
-  let maxConnections = 0
-  nodes.forEach(node => {
-    const count = connectionCounts.get(node.ip) || 0
-    if (count > maxConnections) {
-      maxConnections = count
-      centerNode = node
-    }
-  })
-
-  // 協議分艙（Protocol Clustering）
-  const protocolGroups = {}
-  nodes.forEach(node => {
-    const primaryProtocol = Array.from(node.protocols)[0] || 'OTHER'
-    if (!protocolGroups[primaryProtocol]) {
-      protocolGroups[primaryProtocol] = []
-    }
-    protocolGroups[primaryProtocol].push(node)
-  })
-
-  const protocols = Object.keys(protocolGroups)
-  const protocolCount = protocols.length
-
-  // 極座標播種（Polar Coordinate Seeding）
-  const centerX = canvasSize / 2
-  const centerY = canvasSize / 2
-  const baseRadius = canvasSize * 0.4 // 基礎半徑為畫布的 40%（增加分散度）
-
-  const initialNodes = []
-  let globalIndex = 0
-
-  protocols.forEach((protocol, protocolIndex) => {
-    const protocolNodes = protocolGroups[protocol]
-    const protocolAngleStart = (2 * Math.PI * protocolIndex) / protocolCount
-    const protocolAngleRange = (2 * Math.PI) / protocolCount
-    const nodesInProtocol = protocolNodes.length
-
-    protocolNodes.forEach((node, nodeIndex) => {
-      const isCenter = node.id === centerNode?.id
-
-      let x, y
-
-      if (isCenter) {
-        // 中心節點固定在畫面正中央
-        x = centerX
-        y = centerY
-      } else {
-        // 在協議分艙內使用極座標分布
-        const angleOffset = protocolAngleStart + (protocolAngleRange * nodeIndex) / Math.max(nodesInProtocol, 1)
-        // 增加半徑變化範圍，形成多層環狀分布（50%-150%）
-        const radiusVariation = 0.5 + Math.random() * 1.0
-        const radius = baseRadius * radiusVariation
-
-        x = centerX + Math.cos(angleOffset) * radius
-        y = centerY + Math.sin(angleOffset) * radius
-
-        // 確保在邊界內（使用動態畫布尺寸）
-        const padding = 50
-        x = clamp(x, padding, canvasSize - padding)
-        y = clamp(y, padding, canvasSize - padding)
-      }
-
-      initialNodes.push({
-        id: node.id,
-        label: node.ip,
-        ports: Array.from(node.ports),
-        protocols: Array.from(node.protocols),
-        x,
-        y,
-        isCenter,
-        connectionCount: connectionCounts.get(node.ip) || 0,
-        primaryProtocol: Array.from(node.protocols)[0] || 'OTHER'
-      })
-
-      globalIndex++
-    })
-  })
-
-  // 建立連線資訊供力導向圖使用
-  const connections = []
-  timelines.forEach((timeline) => {
-    const parsed = parseTimelineId(timeline)
-    if (parsed && parsed.src?.ip && parsed.dst?.ip) {
-      connections.push({
-        src: parsed.src.ip,
-        dst: parsed.dst.ip
-      })
-    }
-  })
-
-  // 動態計算力導向圖參數（綁定畫布尺寸）
-  const forceParams = calculateDynamicForceParams(nodes.length, canvasSize)
-  const params = {
-    ...FORCE_PARAMS,
-    ...forceParams
-  }
-
-  // 執行初始力導向圖迭代以穩定布局
-  let currentNodes = initialNodes
-  const velocities = new Map()
-
-  // 初始化速度為零
-  currentNodes.forEach(node => {
-    velocities.set(node.id, { x: 0, y: 0 })
-  })
-
-  // 執行固定次數的迭代
-  for (let iter = 0; iter < params.initialIterations; iter++) {
-    const forces = calculateForces(currentNodes, connections, params)
-    currentNodes = applyForces(currentNodes, forces, velocities, params)
-  }
-
-  return currentNodes
-}
+// calculateForces, applyForces, buildNodeLayout are imported from ./lib/graphLayout.js
 
 
 const buildConnections = (timelines) => {
@@ -891,17 +408,55 @@ const buildAggregatedConnections = (timelines) => {
   })
 
   // 轉換為數組並計算視覺屬性
-  const connections = Array.from(aggregatedMap.values()).map(agg => ({
-    ...agg,
-    protocols: Array.from(agg.protocols),
-    // 計算線條粗細（基於連線數量，範圍 1-10）
-    strokeWidth: Math.min(1 + Math.log10(agg.connectionCount) * 2, 10),
-    // 主要協議（使用最多的協議）
-    primaryProtocol: agg.connections[0].protocol,
-    primaryProtocolType: agg.connections[0].protocolType,
-    // 使用第一條子連線的 originalId 來獲取 renderState（修復遠景顯示 ?? 問題）
-    originalId: agg.connections[0].originalId
-  }))
+  const connections = Array.from(aggregatedMap.values()).map(agg => {
+    // 合成 worst-case metrics：掃描所有子連線，取最嚴重值
+    const synthesizedMetrics = (() => {
+      const m = {}
+      let hasAny = false
+      for (const child of agg.connections) {
+        const cm = child.metrics
+        if (!cm) continue
+        hasAny = true
+        if (cm.isFlood) m.isFlood = true
+        if (typeof cm.synRatio === 'number') m.synRatio = Math.max(m.synRatio ?? 0, cm.synRatio)
+        if (typeof cm.pshRatio === 'number') m.pshRatio = Math.max(m.pshRatio ?? 0, cm.pshRatio)
+        if (typeof cm.finRatio === 'number') m.finRatio = Math.max(m.finRatio ?? 0, cm.finRatio)
+        if (typeof cm.urgRatio === 'number') m.urgRatio = Math.max(m.urgRatio ?? 0, cm.urgRatio)
+        if (typeof cm.ackRatio === 'number') m.ackRatio = Math.max(m.ackRatio ?? 0, cm.ackRatio)
+        if (typeof cm.rstRatio === 'number') m.rstRatio = Math.max(m.rstRatio ?? 0, cm.rstRatio)
+        if (typeof cm.rttMs === 'number') m.rttMs = Math.max(m.rttMs ?? 0, cm.rttMs)
+        if (typeof cm.timeoutMs === 'number') m.timeoutMs = Math.max(m.timeoutMs ?? 0, cm.timeoutMs)
+        if (typeof cm.responseTimeMs === 'number') m.responseTimeMs = Math.max(m.responseTimeMs ?? 0, cm.responseTimeMs)
+        if (typeof cm.teardownDurationMs === 'number') m.teardownDurationMs = Math.max(m.teardownDurationMs ?? 0, cm.teardownDurationMs)
+      }
+      if (!hasAny) return null
+      m.packetCount = agg.totalPackets
+      return m
+    })()
+
+    // primaryProtocolType 優先級：依嚴重度挑出最惡劣的協議類型
+    const firstConn = agg.connections[0]
+    const worstProtocolType = (() => {
+      for (const sev of FLOOD_SEVERITY_ORDER) {
+        if (agg.connections.some(c => c.protocolType === sev)) return sev
+      }
+      return firstConn?.protocolType ?? 'unknown'
+    })()
+
+    return {
+      ...agg,
+      protocols: Array.from(agg.protocols),
+      // 計算線條粗細（基於連線數量，範圍 1-10）
+      strokeWidth: Math.min(1 + Math.log10(agg.connectionCount) * 2, 10),
+      // 主要協議（使用最多的協議）
+      primaryProtocol: firstConn?.protocol ?? 'unknown',
+      primaryProtocolType: worstProtocolType,
+      // 合成的 worst-case metrics，供健康評分使用
+      metrics: synthesizedMetrics,
+      // 使用第一條子連線的 originalId 來獲取 renderState（修復遠景顯示 ?? 問題）
+      originalId: firstConn?.originalId ?? null
+    }
+  })
 
   const stats = {
     original: timelines.length,
@@ -984,6 +539,8 @@ export default function MindMap({ isLearningMode = false }) {
   const [viewTransform, setViewTransform] = useState({ scale: 1, tx: 0, ty: 0 })
   const [isPanning, setIsPanning] = useState(false)
   const panStartRef = useRef({ x: 0, y: 0 })
+  const isPanningRef = useRef(false)
+  const draggingNodeIdRef = useRef(null)
   const [nodePositions, setNodePositions] = useState({})
   const [draggingNodeId, setDraggingNodeId] = useState(null)
 
@@ -1023,6 +580,7 @@ export default function MindMap({ isLearningMode = false }) {
   const [floodTimeProgress, setFloodTimeProgress] = useState(0)
   const [floodIntensity, setFloodIntensity] = useState(0) // 當前攻擊強度 (0-1)
   const floodAnimationRef = useRef(null)
+  const animationTimestampRef = useRef(0)
 
   // 處理強度變化回調（節流以避免過多 re-render）
   const lastIntensityUpdateRef = useRef(0)
@@ -1062,6 +620,8 @@ export default function MindMap({ isLearningMode = false }) {
   // 動畫控制狀態
   const [isPaused, setIsPaused] = useState(false)
   const [isFocusMode, setIsFocusMode] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sidebarTab, setSidebarTab] = useState('nodes') // 'nodes' | 'health'
 
   // ========== 學習模式導航處理 ==========
   const getCurrentStep = useCallback(() => {
@@ -1110,8 +670,7 @@ export default function MindMap({ isLearningMode = false }) {
         // 整個關卡完成
         const nextLevel = parseInt(currentLevelId.replace('level', '')) + 1
         LearningStorage.unlockLevel(nextLevel)
-        // TODO: 顯示完成畫面
-        console.log('關卡完成！')
+        // 關卡完成，已解鎖下一關
       }
     }
   }, [currentCourse, currentLessonIndex, currentStepIndex, currentLevelId])
@@ -1325,6 +884,7 @@ export default function MindMap({ isLearningMode = false }) {
       inertiaAnimationRef.current = null
     }
 
+    isPanningRef.current = true
     setIsPanning(true)
     setInertiaVelocity({ vx: 0, vy: 0 })
     panStartRef.current = { x: e.clientX, y: e.clientY }
@@ -1332,18 +892,18 @@ export default function MindMap({ isLearningMode = false }) {
   }, [])
 
   const handleMouseMove = useCallback((e) => {
-    if (draggingNodeId) {
+    if (draggingNodeIdRef.current) {
       const world = toWorldCoords(e.clientX, e.clientY)
       setNodePositions(prev => ({
         ...prev,
-        [draggingNodeId]: {
+        [draggingNodeIdRef.current]: {
           x: clamp(world.x, VIEWBOX_PADDING, canvasSize - VIEWBOX_PADDING),
           y: clamp(world.y, VIEWBOX_PADDING, canvasSize - VIEWBOX_PADDING)
         }
       }))
       return
     }
-    if (!isPanning) return
+    if (!isPanningRef.current) return
 
     const rect = svgRef.current?.getBoundingClientRect()
     if (!rect) return
@@ -1366,10 +926,10 @@ export default function MindMap({ isLearningMode = false }) {
     const deltaX = dx / rect.width * canvasSize
     const deltaY = dy / rect.height * canvasSize
     setViewTransform(prev => ({ ...prev, tx: prev.tx + deltaX, ty: prev.ty + deltaY }))
-  }, [isPanning, draggingNodeId, toWorldCoords, canvasSize])
+  }, [toWorldCoords, canvasSize])
 
   const handleMouseUp = useCallback(() => {
-    if (isPanning && !draggingNodeId) {
+    if (isPanningRef.current && !draggingNodeIdRef.current) {
       // 啟動慣性動畫
       const startInertia = () => {
         const FRICTION = 0.95 // 摩擦係數
@@ -1412,9 +972,17 @@ export default function MindMap({ isLearningMode = false }) {
       startInertia()
     }
 
+    isPanningRef.current = false
+    draggingNodeIdRef.current = null
     setIsPanning(false)
     setDraggingNodeId(null)
-  }, [isPanning, draggingNodeId, canvasSize])
+  }, [canvasSize])
+
+  // 全域 mouseup 偵測：確保在 SVG 外部放開滑鼠時也能停止平移/拖曳
+  useEffect(() => {
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => window.removeEventListener('mouseup', handleMouseUp)
+  }, [handleMouseUp])
 
   // 觸控手勢處理
   const handleTouchStart = useCallback((e) => {
@@ -1577,6 +1145,24 @@ export default function MindMap({ isLearningMode = false }) {
       })
     }
   }, [isPanning, canvasSize])
+
+  // Wheel / touch 事件需以 { passive: false } 掛載，才能呼叫 preventDefault()。
+  // React 的合成事件無法控制 passive 旗標，改用 DOM API 直接掛在 SVG 元素上。
+  // 必須放在三個 touch handler 宣告之後，避免 temporal dead zone 錯誤。
+  useEffect(() => {
+    const el = svgRef.current
+    if (!el) return
+    el.addEventListener('wheel', handleWheelZoom, { passive: false })
+    el.addEventListener('touchstart', handleTouchStart, { passive: false })
+    el.addEventListener('touchmove', handleTouchMove, { passive: false })
+    el.addEventListener('touchend', handleTouchEnd, { passive: false })
+    return () => {
+      el.removeEventListener('wheel', handleWheelZoom)
+      el.removeEventListener('touchstart', handleTouchStart)
+      el.removeEventListener('touchmove', handleTouchMove)
+      el.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [handleWheelZoom, handleTouchStart, handleTouchMove, handleTouchEnd])
 
   // Fit-to-View：自動縮放與置中
   const fitToView = useCallback((nodes) => {
@@ -1942,7 +1528,6 @@ export default function MindMap({ isLearningMode = false }) {
         packet.index = idx
       })
 
-      console.log(`[MindMap] Loaded ${allPackets.length} packets from ${Object.keys(data.results || {}).length} connections for animation`)
 
       // 設置合併後的封包資料
       setConnectionPackets({
@@ -2006,7 +1591,9 @@ export default function MindMap({ isLearningMode = false }) {
     const animationDuration = Math.min(durationSeconds * 1000, 30000)
 
     const animate = () => {
-      const elapsed = (Date.now() - startTime) % animationDuration
+      const now = Date.now()
+      animationTimestampRef.current = now
+      const elapsed = (now - startTime) % animationDuration
       const progress = elapsed / animationDuration
       setFloodTimeProgress(progress)
       floodAnimationRef.current = requestAnimationFrame(animate)
@@ -2204,7 +1791,7 @@ export default function MindMap({ isLearningMode = false }) {
     })
 
     // 動態計算力導向圖參數
-    const forceParams = calculateDynamicForceParams(baseNodes.length)
+    const forceParams = calculateDynamicForceParams(baseNodes.length, canvasSize)
     const params = {
       ...FORCE_PARAMS,
       ...forceParams
@@ -2296,9 +1883,22 @@ export default function MindMap({ isLearningMode = false }) {
     return map
   }, [nodesComputed])
 
+  const nodeHealthMap = useMemo(() => {
+    const map = new Map()
+    nodesComputed.forEach(node => {
+      map.set(node.id, computeNodeDegreeHealth(node.connectionCount))
+    })
+    return map
+  }, [nodesComputed])
+
   // 建立兩種連線列表：詳細版（每條獨立連線）和合併版（遠景模式用）
   const detailedConnections = useMemo(() => buildConnections(timelines), [timelines])
   const aggregatedConnections = useMemo(() => buildAggregatedConnections(timelines), [timelines])
+
+  const overviewHealthMap = useMemo(
+    () => buildOverviewHealthFromDetailed(detailedConnections, aggregatedConnections),
+    [detailedConnections, aggregatedConnections]
+  )
 
   // 根據模式選擇使用哪種連線列表
   // 1. 遠景模式：使用合併連線（減少視覺混亂）
@@ -2316,6 +1916,24 @@ export default function MindMap({ isLearningMode = false }) {
     // 遠景模式：合併連線
     return aggregatedConnections
   }, [showBatchViewer, batchViewerConnection, isFocusMode, detailedConnections, aggregatedConnections])
+
+  // 健康評分（依 connections 陣列計算，sidebarTab 切換時即更新）
+  const connectionHealthMap = useMemo(() => {
+    if (!isFocusMode && !showBatchViewer) {
+      return overviewHealthMap
+    }
+    const map = new Map()
+    connections.forEach(c => map.set(c.id, computeConnectionHealth(c)))
+    return map
+  }, [connections, isFocusMode, showBatchViewer, overviewHealthMap])
+
+  const overallHealth = useMemo(() => {
+    const nodeResults = nodesComputed.map(n => nodeHealthMap.get(n.id)).filter(Boolean)
+    if (!isFocusMode && !showBatchViewer) {
+      return computeOverallHealthFromMapWithNodes(overviewHealthMap, nodeResults)
+    }
+    return computeOverallHealthWithNodes(connections, nodeResults)
+  }, [connections, nodesComputed, nodeHealthMap, isFocusMode, showBatchViewer, overviewHealthMap])
 
   // 計算每個節點的連線角度分散索引
   const connectionAngles = useMemo(() => {
@@ -2350,6 +1968,18 @@ export default function MindMap({ isLearningMode = false }) {
 
     return angleMap
   }, [connections])
+
+  // 搜尋高亮：計算符合查詢的節點 ID 集合
+  const searchMatchedNodeIds = useMemo(
+    () => computeSearchMatchedNodeIds(nodesComputed, searchQuery),
+    [searchQuery, nodesComputed]
+  )
+
+  // 搜尋高亮：計算符合查詢的連線 ID 集合
+  const searchMatchedConnectionIds = useMemo(
+    () => computeSearchMatchedConnectionIds(connections, searchMatchedNodeIds),
+    [searchMatchedNodeIds, connections]
+  )
 
   // 執行 Fit-to-View
   useEffect(() => {
@@ -2478,6 +2108,7 @@ export default function MindMap({ isLearningMode = false }) {
                   setIsFocusMode(!isFocusMode)
                   if (!isFocusMode) {
                     setIsPaused(true) // 進入焦點模式時自動暫停
+                    setSearchQuery('') // 進入焦點模式時清除搜尋
                   }
                 }}
                 className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-300 hover-lift ${
@@ -2770,7 +2401,7 @@ export default function MindMap({ isLearningMode = false }) {
                                   className={`text-[1.3px] font-bold ${particle.phase === 'spawn' ? 'fill-cyan-300' : 'fill-amber-300'}`}
                                   style={{ pointerEvents: 'none' }}
                                 >
-                                  {particle.phase === 'spawn' ? '生成' : '到達'}
+                                  {particle.phase === 'spawn' ? '發送' : '收到'}
                                 </text>
                               )}
                             </g>
@@ -2819,10 +2450,10 @@ export default function MindMap({ isLearningMode = false }) {
                         <text x="2" y="19" className="text-[1.2px] fill-slate-500">生命週期:</text>
                         <circle cx="4" cy="22" r="0.8" fill="#22d3ee" />
                         <circle cx="4" cy="22" r="1.3" fill="none" stroke="#22d3ee" strokeWidth="0.1" />
-                        <text x="7" y="22.5" className="text-[1.1px] fill-cyan-300">生成</text>
+                        <text x="7" y="22.5" className="text-[1.1px] fill-cyan-300">發送</text>
                         <circle cx="16" cy="22" r="0.8" fill="#fbbf24" />
                         <circle cx="16" cy="22" r="1.3" fill="none" stroke="#fbbf24" strokeWidth="0.1" strokeDasharray="0.3 0.3" />
-                        <text x="19" y="22.5" className="text-[1.1px] fill-amber-300">到達</text>
+                        <text x="19" y="22.5" className="text-[1.1px] fill-amber-300">收到</text>
 
                         {/* 已選取 */}
                         <circle cx="4" cy="26" r="1" fill="#ffd700" stroke="#ffd700" strokeWidth="0.3" />
@@ -2895,14 +2526,8 @@ export default function MindMap({ isLearningMode = false }) {
                   ref={svgRef}
                   viewBox={`0 0 ${canvasSize} ${canvasSize}`}
                   className="w-full h-[calc(100vh-260px)] min-h-[400px] text-slate-400"
-                  onWheel={handleWheelZoom}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
-                  onMouseLeave={handleMouseUp}
-                  onTouchStart={handleTouchStart}
-                  onTouchMove={handleTouchMove}
-                  onTouchEnd={handleTouchEnd}
                   style={{ touchAction: 'none' }}
                 >
                   <defs>
@@ -2931,6 +2556,27 @@ export default function MindMap({ isLearningMode = false }) {
                       <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.6  0 0 0 0 0.3  0 0 0 0 0  0 0 0 0.8 0" result="orangeBlur" />
                       <feMerge>
                         <feMergeNode in="orangeBlur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                    {/* 搜尋高亮螢光 - 節點 */}
+                    <filter id="searchHighlightGlow" filterUnits="userSpaceOnUse" x="-100%" y="-100%" width="300%" height="300%">
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur1" />
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur2" />
+                      <feColorMatrix in="blur1" type="matrix" values="0 0 0 0 0  0 1 0 0 0.8  0 0 1 0 1  0 0 0 1 0" result="cyanBlur1" />
+                      <feColorMatrix in="blur2" type="matrix" values="0 0 0 0 0  0 1 0 0 0.6  0 0 1 0 0.8  0 0 0 0.5 0" result="cyanBlur2" />
+                      <feMerge>
+                        <feMergeNode in="cyanBlur2" />
+                        <feMergeNode in="cyanBlur1" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                    {/* 搜尋高亮螢光 - 連線 */}
+                    <filter id="searchConnectionGlow" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur" />
+                      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0  0 1 0 0 0.6  0 0 1 0 0.8  0 0 0 0.8 0" result="cyanBlur" />
+                      <feMerge>
+                        <feMergeNode in="cyanBlur" />
                         <feMergeNode in="SourceGraphic" />
                       </feMerge>
                     </filter>
@@ -2963,9 +2609,6 @@ export default function MindMap({ isLearningMode = false }) {
                     const color = renderState?.protocolColor || protocolColor(protocol, protocolType)
                     const visualEffects = renderState?.visualEffects || {}
 
-                    // 圓點動畫沿路徑
-                    const dotProgress = renderState?.dotPosition ?? renderState?.stageProgress ?? 0
-                    const stageLabel = translateStageLabel(renderState?.currentStage?.label) || '??'
                     const fromPoint = { x: fromNode.x, y: fromNode.y }
                     const toPoint = { x: toNode.x, y: toNode.y }
 
@@ -2978,7 +2621,6 @@ export default function MindMap({ isLearningMode = false }) {
                     const dx = toPoint.x - fromPoint.x
                     const dy = toPoint.y - fromPoint.y
                     const baseAngle = Math.atan2(dy, dx)
-                    const distance = Math.hypot(dx, dy)
 
                     // 角度分散：為從同一節點出發的連線添加偏移
                     let angleOffset = 0
@@ -3009,61 +2651,50 @@ export default function MindMap({ isLearningMode = false }) {
                       y: toPoint.y - Math.sin(adjustedAngle) * toRadius * 1.2
                     }
 
-                    // 放射狀布局：使用調整後的點
-                    const dotX = adjustedFromPoint.x + (adjustedToPoint.x - adjustedFromPoint.x) * dotProgress
-                    const dotY = adjustedFromPoint.y + (adjustedToPoint.y - adjustedFromPoint.y) * dotProgress
-                    const dotPoint = { x: dotX, y: dotY }
-
-                    // 智能標籤定位：遠離中心節點
-                    let labelProgress
-                    if (hasCenter) {
-                      // 如果連接到中心節點，將標籤放在遠離中心的位置
-                      if (fromIsCenter) {
-                        // 從中心出發：標籤在 40%-60% 之間（靠近目標端）
-                        labelProgress = clamp(0.4 + dotProgress * 0.2, 0.4, 0.6)
-                      } else {
-                        // 到中心：標籤在 40%-60% 之間（靠近起點端）
-                        labelProgress = clamp(0.4 + dotProgress * 0.2, 0.4, 0.6)
-                      }
-                    } else {
-                      // 非中心連線：跟隨動畫點並稍微偏移
-                      labelProgress = clamp(dotProgress + 0.1, 0, 1)
-                    }
-
-                    const labelPoint = {
-                      x: adjustedFromPoint.x + (adjustedToPoint.x - adjustedFromPoint.x) * labelProgress,
-                      y: adjustedFromPoint.y + (adjustedToPoint.y - adjustedFromPoint.y) * labelProgress
-                    }
-
                     const midpoint = {
                       x: (adjustedFromPoint.x + adjustedToPoint.x) / 2,
                       y: (adjustedFromPoint.y + adjustedToPoint.y) / 2
                     }
-                    const completionPoint = midpoint
                     const pathD = `M ${adjustedFromPoint.x} ${adjustedFromPoint.y} L ${adjustedToPoint.x} ${adjustedToPoint.y}`
 
-                    const connectionStyle = renderState?.connectionStyle || 'solid'
-                    const strokeDasharray = connectionStyle === 'dashed'
-                      ? '2 2'
-                      : connectionStyle === 'dotted'
-                        ? '1 1'
-                        : null
+                    const lineStyle = PROTOCOL_LINE_STYLES[protocolType] ?? DEFAULT_LINE_STYLE
+                    const strokeDasharray = lineStyle.dashArray
                     const opacity = visualEffects.opacity ?? 1.0
-                    const isBlinking = visualEffects.blinking
-                    const isPulsing = visualEffects.pulsing
-                    const isCompleted = renderState?.isCompleted
 
                     const isHovered = hoveredConnectionId === connection.id
                     const isSelected = selectedConnectionId === connection.id
                     const isAggregated = connection.id?.startsWith('aggregated-')
                     const shouldShowLabel = isHovered || isSelected
+                    const lineStrokeWidth = isSelected
+                      ? lineStyle.strokeWidth * 2.0
+                      : isHovered
+                        ? lineStyle.strokeWidth * 1.5
+                        : lineStyle.strokeWidth
 
-                    // 聚焦模式：當選中連線時，只顯示該連線，隱藏其他連線
-                    const shouldHide = selectedConnectionId && !isSelected
-                    if (shouldHide) return null
+                    // 聚焦模式：僅在 isFocusMode 啟用時隱藏非選中連線
+                    if (isFocusMode && selectedConnectionId && !isSelected) return null
 
-                    const isDimmed = !isFocusMode && hoveredConnectionId && !isHovered && !isSelected
-                    const finalOpacity = isDimmed ? opacity * 0.15 : opacity
+                    const isSearchActive = searchMatchedConnectionIds !== null
+                    const isSearchMatch = isSearchActive ? searchMatchedConnectionIds.has(connection.id) : false
+
+                    // 健康分頁：取得健康狀態，決定顏色覆蓋與 opacity
+                    const connHealth = sidebarTab === 'health' ? (connectionHealthMap.get(connection.id) ?? { status: 'healthy' }) : null
+                    const healthOpacityOverride = connHealth
+                      ? connHealth.status === 'healthy' ? 0.3 : 1.0
+                      : null
+
+                    // 在健康分頁中，critical/warning 連線不受 hover 遮蔽（保持完整可見性）
+                    const isHealthPriority = connHealth && connHealth.status !== 'healthy'
+                    const isDimmedByHover = !isFocusMode && !isHealthPriority && hoveredConnectionId && !isHovered && !isSelected
+                    const isDimmedBySearch = isSearchActive && !isSearchMatch && !isSelected
+
+                    const finalOpacity = isDimmedBySearch
+                      ? opacity * 0.1
+                      : isDimmedByHover
+                        ? opacity * 0.15
+                        : healthOpacityOverride !== null
+                          ? healthOpacityOverride
+                          : opacity
 
                     return (
                       <g
@@ -3137,35 +2768,58 @@ export default function MindMap({ isLearningMode = false }) {
                           const isActiveFloodConnection = isAggregated && showBatchViewer && connection.id === batchViewerConnection?.id
                           // 脈動效果：基於強度的線條粗細變化
                           const pulseMultiplier = isActiveFloodConnection
-                            ? 1 + floodIntensity * 0.5 * Math.sin(Date.now() / 200) // 脈動頻率約 5Hz
+                            ? 1 + floodIntensity * 0.5 * Math.sin((animationTimestampRef.current || 0) / 200)
                             : 1
-                          // 警告濾鏡：強度超過 50% 時套用
-                          const warningFilter = isActiveFloodConnection && floodIntensity > 0.5
-                            ? floodIntensity > 0.7 ? 'url(#attackWarningGlow)' : 'url(#attackWarningGlowMedium)'
-                            : undefined
-                          // 高強度時使用紅色
+                          // 警告濾鏡：強度超過 50% 時套用；搜尋高亮時使用 searchConnectionGlow；健康分頁 critical 使用攻擊警告
+                          const warningFilter = isSearchActive && isSearchMatch
+                            ? 'url(#searchConnectionGlow)'
+                            : isActiveFloodConnection && floodIntensity > 0.5
+                              ? floodIntensity > 0.7 ? 'url(#attackWarningGlow)' : 'url(#attackWarningGlowMedium)'
+                              : connHealth?.status === 'critical'
+                                ? 'url(#attackWarningGlow)'
+                                : undefined
+                          // 高強度時使用紅色；健康分頁時依健康狀態覆蓋顏色
                           const strokeColor = isActiveFloodConnection && floodIntensity > 0.7
                             ? '#ef4444' // 紅色警告
                             : isActiveFloodConnection && floodIntensity > 0.5
                               ? '#f97316' // 橙色警告
-                              : color
+                              : connHealth?.status === 'critical'
+                                ? '#ef4444'
+                                : connHealth?.status === 'warning'
+                                  ? '#f59e0b'
+                                  : color
+
+                          // 搜尋命中時加粗連線
+                          const searchStrokeMultiplier = isSearchActive && isSearchMatch ? 1.8 : 1
 
                           return (
-                            <path
-                              d={pathD}
-                              stroke={strokeColor}
-                              strokeWidth={
-                                isAggregated
-                                  ? (connection.strokeWidth || 1) * (isSelected ? 1.5 : isHovered ? 1.3 : 1) * pulseMultiplier
-                                  : (isSelected ? 1.8 : isHovered ? 1.5 : isCompleted ? 1.2 : 0.8)
-                              }
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeOpacity={finalOpacity * (isActiveFloodConnection ? 0.6 : 0.35)}
-                              strokeDasharray={strokeDasharray || undefined}
-                              fill="none"
-                              filter={warningFilter}
-                            />
+                            <>
+                              <path
+                                d={pathD}
+                                stroke={strokeColor}
+                                strokeWidth={
+                                  isAggregated
+                                    ? (connection.strokeWidth || 1) * (isSelected ? 1.5 : isHovered ? 1.3 : 1) * pulseMultiplier * searchStrokeMultiplier
+                                    : lineStrokeWidth * searchStrokeMultiplier
+                                }
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeOpacity={finalOpacity * (isActiveFloodConnection ? 0.6 : 0.35)}
+                                strokeDasharray={strokeDasharray || undefined}
+                                fill="none"
+                                filter={warningFilter}
+                              />
+                              {!isAggregated && lineStyle.double && (
+                                <path
+                                  d={pathD}
+                                  stroke={strokeColor}
+                                  strokeWidth={lineStrokeWidth * 0.5}
+                                  strokeOpacity={finalOpacity * 0.4}
+                                  fill="none"
+                                  style={{ pointerEvents: 'none' }}
+                                />
+                              )}
+                            </>
                           )
                         })()}
 
@@ -3181,101 +2835,17 @@ export default function MindMap({ isLearningMode = false }) {
                           />
                         )}
 
-                        {/* 遠景動畫元素 - 只在沒有粒子系統時顯示 */}
-                        {!(isSelected && particleSystemRef.current) && (
-                          <>
-                            {/* 動畫圓點 - 聚合連線根據連線數量調整大小 */}
-                            <circle
-                              cx={dotPoint.x}
-                              cy={dotPoint.y}
-                              r={
-                                isAggregated
-                                  ? Math.min(1.6 + Math.log10(connection.connectionCount || 1) * 1.5, 4) * (isSelected ? 1.5 : 1)
-                                  : (isSelected ? 2.8 : isPulsing ? 2.2 : 1.6)
-                              }
-                              fill={color}
-                              filter="url(#nodeGlow)"
-                              opacity={isBlinking ? 0.5 : finalOpacity}
-                            >
-                              {isPulsing && !isAggregated && (
-                                <animate
-                                  attributeName="r"
-                                  values="1.6;2.4;1.6"
-                                  dur="1s"
-                                  repeatCount="indefinite"
-                                />
-                              )}
-                              {isBlinking && (
-                                <animate
-                                  attributeName="opacity"
-                                  values="0.3;1;0.3"
-                                  dur="0.8s"
-                                  repeatCount="indefinite"
-                                />
-                              )}
-                            </circle>
-
-                            {/* 跟隨小球移動的文字標籤 */}
-                            <text
-                              x={labelPoint.x}
-                              y={labelPoint.y - 3.5}
-                              textAnchor="middle"
-                              className="text-[1.8px] fill-slate-100 font-semibold"
-                              style={{ pointerEvents: 'none' }}
-                              opacity={finalOpacity}
-                            >
-                              {(protocolType || protocol).toUpperCase()}
-                            </text>
-                            <text
-                              x={labelPoint.x}
-                              y={labelPoint.y - 1.8}
-                              textAnchor="middle"
-                              className="text-[1.4px] fill-cyan-300"
-                              style={{ pointerEvents: 'none' }}
-                              opacity={finalOpacity * 0.9}
-                            >
-                              {stageLabel}
-                            </text>
-                            {/* 聚合連線顯示連線數量 */}
-                            {isAggregated && connection.connectionCount > 1 && (
-                              <text
-                                x={labelPoint.x}
-                                y={labelPoint.y - 5.5}
-                                textAnchor="middle"
-                                className="text-[1.2px] fill-amber-400 font-bold"
-                                style={{ pointerEvents: 'none' }}
-                                opacity={finalOpacity * 0.85}
-                              >
-                                ×{connection.connectionCount}
-                              </text>
-                            )}
-
-                            {/* 協議和階段標籤 */}
-                            {shouldShowLabel && (
-                              <>
-                                <text
-                                  x={midpoint.x}
-                                  y={midpoint.y - 2}
-                                  textAnchor="middle"
-                                  className="text-[1.9px] fill-slate-200 font-semibold"
-                                  style={{ pointerEvents: 'none' }}
-                                >
-                                  {(protocolType || protocol).toUpperCase()} · {stageLabel}
-                                </text>
-
-                                {/* 完成百分比 */}
-                                <text
-                                  x={completionPoint.x}
-                                  y={completionPoint.y + 2}
-                                  textAnchor="middle"
-                                  className={`text-[1.6px] ${isCompleted ? 'fill-green-400' : 'fill-slate-500'}`}
-                                  style={{ pointerEvents: 'none' }}
-                                >
-                                  {Math.round((renderState?.timelineProgress || 0) * 100)}% {isCompleted ? '✓' : '完成'}
-                                </text>
-                              </>
-                            )}
-                          </>
+                        {/* 靜態中點標籤 - 僅在 hover 或 selected 時顯示 */}
+                        {shouldShowLabel && (
+                          <text
+                            x={midpoint.x}
+                            y={midpoint.y - 2}
+                            textAnchor="middle"
+                            className="text-[1.8px] fill-white/70"
+                            style={{ pointerEvents: 'none' }}
+                          >
+                            {(protocolType || protocol).toUpperCase()}{isAggregated && connection.connectionCount > 1 ? ` (${connection.connectionCount})` : ''}
+                          </text>
                         )}
 
                         {/* 封包粒子動畫 */}
@@ -3397,22 +2967,39 @@ export default function MindMap({ isLearningMode = false }) {
                     // 根據是否為中心節點使用不同的視覺樣式
                     const outerRadius = node.isCenter ? CENTRAL_NODE_OUTER_RADIUS : NODE_OUTER_RADIUS
                     const innerRadius = node.isCenter ? CENTRAL_NODE_INNER_RADIUS : NODE_INNER_RADIUS
-                    const labelOffsetY = node.isCenter ? CENTRAL_LABEL_OFFSET : -NODE_LABEL_OFFSET_TOP
-                    const labelClass = node.isCenter
-                      ? "text-[2.2px] font-bold fill-cyan-200"
-                      : "text-[1.9px] font-semibold fill-slate-100"
                     const outerFill = node.isCenter ? "#020617" : "#0f172a"
                     const strokeWidth = node.isCenter ? 0.55 : 0.45
 
+                    // 字體大小：SVG user units（跟隨 viewBox 與 zoom 縮放，非 CSS px）
+                    const ipFontSize  = canvasSize / 75   // ~12 units at 900-unit canvas
+                    const subFontSize = canvasSize / 100  // ~9 units for subtitle/protocol
+
+                    // Label 位置（SVG user units，隨 viewBox 縮放）
+                    const ipLabelY   = node.isCenter
+                      ? node.y + outerRadius + ipFontSize * 1.4   // 中心節點：IP 在圓下方
+                      : node.y - outerRadius - ipFontSize * 0.3   // 一般節點：IP 在圓上方
+                    const subtitleY  = ipLabelY + ipFontSize * 1.3
+                    const protocolY  = node.y + outerRadius + subFontSize * 1.4
+
+                    // 搜尋高亮
+                    const isNodeSearchMatch = searchMatchedNodeIds ? searchMatchedNodeIds.has(node.id) : false
+                    const isNodeSearchActive = searchMatchedNodeIds !== null
+                    const nodeOpacity = isNodeSearchActive && !isNodeSearchMatch ? 0.1 : 1.0
+                    const nodeGlowFilter = isNodeSearchActive && isNodeSearchMatch
+                      ? "url(#searchHighlightGlow)"
+                      : "url(#nodeGlow)"
+
                     return (
-                      <g key={node.id} className="mindmap-node" onMouseDown={(e) => { e.stopPropagation(); setDraggingNodeId(node.id) }} style={{ cursor: node.isCenter ? 'default' : 'grab' }}>
+                      <g key={node.id} className="mindmap-node" opacity={nodeOpacity} onMouseDown={(e) => { e.stopPropagation(); draggingNodeIdRef.current = node.id; setDraggingNodeId(node.id) }} style={{ cursor: node.isCenter ? 'default' : 'grab' }}>
                         <circle cx={node.x} cy={node.y} r={outerRadius} fill={outerFill} stroke="#1f2937" strokeWidth={strokeWidth} />
-                        <circle cx={node.x} cy={node.y} r={innerRadius} fill="#1f2937" stroke="#38bdf8" strokeWidth={strokeWidth} filter="url(#nodeGlow)" />
+                        <circle cx={node.x} cy={node.y} r={innerRadius} fill="#1f2937" stroke="#38bdf8" strokeWidth={strokeWidth} filter={nodeGlowFilter} />
                         <text
                           x={node.x}
-                          y={node.y + labelOffsetY}
+                          y={ipLabelY}
                           textAnchor="middle"
-                          className={labelClass}
+                          fontSize={ipFontSize}
+                          fontWeight={node.isCenter ? "700" : "600"}
+                          fill={node.isCenter ? "#a5f3fc" : "#f1f5f9"}
                           style={{ pointerEvents: 'none' }}
                         >
                           {node.label}
@@ -3420,9 +3007,11 @@ export default function MindMap({ isLearningMode = false }) {
                         {node.isCenter && (
                           <text
                             x={node.x}
-                            y={node.y + labelOffsetY + 2.5}
+                            y={subtitleY}
                             textAnchor="middle"
-                            className="text-[1.5px] fill-amber-400 font-semibold"
+                            fontSize={subFontSize}
+                            fontWeight="600"
+                            fill="#fbbf24"
                             style={{ pointerEvents: 'none' }}
                           >
                             網路中心
@@ -3431,9 +3020,11 @@ export default function MindMap({ isLearningMode = false }) {
                         {!node.isCenter && node.protocols.length > 0 && (
                           <text
                             x={node.x}
-                            y={node.y + NODE_PROTOCOL_OFFSET}
+                            y={protocolY}
                             textAnchor="middle"
-                            className="text-[1.5px] fill-cyan-300 uppercase tracking-wide"
+                            fontSize={subFontSize}
+                            fill="#67e8f9"
+                            style={{ textTransform: 'uppercase', pointerEvents: 'none' }}
                           >
                             {node.protocols.join(' · ')}
                           </text>
@@ -3474,147 +3065,322 @@ export default function MindMap({ isLearningMode = false }) {
             )}
           </section>
 
-          <aside className="sidebar-timeline-list glass-card rounded-2xl p-5">
-            <div className="flex items-center gap-2.5 text-sm font-semibold text-slate-100">
+          <aside className="glass-card rounded-2xl p-5 flex flex-col" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+            {/* Header */}
+            <div className="flex items-center gap-2.5 text-sm font-semibold text-slate-100 mb-3">
               <div className="p-1.5 rounded-lg bg-cyan-500/20">
                 <Activity className="w-4 h-4 text-cyan-400" />
               </div>
-              <span className="text-gradient-primary">時間軸串流列表</span>
+              <span className="text-gradient-primary">節點總覽</span>
+              <span className="ml-auto text-xs text-slate-500 font-mono">
+                {nodesComputed.length} 節點
+              </span>
             </div>
 
-            <div className="mt-4 space-y-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
-              {/* 連線列表 - 威脅分析已移至 BatchPacketViewer 統一顯示 */}
-              {connections.map((connection) => {
-                const renderState = renderStates[connection.originalId] // 使用 originalId 匹配 timeline.id
-                const protocolType = renderState?.protocolType || connection.protocolType || connection.primaryProtocolType
-                const protocol = connection.protocol || connection.primaryProtocol || 'TCP'
-                const stageLabel = translateStageLabel(renderState?.currentStage?.label) || '??'
-                const stageProgress = Math.round((renderState?.timelineProgress || 0) * 100)
-                const isCompleted = renderState?.isCompleted
-                const visualEffects = renderState?.visualEffects || {}
+            {/* 分頁切換 */}
+            <div role="tablist" aria-label="側欄分頁" className="flex border-b border-slate-700 mb-3">
+              <button
+                type="button"
+                role="tab"
+                id="tab-nodes"
+                aria-selected={sidebarTab === 'nodes'}
+                aria-controls="panel-nodes"
+                onClick={() => setSidebarTab('nodes')}
+                className={sidebarTab === 'nodes'
+                  ? 'flex-1 py-2 text-sm font-semibold text-cyan-300 border-b-2 border-cyan-400'
+                  : 'flex-1 py-2 text-sm text-slate-400 hover:text-slate-200 transition-colors'}
+              >
+                節點
+              </button>
+              <button
+                type="button"
+                role="tab"
+                id="tab-health"
+                aria-selected={sidebarTab === 'health'}
+                aria-controls="panel-health"
+                onClick={() => setSidebarTab('health')}
+                className={sidebarTab === 'health'
+                  ? 'flex-1 py-2 text-sm font-semibold text-cyan-300 border-b-2 border-cyan-400'
+                  : 'flex-1 py-2 text-sm text-slate-400 hover:text-slate-200 transition-colors'}
+              >
+                健康
+              </button>
+            </div>
 
-                // 協議圖示
-                const getProtocolIcon = (protocol, type) => {
-                  if (type === 'tcp-handshake') return <Wifi className="w-3 h-3" />
-                  if (type === 'tcp-teardown') return <WifiOff className="w-3 h-3" />
-                  if (type === 'ssh-secure' || protocol === 'https') return <Shield className="w-3 h-3" />
-                  if (type === 'timeout') return <AlertCircle className="w-3 h-3" />
-                  return <Activity className="w-3 h-3" />
-                }
+            {/* ======= 節點分頁 ======= */}
+            {sidebarTab === 'nodes' && (
+              <div role="tabpanel" id="panel-nodes" aria-labelledby="tab-nodes" className="contents">
+                {/* Search Box */}
+                <div className="relative mb-3">
+                  <input
+                    type="text"
+                    placeholder="搜尋 IP 位址..."
+                    aria-label="搜尋 IP 位址"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-colors"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      aria-label="清除搜尋"
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
 
-                // 漸進式資訊揭露: 當連線被選中時，在側邊欄高亮顯示
-                const isSelected = selectedConnectionId === connection.id
-
-                return (
-                  <div
-                    key={connection.id}
-                    onClick={() => {
-                      // 統一使用 BatchPacketViewer
-                      if (selectedConnectionId === connection.id) {
-                        // 點擊同一連線，關閉檢視器
-                        setShowBatchViewer(false)
-                        setBatchViewerConnection(null)
-                        setSelectedConnectionId(null)
-                        setConnectionPackets(null)
-                      } else {
-                        // 檢查是否為聚合連線
-                        if (connection.id?.startsWith('aggregated-')) {
-                          // 聚合連線：直接使用
-                          setShowBatchViewer(true)
-                          setBatchViewerConnection(connection)
-                          setSelectedConnectionId(connection.id)
-                          // 判斷是否為攻擊流量
-                          const isAttackTraffic = (connection.connectionCount || 0) > 50
-                          if (isAttackTraffic) {
-                            fetchBatchPacketsForAnimation(connection)
-                          } else {
-                            const firstChildId = connection.connections?.[0]?.originalId || connection.originalId
-                            fetchConnectionPackets(firstChildId)
-                          }
-                        } else {
-                          // 普通連線：構造單一連線格式
-                          const singleConnection = {
-                            ...connection,
-                            connectionCount: 1,
-                            connections: [{
-                              originalId: connection.originalId || connection.id,
-                              ...connection
-                            }]
-                          }
-                          setShowBatchViewer(true)
-                          setBatchViewerConnection(singleConnection)
-                          setSelectedConnectionId(connection.id)
-                          fetchConnectionPackets(connection.originalId || connection.id)
-                        }
-                      }
-                    }}
-                    className={`sidebar-item rounded-xl p-4 transition-all duration-300 cursor-pointer hover-lift ${
-                      isSelected
-                        ? 'sidebar-item-selected animate-glow-pulse'
-                        : isCompleted
-                          ? 'border-emerald-500/40 bg-emerald-500/5'
-                          : ''
-                    }`}
-                  >
-                    {/* 標題列 */}
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-[11px] text-slate-400 truncate max-w-[140px]">{connection.id}</span>
-                      <div className={`protocol-badge ${
-                        protocolType?.includes('tcp') ? 'protocol-badge-tcp' :
-                        protocolType?.includes('udp') ? 'protocol-badge-udp' :
-                        protocolType?.includes('http') && !protocolType?.includes('https') ? 'protocol-badge-http' :
-                        protocolType?.includes('https') ? 'protocol-badge-https' :
-                        protocolType?.includes('dns') ? 'protocol-badge-dns' :
-                        protocolType?.includes('timeout') ? 'protocol-badge-timeout' :
-                        'protocol-badge-tcp'
-                      }`}>
-                        {getProtocolIcon(connection.protocol, protocolType)}
-                        <span className="ml-1">{(protocolType || protocol).toUpperCase().replace('-', ' ')}</span>
-                      </div>
-                    </div>
-
-                    {/* 狀態區塊 */}
-                    <div className="mt-3 space-y-2.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-500">階段</span>
-                        <div className="flex items-center gap-1.5">
-                          {visualEffects.blinking && <span className="text-amber-400 animate-pulse">⚡</span>}
-                          {visualEffects.pulsing && <span className="text-cyan-400 animate-pulse">●</span>}
-                          <span className={`font-medium ${isCompleted ? 'text-emerald-400' : 'text-slate-200'}`}>
-                            {stageLabel}
-                            {isCompleted && <span className="ml-1 text-emerald-400">✓</span>}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* 進度條 */}
-                      <div className="progress-bar">
-                        <div
-                          className={`progress-bar-fill ${isCompleted ? '!bg-gradient-to-r !from-emerald-500 !to-green-400' : ''}`}
-                          style={{ width: `${stageProgress}%` }}
-                        />
-                      </div>
-
-                      {/* 指標數據 */}
-                      <div className="grid grid-cols-2 gap-2 pt-1">
-                        <div className="text-[10px]">
-                          <span className="text-slate-500">RTT</span>
-                          <span className="ml-2 font-mono text-slate-300">
-                            {connection.metrics?.rttMs ? `${connection.metrics.rttMs}ms` : '—'}
-                          </span>
-                        </div>
-                        <div className="text-[10px] text-right">
-                          <span className="text-slate-500">封包</span>
-                          <span className="ml-2 font-mono text-slate-300">
-                            {connection.metrics?.packetCount ?? '—'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                {/* Match count */}
+                {searchMatchedNodeIds !== null && (
+                  <div className="text-xs text-slate-400 mb-3 px-1">
+                    找到 <span className="text-cyan-400 font-semibold">{searchMatchedNodeIds.size}</span> 節點，
+                    <span className="text-cyan-400 font-semibold">{searchMatchedConnectionIds?.size || 0}</span> 條連線
                   </div>
-                )
-              })}
+                )}
+
+                {/* Node List */}
+                <div className="flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
+                  {nodesComputed
+                    .filter(node => {
+                      if (searchMatchedNodeIds === null) return true
+                      return searchMatchedNodeIds.has(node.id)
+                    })
+                    .sort((a, b) => {
+                      if (a.isCenter) return -1
+                      if (b.isCenter) return 1
+                      return b.connectionCount - a.connectionCount
+                    })
+                    .map(node => {
+                      const depthLabel = getDepthLabel(node.depth, node.isCenter)
+                      const isHighlighted = searchMatchedNodeIds?.has(node.id)
+
+                      return (
+                        <div
+                          key={node.id}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`選取節點 ${node.id}`}
+                          className={`rounded-xl p-3 transition-all duration-300 cursor-pointer ${
+                            isHighlighted
+                              ? 'bg-cyan-500/15 border border-cyan-500/50 shadow-lg shadow-cyan-500/10'
+                              : 'bg-slate-800/40 border border-slate-700/50 hover:bg-slate-700/40 hover:border-slate-600'
+                          }`}
+                          onClick={() => setSearchQuery(node.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              setSearchQuery(node.id)
+                            }
+                          }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className={`font-mono text-sm truncate max-w-[160px] ${isHighlighted ? 'text-cyan-200 font-semibold' : 'text-slate-200'}`}>
+                              {node.label}
+                            </span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ml-1 ${
+                              node.isCenter
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                : node.depth === 1
+                                  ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                  : 'bg-slate-600/30 text-slate-400 border border-slate-600/40'
+                            }`}>
+                              {depthLabel}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {node.protocols.map(proto => (
+                              <span
+                                key={proto}
+                                className="text-[10px] px-1.5 py-0.5 rounded-md font-mono uppercase"
+                                style={{
+                                  backgroundColor: `${PROTOCOL_COLORS[proto.toLowerCase()] || '#64748b'}20`,
+                                  color: PROTOCOL_COLORS[proto.toLowerCase()] || '#94a3b8',
+                                  border: `1px solid ${PROTOCOL_COLORS[proto.toLowerCase()] || '#64748b'}40`
+                                }}
+                              >
+                                {proto}
+                              </span>
+                            ))}
+                          </div>
+
+                          <div className="flex items-center justify-between mt-2 text-xs text-slate-500">
+                            <span>連線數</span>
+                            <span className="font-mono text-slate-300">{node.connectionCount}</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                </div>
             </div>
+            )}
+
+            {/* ======= 健康分頁 ======= */}
+            {sidebarTab === 'health' && (
+              <div role="tabpanel" id="panel-health" aria-labelledby="tab-health" className="flex-1 flex flex-col overflow-hidden">
+                {/* 總覽分數卡 */}
+                <div className="rounded-xl p-3 bg-slate-800/50 border border-slate-700/60 mb-3 shrink-0">
+                  <div className="text-xs text-slate-400 mb-2">網路健康分數</div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex-1 h-2 rounded-full bg-slate-700 overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${overallHealth.score}%`,
+                          backgroundColor: overallHealth.score >= 80 ? '#22c55e' : overallHealth.score >= 50 ? '#f59e0b' : '#ef4444'
+                        }}
+                      />
+                    </div>
+                    <span className="text-sm font-mono font-semibold text-slate-100 shrink-0">
+                      {overallHealth.score} / 100
+                    </span>
+                  </div>
+                  {/* 連線健康統計 */}
+                  <div className="flex items-center gap-2 text-xs flex-wrap">
+                    <span className="text-slate-500 text-[10px]">連線:</span>
+                    <span className="text-green-400">🟢 {overallHealth.healthy} 健康</span>
+                    <span className="text-yellow-400">🟡 {overallHealth.warning} 警告</span>
+                    <span className="text-red-400">🔴 {overallHealth.critical} 異常</span>
+                  </div>
+                  {/* 節點健康統計 */}
+                  <div className="flex items-center gap-2 text-xs flex-wrap mt-1">
+                    <span className="text-slate-500 text-[10px]">節點:</span>
+                    <span className="text-green-400">🟢 {Math.max(0, nodesComputed.length - (overallHealth.nodeCritical || 0) - (overallHealth.nodeWarning || 0))} 正常</span>
+                    <span className="text-yellow-400">🟡 {overallHealth.nodeWarning || 0} 警戒</span>
+                    <span className="text-red-400">🔴 {overallHealth.nodeCritical || 0} 高危</span>
+                  </div>
+                  {/* 節點連線數風險詳情（若有） */}
+                  {(() => {
+                    const dangerNodes = nodesComputed
+                      .map(node => ({ node, health: nodeHealthMap.get(node.id) }))
+                      .filter(({ health }) => health && health.status !== 'healthy')
+                      .sort((a, b) => {
+                        if (a.health.status === b.health.status) return b.node.connectionCount - a.node.connectionCount
+                        return a.health.status === 'critical' ? -1 : 1
+                      })
+                    if (dangerNodes.length === 0) return null
+                    return (
+                      <div className="border-t border-slate-700/40 mt-2 pt-2">
+                        {dangerNodes.map(({ node, health }) => (
+                          <div
+                            key={node.id}
+                            className={`mb-1 p-2 rounded text-xs border-l-4 bg-slate-700/50 ${
+                              health.status === 'critical' ? 'border-red-500' : 'border-yellow-500'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-mono text-slate-200">{node.id}</span>
+                              <span className={`font-bold ${health.status === 'critical' ? 'text-red-400' : 'text-yellow-400'}`}>
+                                {node.connectionCount} 條連線
+                              </span>
+                            </div>
+                            <div className={`mt-0.5 ${health.status === 'critical' ? 'text-red-300' : 'text-yellow-300'}`}>
+                              {health.issues[0]}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })()}
+                </div>
+
+                {/* 連線健康清單 */}
+                <div className="flex-1 space-y-1.5 overflow-y-auto pr-1 custom-scrollbar">
+                  {[...connections]
+                    .sort((a, b) => {
+                      const order = { critical: 0, warning: 1, healthy: 2 }
+                      const ha = connectionHealthMap.get(a.id) ?? { status: 'healthy' }
+                      const hb = connectionHealthMap.get(b.id) ?? { status: 'healthy' }
+                      return (order[ha.status] ?? 2) - (order[hb.status] ?? 2)
+                    })
+                    .map(connection => {
+                      const health = connectionHealthMap.get(connection.id) ?? { status: 'healthy', score: 100, issues: [], mainMetric: '' }
+                      const isSelected = selectedConnectionId === connection.id
+
+                      const borderColor = health.status === 'critical' ? 'border-l-red-500' : health.status === 'warning' ? 'border-l-yellow-500' : 'border-l-green-500'
+                      const statusDot = health.status === 'critical' ? '🔴' : health.status === 'warning' ? '🟡' : '🟢'
+
+                      // IP 短縮顯示
+                      const srcLabel = connection.src || ''
+                      const dstLabel = connection.dst || ''
+
+                      const srcNodeHealth = nodeHealthMap.get(connection.src)
+                      const dstNodeHealth = nodeHealthMap.get(connection.dst)
+
+                      const ptLabel = (connection.protocolType || connection.primaryProtocolType || 'UNKNOWN').toUpperCase().replace(/-/g, '\u2011')
+
+                      return (
+                        <div
+                          key={connection.id}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`選取連線 ${connection.id}`}
+                          className={`rounded-lg p-2.5 border-l-4 cursor-pointer transition-all duration-200 ${borderColor} ${
+                            isSelected
+                              ? 'bg-cyan-500/15 border border-cyan-500/40 border-l-4'
+                              : 'bg-slate-800/40 border border-slate-700/40 hover:bg-slate-700/40'
+                          }`}
+                          onClick={() => {
+                            if (isSelected) {
+                              setShowBatchViewer(false)
+                              setBatchViewerConnection(null)
+                              setSelectedConnectionId(null)
+                              setConnectionPackets(null)
+                            } else if (connection.id?.startsWith('aggregated-')) {
+                              setShowBatchViewer(true)
+                              setBatchViewerConnection(connection)
+                              setSelectedConnectionId(connection.id)
+                              const isAttackTraffic = (connection.connectionCount || 0) > 50
+                              if (isAttackTraffic) {
+                                fetchBatchPacketsForAnimation(connection)
+                              } else {
+                                const firstChildId = connection.connections?.[0]?.originalId || connection.originalId
+                                fetchConnectionPackets(firstChildId)
+                              }
+                            } else {
+                              const singleConnection = {
+                                ...connection,
+                                connectionCount: 1,
+                                connections: [{ originalId: connection.originalId || connection.id, ...connection }]
+                              }
+                              setShowBatchViewer(true)
+                              setBatchViewerConnection(singleConnection)
+                              setSelectedConnectionId(connection.id)
+                              fetchConnectionPackets(connection.originalId || connection.id)
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              setSelectedConnectionId(isSelected ? null : connection.id)
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <span className="text-[10px] leading-none">{statusDot}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold bg-slate-700/60 text-slate-200 truncate max-w-[100px]">
+                              {ptLabel}
+                            </span>
+                            <span className="text-[9px] text-slate-400 font-mono truncate">
+                              {srcLabel}{srcNodeHealth?.status === 'critical' ? ' 🔴' : srcNodeHealth?.status === 'warning' ? ' 🟡' : ''}{' → '}{dstLabel}{dstNodeHealth?.status === 'critical' ? ' 🔴' : dstNodeHealth?.status === 'warning' ? ' 🟡' : ''}
+                            </span>
+                          </div>
+                          {health.mainMetric && (
+                            <div className="text-[10px] text-cyan-300 font-mono pl-4">{health.mainMetric}</div>
+                          )}
+                          {health.issues.length > 0 && health.status !== 'healthy' && (
+                            <div className={`text-[10px] pl-4 mt-0.5 truncate ${health.status === 'critical' ? 'text-red-400' : 'text-yellow-400'}`}>
+                              {health.issues[0]}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                </div>
+              </div>
+            )}
           </aside>
         </div>
       </main>

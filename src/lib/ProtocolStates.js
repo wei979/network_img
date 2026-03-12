@@ -543,6 +543,123 @@ export const PROTOCOL_STATES = {
     isAttack: true
   },
 
+  // ACK Flood 攻擊 — 大量純 ACK 封包
+  'ack-flood': {
+    stages: [
+      {
+        step: 'ACK-Burst',
+        label: 'ACK 洪水',
+        direction: 'forward',
+        color: '#dc2626', // 深紅
+        duration: 200,
+        icon: '⚡',
+        blinking: true
+      },
+      {
+        step: 'Flood',
+        label: '洪水攻擊中',
+        direction: 'forward',
+        color: '#b91c1c',
+        duration: 350,
+        icon: '💥',
+        pulsing: true
+      },
+      {
+        step: 'Overload',
+        label: '連線佇列溢位',
+        direction: 'forward',
+        color: '#7f1d1d',
+        duration: 200,
+        icon: '🔥',
+        blinking: true
+      }
+    ],
+    finalState: 'attack',
+    finalColor: '#dc2626',
+    totalDuration: 750,
+    description: 'ACK 洪水攻擊 — 大量純 ACK 封包耗盡資源',
+    warningEffect: 'pulse-red',
+    isAttack: true
+  },
+
+  // RST Flood 攻擊 — 大量 RST 封包強制重置連線
+  'rst-flood': {
+    stages: [
+      {
+        step: 'RST-Burst',
+        label: 'RST 洪水',
+        direction: 'forward',
+        color: '#f43f5e', // 玫紅
+        duration: 200,
+        icon: '⚡',
+        blinking: true
+      },
+      {
+        step: 'Reset',
+        label: '強制重置連線',
+        direction: 'forward',
+        color: '#e11d48',
+        duration: 350,
+        icon: '✗',
+        pulsing: true
+      },
+      {
+        step: 'Overload',
+        label: '連線耗盡',
+        direction: 'forward',
+        color: '#be123c',
+        duration: 200,
+        icon: '🔥',
+        blinking: true
+      }
+    ],
+    finalState: 'attack',
+    finalColor: '#f43f5e',
+    totalDuration: 750,
+    description: 'RST 洪水攻擊 — 強制終止大量連線',
+    warningEffect: 'pulse-red',
+    isAttack: true
+  },
+
+  // ACK+FIN 複合 Flag 攻擊
+  'ack-fin-flood': {
+    stages: [
+      {
+        step: 'ACK-FIN-Burst',
+        label: 'ACK+FIN 複合攻擊',
+        direction: 'forward',
+        color: '#9f1239', // 深玫紅
+        duration: 200,
+        icon: '⚡',
+        blinking: true
+      },
+      {
+        step: 'Flood',
+        label: '複合旗標洪水',
+        direction: 'forward',
+        color: '#881337',
+        duration: 400,
+        icon: '💥',
+        pulsing: true
+      },
+      {
+        step: 'Overload',
+        label: '連線狀態混亂',
+        direction: 'forward',
+        color: '#4c0519',
+        duration: 200,
+        icon: '🔥',
+        blinking: true
+      }
+    ],
+    finalState: 'attack',
+    finalColor: '#9f1239',
+    totalDuration: 800,
+    description: 'ACK+FIN 複合旗標攻擊 — 混淆 TCP 狀態機導致連線異常終止',
+    warningEffect: 'pulse-red',
+    isAttack: true
+  },
+
   // URG+PSH+FIN 複合 Flag 攻擊
   'urg-psh-fin-flood': {
     stages: [

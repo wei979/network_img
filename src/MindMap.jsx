@@ -792,6 +792,28 @@ export default function MindMap({ isLearningMode = false }) {
 
   // ========== 學習操作偵測 ==========
   // 監聽使用者操作並自動進入下一步
+  // 動態畫布尺寸
+  const [canvasSize, setCanvasSize] = useState(1000)
+
+  // 篩選後的 timelines（依協定群組過濾）
+  const filteredTimelines = useMemo(() => {
+    const allActive = Object.values(protocolFilters).every(Boolean)
+    if (allActive) return timelines
+    return timelines.filter(t => {
+      const group = PROTOCOL_GROUP_MAP[t.protocolType] ?? t.protocol?.toLowerCase() ?? 'tcp'
+      const knownGroup = ['tcp', 'udp', 'http', 'dns', 'icmp'].includes(group) ? group : 'tcp'
+      return protocolFilters[knownGroup] === true
+    })
+  }, [timelines, protocolFilters])
+
+  // A2-2: Node layout hook (must be before useLearningActionDetector which reads draggingNodeId)
+  const {
+    nodePositions, setNodePositions,
+    draggingNodeId, setDraggingNodeId, draggingNodeIdRef,
+    isLayoutStable, nodesComputed,
+    needsFitToView, setNeedsFitToView,
+  } = useNodeLayout(filteredTimelines, canvasSize, timelines)
+
   useLearningActionDetector({
     currentStep: getCurrentStep(),
     onActionComplete: handleLearningNext,
@@ -803,9 +825,6 @@ export default function MindMap({ isLearningMode = false }) {
     },
     isActive: showLearningUI && showTutorialOverlay
   })
-
-  // 動態畫布尺寸
-  const [canvasSize, setCanvasSize] = useState(1000)
 
   const toWorldCoords = useCallback((clientX, clientY) => {
     const rect = svgRef.current?.getBoundingClientRect()
@@ -1241,16 +1260,7 @@ export default function MindMap({ isLearningMode = false }) {
     loadTimelines()
   }, [loadTimelines])
 
-  // 篩選後的 timelines（依協定群組過濾）
-  const filteredTimelines = useMemo(() => {
-    const allActive = Object.values(protocolFilters).every(Boolean)
-    if (allActive) return timelines
-    return timelines.filter(t => {
-      const group = PROTOCOL_GROUP_MAP[t.protocolType] ?? t.protocol?.toLowerCase() ?? 'tcp'
-      const knownGroup = ['tcp', 'udp', 'http', 'dns', 'icmp'].includes(group) ? group : 'tcp'
-      return protocolFilters[knownGroup] === true
-    })
-  }, [timelines, protocolFilters])
+  // filteredTimelines moved up (before useNodeLayout)
 
   // 計算全局時間範圍（從所有 timelines 中提取最早和最晚的時間戳）
   useEffect(() => {
@@ -1307,14 +1317,6 @@ export default function MindMap({ isLearningMode = false }) {
   animationExternalRefsRef.current.setParticleTimeInfo = setParticleTimeInfo
   animationExternalRefsRef.current.setActiveParticleIndices = setActiveParticleIndices
   const { renderStates, controllersRef } = useAnimationLoop(filteredTimelines, isPaused, animationExternalRefsRef)
-
-  // A2-2: Node layout extracted to custom hook
-  const {
-    nodePositions, setNodePositions,
-    draggingNodeId, setDraggingNodeId, draggingNodeIdRef,
-    isLayoutStable, nodesComputed,
-    needsFitToView, setNeedsFitToView,
-  } = useNodeLayout(filteredTimelines, canvasSize, timelines)
 
   const handleFileUpload = async (event) => {
     const file = event.target.files?.[0]

@@ -91,6 +91,54 @@ export const ATTACK_TYPES = {
     priority: 6
   },
 
+  'DNS Amplification': {
+    colors: {
+      bg: 'bg-purple-500/20',
+      text: 'text-purple-400',
+      border: 'border-purple-500/30'
+    },
+    iconColor: 'text-purple-400',
+    description: 'DNS 放大攻擊 — 利用開放 DNS 伺服器反射並放大流量',
+    threatLevel: 'high',
+    priority: 3.5
+  },
+
+  'Slowloris': {
+    colors: {
+      bg: 'bg-amber-500/20',
+      text: 'text-amber-300',
+      border: 'border-amber-500/30'
+    },
+    iconColor: 'text-amber-300',
+    description: 'Slowloris 慢速攻擊 — 維持大量不完整 HTTP 連線耗盡伺服器資源',
+    threatLevel: 'high',
+    priority: 4.5
+  },
+
+  'ARP Spoofing': {
+    colors: {
+      bg: 'bg-rose-500/20',
+      text: 'text-rose-400',
+      border: 'border-rose-500/30'
+    },
+    iconColor: 'text-rose-400',
+    description: 'ARP 欺騙攻擊 — 偽造 ARP 回應以攔截網路流量',
+    threatLevel: 'high',
+    priority: 5.5
+  },
+
+  'Volumetric Flood': {
+    colors: {
+      bg: 'bg-orange-500/20',
+      text: 'text-orange-400',
+      border: 'border-orange-500/30'
+    },
+    iconColor: 'text-orange-400',
+    description: '容量型洪泛攻擊 — 單一來源大量封包消耗頻寬',
+    threatLevel: 'high',
+    priority: 6.5
+  },
+
   'High Volume Attack': {
     colors: {
       bg: 'bg-orange-500/20',

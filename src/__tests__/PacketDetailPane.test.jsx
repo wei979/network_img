@@ -164,4 +164,124 @@ describe('PacketDetailPane', () => {
     expect(screen.getByText('192.168.1.2')).toBeTruthy()
     expect(screen.getByText('0x0800')).toBeTruthy()
   })
+
+  it('renders children collapsed by default and expands on click', () => {
+    const detail = {
+      ...makeMockPacketDetail(),
+      layers: [{
+        name: 'TCP',
+        displayName: 'TCP Segment',
+        byteRange: [34, 65],
+        fields: [
+          { name: 'Source Port', value: '80', byteRange: [34, 35] },
+          {
+            name: 'Options',
+            value: '12 bytes (3 options)',
+            byteRange: [54, 65],
+            children: [
+              { name: 'Maximum Segment Size', value: '1460 bytes', byteRange: [54, 57] },
+              { name: 'SACK Permitted', value: '', byteRange: [58, 59] },
+              { name: 'Timestamps', value: 'TSval=123, TSecr=456', byteRange: [60, 65] },
+            ]
+          },
+        ]
+      }]
+    }
+    const { container } = render(<PacketDetailPane packetDetail={detail} />)
+
+    // Children should be hidden by default
+    expect(container.querySelector('[data-field="Maximum Segment Size"]')).toBeNull()
+
+    // Click the Options field to expand children
+    const optionsField = container.querySelector('[data-field="Options"]')
+    fireEvent.click(optionsField)
+
+    // Children should now be visible
+    expect(container.querySelector('[data-field="Maximum Segment Size"]')).toBeTruthy()
+    expect(container.querySelector('[data-field="SACK Permitted"]')).toBeTruthy()
+    expect(container.querySelector('[data-field="Timestamps"]')).toBeTruthy()
+
+    // Click again to collapse
+    fireEvent.click(optionsField)
+    expect(container.querySelector('[data-field="Maximum Segment Size"]')).toBeNull()
+  })
+
+  it('propagates onFieldHover through child fields', () => {
+    const onFieldHover = vi.fn()
+    const detail = {
+      ...makeMockPacketDetail(),
+      layers: [{
+        name: 'DNS',
+        displayName: 'DNS',
+        byteRange: [42, 80],
+        fields: [{
+          name: 'Query',
+          value: 'google.com. type A',
+          byteRange: [42, 60],
+          children: [
+            { name: 'Name', value: 'google.com.', byteRange: [44, 55] },
+            { name: 'Type', value: '1 (A)', byteRange: [56, 57] },
+          ]
+        }]
+      }]
+    }
+    const { container } = render(
+      <PacketDetailPane packetDetail={detail} onFieldHover={onFieldHover} />
+    )
+
+    // Expand the Query field
+    const queryField = container.querySelector('[data-field="Query"]')
+    fireEvent.click(queryField)
+
+    // Hover a child field
+    const nameField = container.querySelector('[data-field="Name"]')
+    fireEvent.mouseEnter(nameField)
+    expect(onFieldHover).toHaveBeenCalledWith([44, 55])
+
+    fireEvent.mouseLeave(nameField)
+    expect(onFieldHover).toHaveBeenLastCalledWith(null)
+  })
+
+  it('supports multi-level nested children', () => {
+    const detail = {
+      ...makeMockPacketDetail(),
+      layers: [{
+        name: 'DNS',
+        displayName: 'DNS',
+        byteRange: [42, 120],
+        fields: [{
+          name: 'Answers',
+          value: '2 records',
+          byteRange: null,
+          children: [{
+            name: 'Answer 1',
+            value: 'google.com. A 142.250.80.46',
+            byteRange: null,
+            children: [
+              { name: 'Name', value: 'google.com.', byteRange: null },
+              { name: 'TTL', value: '300', byteRange: null },
+              { name: 'Data', value: '142.250.80.46', byteRange: null },
+            ]
+          }]
+        }]
+      }]
+    }
+    const { container } = render(<PacketDetailPane packetDetail={detail} />)
+
+    // Level 1 children hidden
+    expect(container.querySelector('[data-field="Answer 1"]')).toBeNull()
+
+    // Expand Answers
+    fireEvent.click(container.querySelector('[data-field="Answers"]'))
+    expect(container.querySelector('[data-field="Answer 1"]')).toBeTruthy()
+
+    // Level 2 children still hidden
+    expect(container.querySelector('[data-field="TTL"]')).toBeNull()
+
+    // Expand Answer 1
+    fireEvent.click(container.querySelector('[data-field="Answer 1"]'))
+    expect(container.querySelector('[data-field="Name"]')).toBeTruthy()
+    expect(container.querySelector('[data-field="TTL"]')).toBeTruthy()
+    expect(container.querySelector('[data-field="Data"]')).toBeTruthy()
+  })
 })

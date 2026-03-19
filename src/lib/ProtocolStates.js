@@ -765,6 +765,7 @@ function getStatusText(statusCode) {
  * 獲取協議的預設顏色
  */
 export const PROTOCOL_COLORS = {
+  // 基本協議顏色
   tcp: '#38bdf8',
   udp: '#60a5fa',
   http: '#a855f7',
@@ -772,8 +773,52 @@ export const PROTOCOL_COLORS = {
   dns: '#f97316',
   icmp: '#facc15',
   ssh: '#fbbf24',
-  tls: '#fbbf24'
+  tls: '#fbbf24',
+  // 特定協議動畫類型顏色
+  'tcp-handshake': '#22c55e',
+  'tcp-teardown': '#ef4444',
+  'tcp-data': '#38bdf8',
+  'tcp-session': '#06b6d4',
+  'http-request': '#a855f7',
+  'https-request': '#14b8a6',
+  'dns-query': '#f97316',
+  'timeout': '#f59e0b',
+  'udp-transfer': '#60a5fa',
+  'icmp-ping': '#facc15',
+  'ssh-secure': '#10b981',
+  'psh-flood': '#ec4899',
+  'syn-flood': '#ef4444',
+  'fin-flood': '#dc2626',
+  'tcp-flood': '#dc2626',
+  'urg-psh-fin-flood': '#9f1239',
+  'ack-flood': '#dc2626',
+  'rst-flood': '#f43f5e',
+  'ack-fin-flood': '#9f1239',
 }
+
+export const PROTOCOL_LINE_STYLES = {
+  'tcp-handshake':  { dashArray: null,         strokeWidth: 1.2, double: false },
+  'tcp-teardown':   { dashArray: '8 4',         strokeWidth: 1.0, double: false },
+  'tcp-data':       { dashArray: null,          strokeWidth: 1.4, double: false },
+  'tcp-session':    { dashArray: null,          strokeWidth: 1.2, double: false },
+  'http-request':   { dashArray: '4 2',         strokeWidth: 1.0, double: false },
+  'https-request':  { dashArray: null,          strokeWidth: 0.7, double: true  },
+  'dns-query':      { dashArray: '1.5 2',       strokeWidth: 0.8, double: false },
+  'udp-transfer':   { dashArray: '4 2 1.5 2',   strokeWidth: 0.8, double: false },
+  'timeout':        { dashArray: '6 6',         strokeWidth: 1.0, double: false },
+  'icmp-ping':      { dashArray: '1 1.5',       strokeWidth: 0.6, double: false },
+  'psh-flood':      { dashArray: '2 1',         strokeWidth: 2.0, double: false },
+  'syn-flood':      { dashArray: '3 1',         strokeWidth: 2.0, double: false },
+  'fin-flood':      { dashArray: '2 1.5',       strokeWidth: 2.0, double: false },
+  'ack-flood':      { dashArray: '3 1',         strokeWidth: 2.0, double: false },
+  'rst-flood':      { dashArray: '2 1',         strokeWidth: 2.0, double: false },
+  'ack-fin-flood':  { dashArray: '1.5 1',       strokeWidth: 2.2, double: false },
+  'urg-psh-fin-flood': { dashArray: '1 1',      strokeWidth: 2.4, double: false },
+  'tcp-flood':      { dashArray: '3 1.5',       strokeWidth: 1.8, double: false },
+  'ssh-secure':     { dashArray: null,          strokeWidth: 1.4, double: true  },
+}
+
+export const DEFAULT_LINE_STYLE = { dashArray: '2 2', strokeWidth: 0.8, double: false }
 
 /**
  * 獲取協議顏色

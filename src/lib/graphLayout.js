@@ -20,18 +20,21 @@ export function parseTimelineId(timeline) {
     return null
   }
 
-  // Timeline ID 格式可能是：
-  // 1. "tcp-teardown-10.128.0.2-5416-10.0.0.2-80" (帶子類型)
-  // 2. "tcp-10.128.0.2-5416-10.0.0.2-80" (純協議)
-  // 使用正則表達式提取 IP 和 Port
-  const ipPortPattern = /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-(\d+)-(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})-(\d+)$/
+  // Timeline ID 格式：
+  // IPv4: "tcp-teardown-10.128.0.2-5416-10.0.0.2-80"
+  // IPv6: "tcp-[2001:db8::1]-5416-[2001:db8::2]-80"
+  const IP_PART = '(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|\\[[0-9a-fA-F:]+\\])'
+  const ipPortPattern = new RegExp(`(${IP_PART})-(\\d+)-(${IP_PART})-(\\d+)$`)
   const match = timeline.id.match(ipPortPattern)
 
   if (!match) {
     return null
   }
 
-  const [, srcIp, srcPort, dstIp, dstPort] = match
+  const srcIp = match[1].replace(/^\[|\]$/g, '')
+  const srcPort = match[2]
+  const dstIp = match[3].replace(/^\[|\]$/g, '')
+  const dstPort = match[4]
 
   // 提取協議類型（IP 之前的部分）
   const protocolPart = timeline.id.replace(ipPortPattern, '').replace(/-$/, '')

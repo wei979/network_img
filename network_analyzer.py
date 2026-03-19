@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from collections import Counter, defaultdict
 
 try:
-    from scapy.all import rdpcap, IP, TCP, UDP, ICMP, Ether, Raw
+    from scapy.all import rdpcap, IP, IPv6, TCP, UDP, ICMP, Ether, Raw, DNS, DNSQR, DNSRR, ARP
 except ImportError:  # pragma: no cover - user environment specific
     print("Please install scapy: pip install scapy")
     sys.exit(1)
@@ -79,8 +79,10 @@ class NetworkAnalyzer:
                 stats['time_intervals'].append(packet_time - prev_time)
             prev_time = packet_time
 
-            if packet.haslayer(IP):
-                ip_layer = packet[IP]
+            has_ip = packet.haslayer(IP)
+            has_ipv6 = packet.haslayer(IPv6)
+            if has_ip or has_ipv6:
+                ip_layer = packet[IP] if has_ip else packet[IPv6]
                 src_ip = ip_layer.src
                 dst_ip = ip_layer.dst
 
@@ -222,10 +224,14 @@ class NetworkAnalyzer:
         handshakes = {}
 
         for index, packet in enumerate(self.packets):
-            if not packet.haslayer(IP) or not packet.haslayer(TCP):
+            if not packet.haslayer(TCP):
+                continue
+            has_ip = packet.haslayer(IP)
+            has_ipv6 = packet.haslayer(IPv6)
+            if not has_ip and not has_ipv6:
                 continue
 
-            ip = packet[IP]
+            ip = packet[IP] if has_ip else packet[IPv6]
             tcp = packet[TCP]
             ts = float(packet.time)
             client_key = (ip.src, tcp.sport, ip.dst, tcp.dport)
@@ -828,10 +834,14 @@ class NetworkAnalyzer:
         transfers = {}
 
         for index, packet in enumerate(self.packets):
-            if not packet.haslayer(IP) or not packet.haslayer(UDP):
+            if not packet.haslayer(UDP):
+                continue
+            has_ip = packet.haslayer(IP)
+            has_ipv6 = packet.haslayer(IPv6)
+            if not has_ip and not has_ipv6:
                 continue
 
-            ip = packet[IP]
+            ip = packet[IP] if has_ip else packet[IPv6]
             udp = packet[UDP]
             ts = float(packet.time)
             key = (ip.src, udp.sport, ip.dst, udp.dport)
@@ -839,10 +849,41 @@ class NetworkAnalyzer:
                 'start': ts,
                 'end': ts,
                 'count': 0,
-                'first_packet': index
+                'first_packet': index,
+                'dns_queries': [],
+                'dns_answers': [],
+                'dns_rcode': None
             })
             info['end'] = ts
             info['count'] += 1
+
+            # Extract DNS details if present
+            if packet.haslayer(DNS):
+                dns = packet[DNS]
+                if not dns.qr and packet.haslayer(DNSQR):
+                    qr = packet[DNSQR]
+                    qname = qr.qname.decode('utf-8', errors='replace') if isinstance(qr.qname, bytes) else str(qr.qname)
+                    info['dns_queries'].append({'name': qname, 'type': self._dns_qtype_name(qr.qtype)})
+                elif dns.qr:
+                    info['dns_rcode'] = self._dns_rcode_name(dns.rcode)
+                    if packet.haslayer(DNSRR):
+                        rr = dns.an
+                        for _ in range(dns.ancount):
+                            if rr is None:
+                                break
+                            try:
+                                rdata = rr.rdata if hasattr(rr, 'rdata') else str(rr.payload)
+                            except Exception:
+                                rdata = '(unparsed)'
+                            if isinstance(rdata, bytes):
+                                rdata = rdata.decode('utf-8', errors='replace')
+                            info['dns_answers'].append({
+                                'name': rr.rrname.decode('utf-8', errors='replace') if isinstance(rr.rrname, bytes) else str(rr.rrname),
+                                'type': self._dns_qtype_name(rr.type),
+                                'data': str(rdata),
+                                'ttl': rr.ttl
+                            })
+                            rr = rr.payload if hasattr(rr, 'payload') and isinstance(rr.payload, DNSRR) else None
 
         timelines = []
         for (src_ip, src_port, dst_ip, dst_port), info in transfers.items():
@@ -850,10 +891,19 @@ class NetworkAnalyzer:
             is_dns = src_port == 53 or dst_port == 53
             protocol_type = 'dns-query' if is_dns else 'udp-transfer'
 
+            metrics = {'packetCount': info['count']}
+            if is_dns:
+                if info['dns_queries']:
+                    metrics['queries'] = info['dns_queries']
+                if info['dns_answers']:
+                    metrics['answers'] = info['dns_answers']
+                if info['dns_rcode']:
+                    metrics['rcode'] = info['dns_rcode']
+
             timeline = {
                 'id': f"udp-{src_ip}-{src_port}-{dst_ip}-{dst_port}",
                 'protocol': 'udp' if not is_dns else 'dns',
-                'protocolType': protocol_type,  # 明確標示協議類型
+                'protocolType': protocol_type,
                 'startEpochMs': int(info['start'] * 1000),
                 'endEpochMs': int(info['end'] * 1000),
                 'stages': [
@@ -861,13 +911,11 @@ class NetworkAnalyzer:
                         'key': 'send',
                         'label': 'DNS Query' if protocol_type == 'dns-query' else 'UDP Transfer',
                         'direction': 'forward',
-                        'durationMs': max(1200, int((info['end'] - info['start']) * 1000)),  # 最小 1.2 秒
+                        'durationMs': max(1200, int((info['end'] - info['start']) * 1000)),
                         'packetRefs': [info['first_packet']]
                     }
                 ],
-                'metrics': {
-                    'packetCount': info['count']
-                }
+                'metrics': metrics
             }
             timelines.append(timeline)
 
@@ -883,10 +931,14 @@ class NetworkAnalyzer:
         processed_connections = set()  # 追蹤已處理的連線（標準化 key）
 
         for index, packet in enumerate(self.packets):
-            if not packet.haslayer(TCP) or not packet.haslayer(IP):
+            if not packet.haslayer(TCP):
+                continue
+            has_ip = packet.haslayer(IP)
+            has_ipv6 = packet.haslayer(IPv6)
+            if not has_ip and not has_ipv6:
                 continue
 
-            ip = packet[IP]
+            ip = packet[IP] if has_ip else packet[IPv6]
             tcp = packet[TCP]
             ts = float(packet.time)
 
@@ -971,10 +1023,14 @@ class NetworkAnalyzer:
         processed_timeout_events = set()  # 追蹤已處理的超時事件 (normalized_key, time_window)
 
         for index, packet in enumerate(self.packets):
-            if not packet.haslayer(TCP) or not packet.haslayer(IP):
+            if not packet.haslayer(TCP):
+                continue
+            has_ip = packet.haslayer(IP)
+            has_ipv6 = packet.haslayer(IPv6)
+            if not has_ip and not has_ipv6:
                 continue
 
-            ip = packet[IP]
+            ip = packet[IP] if has_ip else packet[IPv6]
             tcp = packet[TCP]
             ts = float(packet.time)
 
@@ -1056,15 +1112,22 @@ class NetworkAnalyzer:
         _SEQ_HALF = _SEQ_MAX // 2
 
         for index, packet in enumerate(self.packets):
-            if not packet.haslayer(TCP) or not packet.haslayer(IP):
+            if not packet.haslayer(TCP):
+                continue
+            has_ip = packet.haslayer(IP)
+            has_ipv6 = packet.haslayer(IPv6)
+            if not has_ip and not has_ipv6:
                 continue
             tcp_layer = packet[TCP]
-            ip_layer = packet[IP]
+            ip_layer = packet[IP] if has_ip else packet[IPv6]
             flags = int(tcp_layer.flags)
             syn = bool(flags & 0x02)
             fin = bool(flags & 0x01)
             # Actual TCP payload length from IP/TCP headers (handles variable TCP options)
-            ip_payload = ip_layer.len - (ip_layer.ihl * 4)
+            if has_ip:
+                ip_payload = ip_layer.len - (ip_layer.ihl * 4)
+            else:
+                ip_payload = ip_layer.plen
             tcp_hdr = tcp_layer.dataofs * 4
             data_len = max(0, ip_payload - tcp_hdr)
             # SYN and FIN each consume one sequence number even without data
@@ -1210,6 +1273,109 @@ class NetworkAnalyzer:
             items = items[:top_n]
         return [{'name': str(key), 'count': value} for key, value in items]
 
+    # ── Phase 9: Advanced attack detection helpers ─────────────────────
+
+    def _detect_dns_amplification(self):
+        """Detect DNS amplification/reflection attacks."""
+        result = {'amplification_ratio': 0, 'total_queries': 0, 'total_responses': 0,
+                  'response_source_count': 0, 'target_ip': None}
+        query_bytes = 0
+        response_bytes = 0
+        response_sources = set()
+        response_targets = Counter()
+
+        for packet in self.packets:
+            if not packet.haslayer(UDP) or not packet.haslayer(DNS):
+                continue
+            udp = packet[UDP]
+            if udp.sport != 53 and udp.dport != 53:
+                continue
+            dns = packet[DNS]
+            pkt_len = len(packet)
+            if not dns.qr:  # query
+                query_bytes += pkt_len
+                result['total_queries'] += 1
+            else:  # response
+                response_bytes += pkt_len
+                result['total_responses'] += 1
+                if packet.haslayer(IP):
+                    response_sources.add(packet[IP].src)
+                    response_targets[packet[IP].dst] += 1
+
+        result['amplification_ratio'] = response_bytes / query_bytes if query_bytes > 0 else 0
+        result['response_source_count'] = len(response_sources)
+        if response_targets:
+            result['target_ip'] = response_targets.most_common(1)[0][0]
+        return result
+
+    def _detect_slowloris(self):
+        """Detect Slowloris slow HTTP attacks (many concurrent low-data HTTP connections)."""
+        HTTP_PORTS = {80, 443, 8080, 8443}
+        result = {'detected': False, 'suspicious_sources': 0, 'details': []}
+        connections = defaultdict(lambda: {
+            'sockets': set(), 'data_bytes': 0, 'packet_count': 0,
+            'first_time': None, 'last_time': None,
+            'has_fin': False, 'has_rst': False
+        })
+
+        for packet in self.packets:
+            if not packet.haslayer(TCP) or not packet.haslayer(IP):
+                continue
+            ip = packet[IP]
+            tcp = packet[TCP]
+            if tcp.dport not in HTTP_PORTS:
+                continue
+            src_ip = ip.src
+            conn = connections[src_ip]
+            conn['sockets'].add((ip.dst, tcp.dport, tcp.sport))
+            conn['packet_count'] += 1
+            ts = float(packet.time)
+            if conn['first_time'] is None:
+                conn['first_time'] = ts
+            conn['last_time'] = ts
+            if packet.haslayer(Raw):
+                conn['data_bytes'] += len(packet[Raw])
+            flags = int(tcp.flags)
+            if flags & 0x01:
+                conn['has_fin'] = True
+            if flags & 0x04:
+                conn['has_rst'] = True
+
+        for src_ip, info in connections.items():
+            num_sockets = len(info['sockets'])
+            if num_sockets < 10:
+                continue
+            duration = (info['last_time'] - info['first_time']) if info['first_time'] and info['last_time'] else 0
+            avg_data = info['data_bytes'] / num_sockets if num_sockets > 0 else 0
+            no_termination = not info['has_fin'] and not info['has_rst']
+            if avg_data < 200 and duration > 30 and no_termination:
+                result['suspicious_sources'] += 1
+                result['details'].append({'ip': src_ip, 'connections': num_sockets,
+                                          'avg_data': round(avg_data, 1), 'duration': round(duration, 1)})
+
+        result['detected'] = result['suspicious_sources'] > 0
+        return result
+
+    def _detect_arp_spoofing(self):
+        """Detect ARP spoofing (IP-MAC mapping conflicts)."""
+        result = {'detected': False, 'conflicting_ips': 0, 'details': []}
+        ip_mac_map = defaultdict(set)
+
+        for packet in self.packets:
+            if not packet.haslayer(ARP):
+                continue
+            arp = packet[ARP]
+            if arp.op == 2:  # ARP reply
+                ip_mac_map[arp.psrc].add(str(arp.hwsrc).lower())
+
+        for ip_addr, macs in ip_mac_map.items():
+            if len(macs) > 1:
+                result['conflicting_ips'] += 1
+                result['details'].append({'ip': ip_addr, 'macs': list(macs)})
+
+        result['detected'] = result['conflicting_ips'] > 0
+        return result
+
     def detect_attacks(self):
         """偵測潛在的網路攻擊並計算攻擊指標。"""
         if not self.packets:
@@ -1317,8 +1483,9 @@ class NetworkAnalyzer:
 
         total_connections = len(connections)
 
-        # RST 比例
+        # Flag 比例
         rst_ratio = tcp_flags['rst'] / total_tcp_packets if total_tcp_packets > 0 else 0
+        psh_ratio = tcp_flags['psh'] / total_tcp_packets if total_tcp_packets > 0 else 0
 
         # 每秒連線數
         connections_per_second = total_connections / duration_seconds
@@ -1340,6 +1507,11 @@ class NetworkAnalyzer:
         max_target_count = target_ports.most_common(1)[0][1] if target_ports else 0
         total_target_packets = sum(target_ports.values())
         target_concentration = max_target_count / total_target_packets if total_target_packets > 0 else 0
+
+        # Phase 9: 進階偵測
+        dns_amp = self._detect_dns_amplification()
+        slowloris = self._detect_slowloris()
+        arp_spoof = self._detect_arp_spoofing()
 
         # 攻擊類型判斷
         attack_type = None
@@ -1375,12 +1547,51 @@ class NetworkAnalyzer:
             severity = 'high' if connections_per_second > 100 else 'medium'
             confidence = min(0.85, connections_per_second / 200 + teardown_without_data_rate * 0.3)
 
+        # PSH Flood 檢測
+        elif psh_ratio > 0.6 and total_tcp_packets > 100:
+            attack_type = 'PSH Flood'
+            attack_description = '大量 PSH 封包淹沒目標，可能是 PSH Flood 攻擊'
+            severity = 'high' if psh_ratio > 0.8 else 'medium'
+            confidence = min(0.9, psh_ratio * 0.85)
+
+        # DNS Amplification 檢測
+        elif dns_amp['amplification_ratio'] > 3 and dns_amp['total_responses'] > 50 and dns_amp['response_source_count'] > 5:
+            amp_r = dns_amp['amplification_ratio']
+            src_c = dns_amp['response_source_count']
+            attack_type = 'DNS Amplification'
+            attack_description = f'DNS 放大攻擊：回應/查詢位元組比 {amp_r:.1f}x，來自 {src_c} 個不同 DNS 伺服器'
+            severity = 'high' if amp_r > 10 else 'medium'
+            confidence = min(0.9, amp_r / 20 + src_c / 50)
+
+        # Slowloris 檢測
+        elif slowloris['detected']:
+            sl_count = slowloris['suspicious_sources']
+            attack_type = 'Slowloris'
+            attack_description = f'疑似 Slowloris 慢速攻擊：{sl_count} 個來源 IP 維持大量低流量長連線'
+            severity = 'high' if sl_count > 3 else 'medium'
+            confidence = min(0.85, 0.5 + sl_count * 0.1)
+
+        # ARP Spoofing 檢測
+        elif arp_spoof['detected']:
+            arp_count = arp_spoof['conflicting_ips']
+            attack_type = 'ARP Spoofing'
+            attack_description = f'偵測到 ARP 欺騙：{arp_count} 個 IP 位址對應到多個 MAC 位址'
+            severity = 'high' if arp_count > 2 else 'medium'
+            confidence = min(0.9, 0.6 + arp_count * 0.15)
+
         # 端口掃描檢測
         elif len(target_ports) > 50 and source_concentration > 0.8:
             attack_type = 'Port Scan'
             attack_description = '單一來源掃描大量端口，可能是偵察行為'
             severity = 'low'
             confidence = min(0.8, len(target_ports) / 100 * 0.5 + source_concentration * 0.3)
+
+        # 高速單源洪泛（通用規則）
+        elif connections_per_second > 80 and source_concentration > 0.9 and total_tcp_packets > 200:
+            attack_type = 'Volumetric Flood'
+            attack_description = f'單一來源 IP 以 {connections_per_second:.0f} 連線/秒的速率發送大量封包'
+            severity = 'high' if connections_per_second > 150 else 'medium'
+            confidence = min(0.85, connections_per_second / 200 + source_concentration * 0.2)
 
         # 異常分數計算（0-100）
         anomaly_score = 0
@@ -1392,6 +1603,16 @@ class NetworkAnalyzer:
             anomaly_score += teardown_without_data_rate * 25
         if connections_per_second > 20:
             anomaly_score += min(20, connections_per_second / 5)
+        if psh_ratio > 0.6:
+            anomaly_score += psh_ratio * 25
+        if source_concentration > 0.9 and total_tcp_packets > 100:
+            anomaly_score += source_concentration * 15
+        if dns_amp['amplification_ratio'] > 3:
+            anomaly_score += min(20, dns_amp['amplification_ratio'] * 2)
+        if slowloris['suspicious_sources'] > 0:
+            anomaly_score += min(20, slowloris['suspicious_sources'] * 5)
+        if arp_spoof['conflicting_ips'] > 0:
+            anomaly_score += min(25, arp_spoof['conflicting_ips'] * 10)
 
         anomaly_score = min(100, anomaly_score)
 
@@ -1409,7 +1630,10 @@ class NetworkAnalyzer:
                 'source_concentration': round(source_concentration, 3),
                 'target_concentration': round(target_concentration, 3),
                 'unique_source_ips': len(source_ips),
-                'unique_target_ports': len(target_ports)
+                'unique_target_ports': len(target_ports),
+                'dns_amplification_ratio': round(dns_amp['amplification_ratio'], 1),
+                'slowloris_sources': slowloris['suspicious_sources'],
+                'arp_conflicts': arp_spoof['conflicting_ips']
             },
             'tcp_flags': tcp_flags,
             'top_sources': [{'ip': ip, 'count': count} for ip, count in source_ips.most_common(5)],
@@ -1801,6 +2025,90 @@ class NetworkAnalyzer:
 
         return details
 
+    @staticmethod
+    def _parse_tcp_options(options, byte_offset):
+        """Parse TCP options into structured fields with byte ranges.
+
+        Args:
+            options: Scapy parsed options list [(kind_name, value), ...]
+            byte_offset: starting byte offset of the options block
+
+        Returns:
+            list of field dicts suitable for the layer tree
+        """
+        fields = []
+        pos = byte_offset
+        for opt_name, opt_val in (options or []):
+            kind = opt_name
+            if kind == 'EOL':
+                fields.append({'name': 'End of Option List (EOL)', 'value': '', 'byteRange': [pos, pos]})
+                pos += 1
+            elif kind == 'NOP':
+                fields.append({'name': 'No-Operation (NOP)', 'value': '', 'byteRange': [pos, pos]})
+                pos += 1
+            elif kind == 'MSS':
+                val = opt_val if isinstance(opt_val, int) else 0
+                fields.append({'name': 'Maximum Segment Size', 'value': f'{val} bytes', 'byteRange': [pos, pos + 3]})
+                pos += 4
+            elif kind == 'WScale':
+                val = opt_val if isinstance(opt_val, int) else 0
+                multiplier = 2 ** val
+                fields.append({'name': 'Window Scale', 'value': f'{val} (multiply by {multiplier})', 'byteRange': [pos, pos + 2]})
+                pos += 3
+            elif kind == 'SAckOK':
+                fields.append({'name': 'SACK Permitted', 'value': '', 'byteRange': [pos, pos + 1]})
+                pos += 2
+            elif kind == 'SAck':
+                blocks = opt_val if isinstance(opt_val, (list, tuple)) else ()
+                block_strs = []
+                for i in range(0, len(blocks), 2):
+                    if i + 1 < len(blocks):
+                        block_strs.append(f'{blocks[i]}-{blocks[i + 1]}')
+                block_len = 2 + len(blocks) * 4
+                fields.append({
+                    'name': 'SACK',
+                    'value': ', '.join(block_strs) if block_strs else str(opt_val),
+                    'byteRange': [pos, pos + block_len - 1]
+                })
+                pos += block_len
+            elif kind == 'Timestamp':
+                if isinstance(opt_val, (list, tuple)) and len(opt_val) == 2:
+                    tsval, tsecr = opt_val
+                    fields.append({'name': 'Timestamps', 'value': f'TSval={tsval}, TSecr={tsecr}', 'byteRange': [pos, pos + 9]})
+                else:
+                    fields.append({'name': 'Timestamps', 'value': str(opt_val), 'byteRange': [pos, pos + 9]})
+                pos += 10
+            else:
+                # Unknown / other option
+                opt_len = 2
+                if isinstance(opt_val, bytes):
+                    opt_len = 2 + len(opt_val)
+                elif isinstance(opt_val, (list, tuple)):
+                    opt_len = 2 + len(opt_val) * 4
+                fields.append({
+                    'name': f'Option: {kind}',
+                    'value': str(opt_val) if opt_val is not None else '',
+                    'byteRange': [pos, pos + opt_len - 1]
+                })
+                pos += opt_len
+        return fields
+
+    @staticmethod
+    def _dns_rcode_name(rcode):
+        """Return human-readable DNS response code."""
+        codes = {0: 'No Error', 1: 'Format Error', 2: 'Server Failure',
+                 3: 'Name Error (NXDOMAIN)', 4: 'Not Implemented', 5: 'Refused'}
+        return codes.get(rcode, f'Code {rcode}')
+
+    @staticmethod
+    def _dns_qtype_name(qtype):
+        """Return human-readable DNS query type."""
+        types = {1: 'A', 2: 'NS', 5: 'CNAME', 6: 'SOA', 12: 'PTR',
+                 15: 'MX', 16: 'TXT', 28: 'AAAA', 33: 'SRV', 35: 'NAPTR',
+                 43: 'DS', 46: 'RRSIG', 47: 'NSEC', 48: 'DNSKEY', 255: 'ANY',
+                 65: 'HTTPS', 64: 'SVCB', 257: 'CAA'}
+        return types.get(qtype, f'Type {qtype}')
+
     def _extract_packet_deep_detail(self, packet_index):
         """Extract deep dissection of a single packet with per-field byte offsets.
 
@@ -1904,7 +2212,14 @@ class NetworkAnalyzer:
                     {'name': 'Urgent Pointer', 'value': str(tcp.urgptr), 'byteRange': [tcp_start + 18, tcp_start + 19]},
                 ]
                 if tcp_hdr_len > 20:
-                    tcp_fields.append({'name': 'Options', 'value': f'{tcp_hdr_len - 20} bytes', 'byteRange': [tcp_start + 20, tcp_start + tcp_hdr_len - 1]})
+                    opt_bytes = tcp_hdr_len - 20
+                    opt_fields = self._parse_tcp_options(tcp.options, tcp_start + 20)
+                    tcp_fields.append({
+                        'name': 'Options',
+                        'value': f'{opt_bytes} bytes ({len(opt_fields)} options)',
+                        'byteRange': [tcp_start + 20, tcp_start + tcp_hdr_len - 1],
+                        'children': opt_fields
+                    })
 
                 layers.append({
                     'name': 'TCP',
@@ -1933,6 +2248,85 @@ class NetworkAnalyzer:
                 })
                 offset = udp_start + udp_hdr_len
 
+                # DNS layer (inside UDP)
+                if packet.haslayer(DNS):
+                    dns = packet[DNS]
+                    dns_start = offset
+                    qr = 'Response' if dns.qr else 'Query'
+                    rcode_name = self._dns_rcode_name(dns.rcode)
+                    dns_fields = [
+                        {'name': 'Transaction ID', 'value': f'0x{dns.id:04x}', 'byteRange': [dns_start, dns_start + 1]},
+                        {'name': 'Flags', 'value': f'0x{(dns.qr << 15 | dns.opcode << 11 | dns.aa << 10 | dns.rd << 8 | dns.ra << 7 | dns.rcode):04x} ({qr})', 'byteRange': [dns_start + 2, dns_start + 3]},
+                        {'name': 'QR', 'value': f'{dns.qr} ({qr})', 'byteRange': None},
+                        {'name': 'Opcode', 'value': str(dns.opcode), 'byteRange': None},
+                        {'name': 'AA (Authoritative)', 'value': str(dns.aa), 'byteRange': None},
+                        {'name': 'RD (Recursion Desired)', 'value': str(dns.rd), 'byteRange': None},
+                        {'name': 'RA (Recursion Available)', 'value': str(dns.ra), 'byteRange': None},
+                        {'name': 'Response Code', 'value': f'{dns.rcode} ({rcode_name})', 'byteRange': None},
+                        {'name': 'Questions', 'value': str(dns.qdcount), 'byteRange': [dns_start + 4, dns_start + 5]},
+                        {'name': 'Answer RRs', 'value': str(dns.ancount), 'byteRange': [dns_start + 6, dns_start + 7]},
+                        {'name': 'Authority RRs', 'value': str(dns.nscount), 'byteRange': [dns_start + 8, dns_start + 9]},
+                        {'name': 'Additional RRs', 'value': str(dns.arcount), 'byteRange': [dns_start + 10, dns_start + 11]},
+                    ]
+                    # Parse question section
+                    if dns.qdcount and packet.haslayer(DNSQR):
+                        qr_layer = packet[DNSQR]
+                        qname = qr_layer.qname.decode('utf-8', errors='replace') if isinstance(qr_layer.qname, bytes) else str(qr_layer.qname)
+                        qtype_name = self._dns_qtype_name(qr_layer.qtype)
+                        dns_fields.append({
+                            'name': 'Query',
+                            'value': f'{qname} type {qtype_name}',
+                            'byteRange': None,
+                            'children': [
+                                {'name': 'Name', 'value': qname, 'byteRange': None},
+                                {'name': 'Type', 'value': f'{qr_layer.qtype} ({qtype_name})', 'byteRange': None},
+                                {'name': 'Class', 'value': str(qr_layer.qclass), 'byteRange': None},
+                            ]
+                        })
+                    # Parse answer section
+                    if dns.ancount and packet.haslayer(DNSRR):
+                        rr = dns.an
+                        ans_children = []
+                        for i in range(dns.ancount):
+                            if rr is None:
+                                break
+                            rr_name = rr.rrname.decode('utf-8', errors='replace') if isinstance(rr.rrname, bytes) else str(rr.rrname)
+                            rr_type = self._dns_qtype_name(rr.type)
+                            try:
+                                rdata = rr.rdata if hasattr(rr, 'rdata') else str(rr.payload)
+                            except Exception:
+                                rdata = '(unparsed)'
+                            if isinstance(rdata, bytes):
+                                rdata = rdata.decode('utf-8', errors='replace')
+                            ans_children.append({
+                                'name': f'Answer {i + 1}',
+                                'value': f'{rr_name} {rr_type} {rdata}',
+                                'byteRange': None,
+                                'children': [
+                                    {'name': 'Name', 'value': rr_name, 'byteRange': None},
+                                    {'name': 'Type', 'value': f'{rr.type} ({rr_type})', 'byteRange': None},
+                                    {'name': 'TTL', 'value': str(rr.ttl), 'byteRange': None},
+                                    {'name': 'Data', 'value': str(rdata), 'byteRange': None},
+                                ]
+                            })
+                            rr = rr.payload if hasattr(rr, 'payload') and isinstance(rr.payload, DNSRR) else None
+                        if ans_children:
+                            dns_fields.append({
+                                'name': 'Answers',
+                                'value': f'{len(ans_children)} records',
+                                'byteRange': None,
+                                'children': ans_children
+                            })
+
+                    dns_end = len(raw_bytes) - 1  # DNS extends to end of packet
+                    layers.append({
+                        'name': 'DNS',
+                        'displayName': f'DNS {qr}, ID: 0x{dns.id:04x}',
+                        'byteRange': [dns_start, dns_end],
+                        'fields': dns_fields
+                    })
+                    offset = dns_end + 1
+
             # ICMP layer
             elif packet.haslayer(ICMP):
                 icmp = packet[ICMP]
@@ -1955,6 +2349,80 @@ class NetworkAnalyzer:
                     ]
                 })
                 offset = icmp_start + icmp_hdr_len
+
+        # IPv6 layer
+        elif packet.haslayer(IPv6):
+            ipv6 = packet[IPv6]
+            ipv6_start = offset
+            ipv6_hdr_len = 40  # fixed IPv6 header
+            next_hdr_names = {6: 'TCP', 17: 'UDP', 58: 'ICMPv6', 44: 'Fragment', 43: 'Routing', 0: 'Hop-by-Hop'}
+            nh_name = next_hdr_names.get(ipv6.nh, str(ipv6.nh))
+            layers.append({
+                'name': 'IPv6',
+                'displayName': f'Internet Protocol Version 6, Src: {ipv6.src}, Dst: {ipv6.dst}',
+                'byteRange': [ipv6_start, ipv6_start + ipv6_hdr_len - 1],
+                'fields': [
+                    {'name': 'Version', 'value': '6', 'byteRange': [ipv6_start, ipv6_start]},
+                    {'name': 'Traffic Class', 'value': f'0x{ipv6.tc:02x}', 'byteRange': [ipv6_start, ipv6_start + 1]},
+                    {'name': 'Flow Label', 'value': f'0x{ipv6.fl:05x}', 'byteRange': [ipv6_start + 1, ipv6_start + 3]},
+                    {'name': 'Payload Length', 'value': str(ipv6.plen), 'byteRange': [ipv6_start + 4, ipv6_start + 5]},
+                    {'name': 'Next Header', 'value': f'{ipv6.nh} ({nh_name})', 'byteRange': [ipv6_start + 6, ipv6_start + 6]},
+                    {'name': 'Hop Limit', 'value': str(ipv6.hlim), 'byteRange': [ipv6_start + 7, ipv6_start + 7]},
+                    {'name': 'Source Address', 'value': ipv6.src, 'byteRange': [ipv6_start + 8, ipv6_start + 23]},
+                    {'name': 'Destination Address', 'value': ipv6.dst, 'byteRange': [ipv6_start + 24, ipv6_start + 39]},
+                ]
+            })
+            offset = ipv6_start + ipv6_hdr_len
+
+            # TCP/UDP inside IPv6
+            if packet.haslayer(TCP):
+                tcp = packet[TCP]
+                tcp_hdr_len = tcp.dataofs * 4
+                tcp_start = offset
+                flag_names = []
+                if tcp.flags.S: flag_names.append('SYN')
+                if tcp.flags.A: flag_names.append('ACK')
+                if tcp.flags.F: flag_names.append('FIN')
+                if tcp.flags.R: flag_names.append('RST')
+                if tcp.flags.P: flag_names.append('PSH')
+                if tcp.flags.U: flag_names.append('URG')
+                flags_str = ', '.join(flag_names) if flag_names else 'NONE'
+                tcp_fields = [
+                    {'name': 'Source Port', 'value': str(tcp.sport), 'byteRange': [tcp_start, tcp_start + 1]},
+                    {'name': 'Destination Port', 'value': str(tcp.dport), 'byteRange': [tcp_start + 2, tcp_start + 3]},
+                    {'name': 'Sequence Number', 'value': str(tcp.seq), 'byteRange': [tcp_start + 4, tcp_start + 7]},
+                    {'name': 'Acknowledgment Number', 'value': str(tcp.ack), 'byteRange': [tcp_start + 8, tcp_start + 11]},
+                    {'name': 'Flags', 'value': f'0x{int(tcp.flags):03x} ({flags_str})', 'byteRange': [tcp_start + 12, tcp_start + 13]},
+                    {'name': 'Window', 'value': str(tcp.window), 'byteRange': [tcp_start + 14, tcp_start + 15]},
+                ]
+                if tcp_hdr_len > 20:
+                    opt_fields = self._parse_tcp_options(tcp.options, tcp_start + 20)
+                    tcp_fields.append({
+                        'name': 'Options', 'value': f'{tcp_hdr_len - 20} bytes ({len(opt_fields)} options)',
+                        'byteRange': [tcp_start + 20, tcp_start + tcp_hdr_len - 1], 'children': opt_fields
+                    })
+                layers.append({
+                    'name': 'TCP',
+                    'displayName': f'TCP, Src Port: {tcp.sport}, Dst Port: {tcp.dport} [{flags_str}]',
+                    'byteRange': [tcp_start, tcp_start + tcp_hdr_len - 1],
+                    'fields': tcp_fields
+                })
+                offset = tcp_start + tcp_hdr_len
+            elif packet.haslayer(UDP):
+                udp = packet[UDP]
+                udp_start = offset
+                layers.append({
+                    'name': 'UDP',
+                    'displayName': f'UDP, Src Port: {udp.sport}, Dst Port: {udp.dport}',
+                    'byteRange': [udp_start, udp_start + 7],
+                    'fields': [
+                        {'name': 'Source Port', 'value': str(udp.sport), 'byteRange': [udp_start, udp_start + 1]},
+                        {'name': 'Destination Port', 'value': str(udp.dport), 'byteRange': [udp_start + 2, udp_start + 3]},
+                        {'name': 'Length', 'value': str(udp.len), 'byteRange': [udp_start + 4, udp_start + 5]},
+                        {'name': 'Checksum', 'value': f'0x{udp.chksum:04x}' if udp.chksum else '0x0000', 'byteRange': [udp_start + 6, udp_start + 7]},
+                    ]
+                })
+                offset = udp_start + 8
 
         # Payload / Data layer (remaining bytes after all headers)
         if offset < len(raw_bytes):
@@ -2008,39 +2476,31 @@ class NetworkAnalyzer:
             >>> analyzer._find_packets_by_connection_id("invalid-id")
             set()
         """
-        # Parse connection ID
-        parts = connection_id.split('-')
-
-        # Extract 5-tuple based on connection type
+        # Parse connection ID — supports both IPv4 and IPv6 (bracketed) formats
+        # IPv4: "tcp-10.0.0.1-80-10.0.0.2-443"
+        # IPv6: "tcp-[2001:db8::1]-80-[2001:db8::2]-443"
+        import re as _re
+        _ip_part = r'(?:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|\[[0-9a-fA-F:]+\])'
+        m = _re.search(rf'({_ip_part})-(\d+)-({_ip_part})-(\d+)', connection_id)
+        if not m:
+            return set()
         try:
-            if parts[0] == 'timeout':
-                # Format: timeout-srcIp-srcPort-dstIp-dstPort-packetIndex
-                if len(parts) < 6:
-                    return set()
-                src_ip = parts[1]
-                src_port = int(parts[2])
-                dst_ip = parts[3]
-                dst_port = int(parts[4])
-                # parts[5] is the packet index after timeout (we'll find all packets, not just this one)
-            else:
-                # Format: protocol-srcIp-srcPort-dstIp-dstPort
-                if len(parts) < 5:
-                    return set()
-                src_ip = parts[1]
-                src_port = int(parts[2])
-                dst_ip = parts[3]
-                dst_port = int(parts[4])
+            src_ip = m.group(1).strip('[]')
+            src_port = int(m.group(2))
+            dst_ip = m.group(3).strip('[]')
+            dst_port = int(m.group(4))
         except (ValueError, IndexError):
-            # Port is not an integer or malformed ID
             return set()
 
         # Scan packets to find matches
         matched_indices = set()
         for idx, packet in enumerate(self.packets):
-            if not packet.haslayer(IP):
+            has_ip = packet.haslayer(IP)
+            has_ipv6 = packet.haslayer(IPv6)
+            if not has_ip and not has_ipv6:
                 continue
 
-            ip = packet[IP]
+            ip = packet[IP] if has_ip else packet[IPv6]
 
             # Check TCP/UDP layer
             transport_layer = None
@@ -2108,6 +2568,744 @@ class NetworkAnalyzer:
             connection_packets[connection_id] = packets
 
         self.analysis_results['connection_packets'] = connection_packets
+
+    # ── Phase 5: Statistics summary ────────────────────────────────────
+
+    def generate_statistics_summary(self):
+        """Generate Wireshark-style protocol hierarchy, endpoint and conversation stats."""
+        if not self.packets:
+            return None
+
+        # Protocol hierarchy: Ethernet → IP → TCP/UDP → Application
+        hierarchy = {}
+        endpoints = Counter()     # ip → {sent, recv, bytes_sent, bytes_recv}
+        endpoint_details = {}
+        conversations = Counter()  # sorted pair → packet count
+        conversation_details = {}
+
+        for packet in self.packets:
+            pkt_len = len(packet)
+            proto_path = []
+
+            if packet.haslayer(Ether):
+                proto_path.append('Ethernet')
+
+            has_ip = packet.haslayer(IP)
+            has_ipv6 = packet.haslayer(IPv6)
+            src_ip = dst_ip = None
+
+            if has_ip:
+                proto_path.append('IPv4')
+                src_ip, dst_ip = packet[IP].src, packet[IP].dst
+            elif has_ipv6:
+                proto_path.append('IPv6')
+                src_ip, dst_ip = packet[IPv6].src, packet[IPv6].dst
+
+            if src_ip:
+                ep_src = endpoint_details.setdefault(src_ip, {'packets_sent': 0, 'packets_recv': 0, 'bytes_sent': 0, 'bytes_recv': 0})
+                ep_src['packets_sent'] += 1
+                ep_src['bytes_sent'] += pkt_len
+
+                ep_dst = endpoint_details.setdefault(dst_ip, {'packets_sent': 0, 'packets_recv': 0, 'bytes_sent': 0, 'bytes_recv': 0})
+                ep_dst['packets_recv'] += 1
+                ep_dst['bytes_recv'] += pkt_len
+
+                conv_key = tuple(sorted([src_ip, dst_ip]))
+                conv = conversation_details.setdefault(conv_key, {'packets': 0, 'bytes': 0, 'src_ip': conv_key[0], 'dst_ip': conv_key[1]})
+                conv['packets'] += 1
+                conv['bytes'] += pkt_len
+
+            if packet.haslayer(TCP):
+                proto_path.append('TCP')
+                tcp = packet[TCP]
+                if tcp.sport == 80 or tcp.dport == 80:
+                    proto_path.append('HTTP')
+                elif tcp.sport == 443 or tcp.dport == 443:
+                    proto_path.append('TLS/HTTPS')
+                elif tcp.sport == 22 or tcp.dport == 22:
+                    proto_path.append('SSH')
+            elif packet.haslayer(UDP):
+                proto_path.append('UDP')
+                udp = packet[UDP]
+                if udp.sport == 53 or udp.dport == 53:
+                    proto_path.append('DNS')
+            elif packet.haslayer(ICMP):
+                proto_path.append('ICMP')
+
+            # Build hierarchy tree
+            node = hierarchy
+            for layer_name in proto_path:
+                if layer_name not in node:
+                    node[layer_name] = {'_count': 0, '_bytes': 0}
+                node[layer_name]['_count'] += 1
+                node[layer_name]['_bytes'] += pkt_len
+                node = node[layer_name]
+
+        def build_hierarchy_tree(tree, total_packets):
+            result = []
+            for key, val in tree.items():
+                if key.startswith('_'):
+                    continue
+                entry = {
+                    'protocol': key,
+                    'packets': val['_count'],
+                    'bytes': val['_bytes'],
+                    'percentage': round(val['_count'] / total_packets * 100, 1) if total_packets else 0,
+                }
+                children = build_hierarchy_tree(val, total_packets)
+                if children:
+                    entry['children'] = children
+                result.append(entry)
+            result.sort(key=lambda x: x['packets'], reverse=True)
+            return result
+
+        total = len(self.packets)
+        summary = {
+            'protocolHierarchy': build_hierarchy_tree(hierarchy, total),
+            'endpoints': sorted(
+                [{'ip': ip, **stats} for ip, stats in endpoint_details.items()],
+                key=lambda x: x['packets_sent'] + x['packets_recv'],
+                reverse=True
+            )[:100],
+            'conversations': sorted(
+                list(conversation_details.values()),
+                key=lambda x: x['packets'],
+                reverse=True
+            )[:100],
+            'totalPackets': total,
+        }
+        self.analysis_results['statistics_summary'] = summary
+        return summary
+
+    # ── Phase 6: Expert info ───────────────────────────────────────────
+
+    def extract_expert_info(self):
+        """Extract expert information events (retransmissions, RST, ZeroWindow, anomalous TTL)."""
+        events = []
+
+        # Reuse packet loss data if available
+        loss_data = self.analysis_results.get('packet_loss')
+        if loss_data is None:
+            loss_data = self.detect_packet_loss()
+
+        for item in loss_data:
+            if item['type'] == 'retransmission':
+                events.append({
+                    'severity': 'warning',
+                    'type': 'Retransmission',
+                    'message': f'TCP retransmission in stream {item["stream"]}',
+                    'packetIndex': item['packet_index'],
+                    'timestamp': item['time'],
+                    'stream': item['stream']
+                })
+            elif item['type'] == 'sequence_gap':
+                events.append({
+                    'severity': 'warning',
+                    'type': 'Sequence Gap',
+                    'message': f'Gap of {item.get("gap_size", 0)} bytes in {item["stream"]}',
+                    'packetIndex': item['packet_index'],
+                    'timestamp': item['time'],
+                    'stream': item['stream']
+                })
+
+        # Scan for RST, ZeroWindow, anomalous TTL
+        for idx, packet in enumerate(self.packets):
+            if not packet.haslayer(IP):
+                if not packet.haslayer(IPv6):
+                    continue
+            ts = float(packet.time)
+
+            ip = packet[IP] if packet.haslayer(IP) else packet[IPv6]
+            ttl = getattr(ip, 'ttl', getattr(ip, 'hlim', 64))
+
+            if packet.haslayer(TCP):
+                tcp = packet[TCP]
+                flags = int(tcp.flags)
+                stream = f"{ip.src}:{tcp.sport}-{ip.dst}:{tcp.dport}"
+
+                if flags & 0x04:  # RST
+                    events.append({
+                        'severity': 'error',
+                        'type': 'RST',
+                        'message': f'Connection reset {stream}',
+                        'packetIndex': idx,
+                        'timestamp': ts,
+                        'stream': stream
+                    })
+                if tcp.window == 0 and not (flags & 0x02):  # ZeroWindow (not SYN)
+                    events.append({
+                        'severity': 'error',
+                        'type': 'Zero Window',
+                        'message': f'Zero window advertised by {ip.src} in {stream}',
+                        'packetIndex': idx,
+                        'timestamp': ts,
+                        'stream': stream
+                    })
+
+            if ttl <= 2:
+                events.append({
+                    'severity': 'note',
+                    'type': 'Anomalous TTL',
+                    'message': f'Very low TTL ({ttl}) from {ip.src}',
+                    'packetIndex': idx,
+                    'timestamp': ts,
+                    'stream': ''
+                })
+
+        # 攻擊模式彙總事件（利用 detect_attacks() 的結果）
+        attack_data = self.analysis_results.get('attack_analysis')
+        if attack_data:
+            det = attack_data.get('attack_detection', {})
+            metrics = attack_data.get('metrics', {})
+            flags = attack_data.get('tcp_flags', {})
+            first_ts = float(self.packets[0].time) if self.packets else 0
+
+            # 已偵測到攻擊 → error 事件
+            if det.get('detected'):
+                events.append({
+                    'severity': 'error',
+                    'type': det['type'],
+                    'message': det.get('description', '偵測到攻擊行為'),
+                    'packetIndex': 0,
+                    'timestamp': first_ts,
+                    'stream': ''
+                })
+
+            # 高連線速率 → warning 事件
+            cps = metrics.get('connections_per_second', 0)
+            if cps > 50:
+                events.append({
+                    'severity': 'warning',
+                    'type': 'High Connection Rate',
+                    'message': f'連線速率 {cps:.1f}/s 超出正常範圍（閾值 50/s）',
+                    'packetIndex': 0,
+                    'timestamp': first_ts,
+                    'stream': ''
+                })
+
+            # 單一 flag 主導 → warning 事件
+            total_tcp = metrics.get('total_tcp_packets', 0)
+            if total_tcp > 100:
+                for flag_name, count in flags.items():
+                    ratio = count / total_tcp
+                    if ratio > 0.8 and flag_name not in ('ack',):
+                        events.append({
+                            'severity': 'warning',
+                            'type': 'Flag Anomaly',
+                            'message': f'{flag_name.upper()} 封包佔比 {ratio:.0%}（{count}/{total_tcp}），可能為 {flag_name.upper()} Flood',
+                            'packetIndex': 0,
+                            'timestamp': first_ts,
+                            'stream': ''
+                        })
+
+            # 單源高度集中 → note 事件
+            sc = metrics.get('source_concentration', 0)
+            if sc > 0.9 and total_tcp > 100:
+                top_src = (attack_data.get('top_sources') or [{}])[0].get('ip', '未知')
+                events.append({
+                    'severity': 'note',
+                    'type': 'Source Concentration',
+                    'message': f'{sc:.0%} 的封包來自單一來源 {top_src}',
+                    'packetIndex': 0,
+                    'timestamp': first_ts,
+                    'stream': ''
+                })
+
+        events.sort(key=lambda e: e['timestamp'])
+        self.analysis_results['expert_info'] = events
+        return events
+
+    # ── Phase 10: TLS handshake parsing (raw bytes) ────────────────────
+
+    TLS_VERSIONS = {
+        (3, 1): 'TLS 1.0', (3, 2): 'TLS 1.1', (3, 3): 'TLS 1.2', (3, 4): 'TLS 1.3',
+    }
+
+    CIPHER_SUITES = {
+        0x1301: 'TLS_AES_128_GCM_SHA256',
+        0x1302: 'TLS_AES_256_GCM_SHA384',
+        0x1303: 'TLS_CHACHA20_POLY1305_SHA256',
+        0xc02b: 'TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256',
+        0xc02c: 'TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384',
+        0xc02f: 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256',
+        0xc030: 'TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384',
+        0xc013: 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA',
+        0xc014: 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA',
+        0x002f: 'TLS_RSA_WITH_AES_128_CBC_SHA',
+        0x0035: 'TLS_RSA_WITH_AES_256_CBC_SHA',
+        0x009c: 'TLS_RSA_WITH_AES_128_GCM_SHA256',
+        0x009d: 'TLS_RSA_WITH_AES_256_GCM_SHA384',
+        0xcca8: 'TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256',
+        0xcca9: 'TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256',
+    }
+
+    def _parse_tls_version(self, major, minor):
+        return self.TLS_VERSIONS.get((major, minor), f'Unknown ({major}.{minor})')
+
+    def _parse_cipher_suite(self, code):
+        name = self.CIPHER_SUITES.get(code, 'Unknown')
+        return f'0x{code:04x} ({name})'
+
+    def _extract_supported_version(self, data, offset):
+        """Extract TLS 1.3 supported_versions from ClientHello extensions."""
+        try:
+            sid_len = data[offset]
+            offset += 1 + sid_len
+            if offset + 2 > len(data):
+                return None
+            cs_len = int.from_bytes(data[offset:offset + 2], 'big')
+            offset += 2 + cs_len
+            if offset >= len(data):
+                return None
+            cm_len = data[offset]
+            offset += 1 + cm_len
+            if offset + 2 > len(data):
+                return None
+            ext_len = int.from_bytes(data[offset:offset + 2], 'big')
+            offset += 2
+            ext_end = min(offset + ext_len, len(data))
+            while offset + 4 <= ext_end:
+                ext_type = int.from_bytes(data[offset:offset + 2], 'big')
+                ext_data_len = int.from_bytes(data[offset + 2:offset + 4], 'big')
+                offset += 4
+                if ext_type == 0x002B and ext_data_len >= 3:  # supported_versions
+                    # First byte is list length, then 2-byte version entries
+                    if offset + 1 <= len(data):
+                        list_len = data[offset]
+                        for i in range(0, min(list_len, ext_data_len - 1), 2):
+                            if offset + 1 + i + 2 <= len(data):
+                                major = data[offset + 1 + i]
+                                minor = data[offset + 1 + i + 1]
+                                if (major, minor) == (3, 4):
+                                    return 'TLS 1.3'
+                offset += max(ext_data_len, 1)
+        except (IndexError, ValueError):
+            pass
+        return None
+
+    def _extract_sni(self, data, offset):
+        """Extract SNI from ClientHello extensions."""
+        try:
+            # Skip session_id
+            if offset >= len(data):
+                return None
+            sid_len = data[offset]
+            offset += 1 + sid_len
+            # Skip cipher suites
+            if offset + 2 > len(data):
+                return None
+            cs_len = int.from_bytes(data[offset:offset + 2], 'big')
+            offset += 2 + cs_len
+            # Skip compression methods
+            if offset >= len(data):
+                return None
+            cm_len = data[offset]
+            offset += 1 + cm_len
+            # Extensions
+            if offset + 2 > len(data):
+                return None
+            ext_len = int.from_bytes(data[offset:offset + 2], 'big')
+            offset += 2
+            ext_end = min(offset + ext_len, len(data))
+            while offset + 4 <= ext_end:
+                ext_type = int.from_bytes(data[offset:offset + 2], 'big')
+                ext_data_len = int.from_bytes(data[offset + 2:offset + 4], 'big')
+                offset += 4
+                if ext_type == 0x0000 and ext_data_len > 5:  # SNI
+                    if offset + 5 > len(data):
+                        break
+                    name_len = int.from_bytes(data[offset + 3:offset + 5], 'big')
+                    if offset + 5 + name_len <= len(data):
+                        return data[offset + 5:offset + 5 + name_len].decode('ascii', errors='replace')
+                offset += max(ext_data_len, 1)  # guard against zero-length infinite loop
+        except (IndexError, ValueError):
+            pass
+        return None
+
+    def extract_tls_info(self):
+        """Extract TLS handshake info from raw packet bytes (no Scapy TLS dependency)."""
+        sessions = {}  # connection_id → session dict
+
+        for packet in self.packets:
+            if not packet.haslayer(TCP) or not packet.haslayer(Raw):
+                continue
+            has_ip = packet.haslayer(IP)
+            has_ipv6 = packet.haslayer(IPv6)
+            if not has_ip and not has_ipv6:
+                continue
+            tcp = packet[TCP]
+            if tcp.sport != 443 and tcp.dport != 443:
+                continue
+
+            ip = packet[IP] if has_ip else packet[IPv6]
+            # Normalize connection ID: server (port 443) always on one side
+            if tcp.sport == 443:
+                conn_id = f'{ip.src}:{tcp.sport}-{ip.dst}:{tcp.dport}'
+            else:
+                conn_id = f'{ip.dst}:{tcp.dport}-{ip.src}:{tcp.sport}'
+
+            data = bytes(packet[Raw].load)
+            if len(data) < 6:
+                continue
+
+            content_type = data[0]
+            if content_type not in (0x14, 0x15, 0x16, 0x17):
+                continue
+
+            if conn_id not in sessions:
+                sessions[conn_id] = {
+                    'connection_id': conn_id,
+                    'client_hello': None,
+                    'server_hello': None,
+                    'handshake_complete': False,
+                    'has_app_data': False,
+                }
+
+            sess = sessions[conn_id]
+
+            if content_type == 0x17:  # Application Data
+                sess['has_app_data'] = True
+                continue
+
+            if content_type == 0x14:  # ChangeCipherSpec
+                sess['handshake_complete'] = True
+                continue
+
+            if content_type != 0x16 or len(data) < 6:  # Not Handshake
+                continue
+
+            # Validate record length to skip fragmented/truncated records
+            record_len = int.from_bytes(data[3:5], 'big')
+            if len(data) < 5 + record_len:
+                continue
+
+            try:
+                hs_type = data[5]
+                record_version = self._parse_tls_version(data[1], data[2])
+
+                if hs_type == 1 and sess['client_hello'] is None:  # ClientHello
+                    client_version = self._parse_tls_version(data[9], data[10]) if len(data) > 10 else record_version
+                    # Count cipher suites
+                    cs_count = 0
+                    sni = None
+                    if len(data) > 43:
+                        sid_len = data[43]
+                        cs_offset = 44 + sid_len
+                        if cs_offset + 2 <= len(data):
+                            cs_bytes = int.from_bytes(data[cs_offset:cs_offset + 2], 'big')
+                            cs_count = cs_bytes // 2
+                        sni = self._extract_sni(data, 43)
+                    # TLS 1.3 advertises legacy_version=0x0303; check supported_versions extension
+                    real_version = self._extract_supported_version(data, 43)
+                    sess['client_hello'] = {
+                        'sni': sni,
+                        'tls_version': real_version or client_version,
+                        'cipher_suite_count': cs_count,
+                    }
+
+                elif hs_type == 2 and sess['server_hello'] is None:  # ServerHello
+                    server_version = self._parse_tls_version(data[9], data[10]) if len(data) > 10 else record_version
+                    cipher_code = None
+                    if len(data) > 43:
+                        sid_len = data[43]
+                        cs_offset = 44 + sid_len
+                        if cs_offset + 2 <= len(data):
+                            cipher_code = int.from_bytes(data[cs_offset:cs_offset + 2], 'big')
+                    sess['server_hello'] = {
+                        'tls_version': server_version,
+                        'cipher_suite': self._parse_cipher_suite(cipher_code) if cipher_code else 'Unknown',
+                    }
+            except (IndexError, ValueError):
+                continue
+
+        tls_sessions = list(sessions.values())
+
+        # Build summary
+        version_counts = {}
+        unique_snis = set()
+        for sess in tls_sessions:
+            if sess['server_hello']:
+                v = sess['server_hello']['tls_version']
+                version_counts[v] = version_counts.get(v, 0) + 1
+            if sess['client_hello'] and sess['client_hello']['sni']:
+                unique_snis.add(sess['client_hello']['sni'])
+
+        result = {
+            'tls_sessions': tls_sessions,
+            'summary': {
+                'total_tls_connections': len(tls_sessions),
+                'tls_versions': version_counts,
+                'unique_snis': sorted(unique_snis),
+            }
+        }
+
+        self.analysis_results['tls_info'] = result
+        return result
+
+    # ── Phase 12: IP geolocation enrichment ─────────────────────────────
+
+    def _classify_ip(self, ip_str):
+        """Classify IP into network type with optional GeoIP lookup."""
+        import ipaddress
+        try:
+            addr = ipaddress.ip_address(ip_str)
+        except ValueError:
+            return {'type': 'unknown', 'label': '未知', 'country_code': None, 'country_name': None}
+
+        if addr.is_loopback:
+            return {'type': 'loopback', 'label': 'Loopback', 'country_code': None, 'country_name': None}
+        if addr.is_link_local:
+            return {'type': 'link_local', 'label': 'Link-Local', 'country_code': None, 'country_name': None}
+        if addr.is_private:
+            return {'type': 'private', 'label': '區域網路', 'country_code': None, 'country_name': None}
+
+        # Public IP — try optional GeoIP
+        geo = self._geoip_lookup(ip_str)
+        return {
+            'type': 'public',
+            'label': geo.get('country_name') or '外網',
+            'country_code': geo.get('country_code'),
+            'country_name': geo.get('country_name'),
+        }
+
+    def _geoip_lookup(self, ip_str):
+        """Optional GeoIP lookup. Returns empty dict if DB not available."""
+        if not hasattr(self, '_geoip_reader'):
+            try:
+                import geoip2.database
+                from pathlib import Path
+                db_path = Path(__file__).parent / 'data' / 'GeoLite2-Country.mmdb'
+                if db_path.exists():
+                    self._geoip_reader = geoip2.database.Reader(str(db_path))
+                else:
+                    self._geoip_reader = None
+            except ImportError:
+                self._geoip_reader = None
+        if self._geoip_reader is None:
+            return {}
+        try:
+            resp = self._geoip_reader.country(ip_str)
+            return {'country_code': resp.country.iso_code, 'country_name': resp.country.name}
+        except Exception:
+            return {}
+
+    def enrich_geo_info(self):
+        """Enrich all IPs with geolocation/network type info."""
+        stats = self.analysis_results.get('basic_stats')
+        if not stats:
+            self.analysis_results['geo_info'] = {}
+            return {}
+
+        all_ips = set()
+        all_ips.update(stats.get('src_ips', {}).keys())
+        all_ips.update(stats.get('dst_ips', {}).keys())
+
+        geo_map = {}
+        for ip in all_ips:
+            geo_map[ip] = self._classify_ip(ip)
+
+        self.analysis_results['geo_info'] = geo_map
+        return geo_map
+
+    # ── Phase 11: Network performance scoring ──────────────────────────
+
+    def compute_performance_score(self):
+        """Compute composite network performance score (0-100)."""
+        stats = self.analysis_results.get('basic_stats')
+        latency = self.analysis_results.get('latency')
+        loss_data = self.analysis_results.get('packet_loss', [])
+
+        if not stats or not latency:
+            empty = {'overall': 0, 'grade': 'F',
+                     'latency': {'score': 0, 'avg_rtt_ms': 0, 'grade': 'F', 'sample_count': 0},
+                     'packet_loss': {'score': 0, 'retransmission_rate': 0, 'retransmission_count': 0, 'grade': 'F'},
+                     'throughput': {'score': 0, 'bytes_per_second': 0, 'total_bytes': 0, 'grade': 'F'}}
+            self.analysis_results['performance_score'] = empty
+            return empty
+
+        def _score_to_grade(s):
+            if s >= 95: return 'A+'
+            if s >= 80: return 'A'
+            if s >= 65: return 'B'
+            if s >= 50: return 'C'
+            if s >= 30: return 'D'
+            return 'F'
+
+        def _interp(value, breakpoints):
+            """Linear interpolation: breakpoints = [(val, score), ...] sorted ascending by val."""
+            if value <= breakpoints[0][0]:
+                return breakpoints[0][1]
+            if value >= breakpoints[-1][0]:
+                return breakpoints[-1][1]
+            for i in range(len(breakpoints) - 1):
+                v0, s0 = breakpoints[i]
+                v1, s1 = breakpoints[i + 1]
+                if v0 <= value <= v1:
+                    t = (value - v0) / (v1 - v0) if v1 != v0 else 0
+                    return s0 + t * (s1 - s0)
+            return breakpoints[-1][1]
+
+        # ── Latency score (40%) ──
+        rtt_samples = []
+        for h in latency.get('tcp_handshakes', []):
+            rtt_samples.append(h['handshake_time'])
+        for p in latency.get('ping_responses', []):
+            rtt_samples.append(p['rtt'])
+
+        if rtt_samples:
+            avg_rtt = sum(rtt_samples) / len(rtt_samples)
+        else:
+            avg_rtt = 0
+
+        # Lower RTT → higher score
+        latency_breakpoints = [(0, 100), (20, 90), (50, 75), (100, 55), (200, 35), (500, 15), (2000, 5)]
+        latency_score = _interp(avg_rtt, latency_breakpoints) if rtt_samples else 50  # neutral when no data
+
+        latency_result = {
+            'score': round(latency_score, 1),
+            'avg_rtt_ms': round(avg_rtt, 1),
+            'grade': _score_to_grade(latency_score),
+            'sample_count': len(rtt_samples),
+        }
+
+        # ── Packet loss score (35%) ──
+        retransmissions = [item for item in loss_data if item.get('type') == 'retransmission']
+        retransmission_count = len(retransmissions)
+        protocols = stats.get('protocols', {})
+        total_tcp = protocols.get('TCP', 0) if isinstance(protocols, dict) else 0
+        retransmission_rate = retransmission_count / total_tcp if total_tcp > 0 else 0
+
+        # Lower loss → higher score
+        loss_breakpoints = [(0, 100), (0.005, 95), (0.02, 75), (0.05, 50), (0.10, 30), (0.20, 10), (0.50, 0)]
+        loss_score = _interp(retransmission_rate, loss_breakpoints)
+
+        loss_result = {
+            'score': round(loss_score, 1),
+            'retransmission_rate': round(retransmission_rate, 4),
+            'retransmission_count': retransmission_count,
+            'total_tcp_packets': total_tcp,
+            'grade': _score_to_grade(loss_score),
+        }
+
+        # ── Throughput score (25%) ──
+        packet_sizes = stats.get('packet_sizes', [])
+        total_bytes = sum(packet_sizes) if packet_sizes else 0
+
+        if len(self.packets) >= 2:
+            first_t = float(self.packets[0].time)
+            last_t = float(self.packets[-1].time)
+            duration = max(last_t - first_t, 0.001)
+        else:
+            duration = 0.001
+
+        bps = total_bytes / duration
+
+        # Higher throughput → higher score
+        tp_breakpoints = [(0, 10), (1024, 30), (10240, 50), (102400, 70), (1048576, 85), (10485760, 100)]
+        tp_score = _interp(bps, tp_breakpoints)
+
+        tp_result = {
+            'score': round(tp_score, 1),
+            'bytes_per_second': round(bps, 1),
+            'total_bytes': total_bytes,
+            'duration_seconds': round(duration, 2),
+            'grade': _score_to_grade(tp_score),
+        }
+
+        # ── Overall ──
+        overall = latency_score * 0.40 + loss_score * 0.35 + tp_score * 0.25
+        overall = max(0, min(100, overall))
+
+        result = {
+            'overall': round(overall, 1),
+            'grade': _score_to_grade(overall),
+            'latency': latency_result,
+            'packet_loss': loss_result,
+            'throughput': tp_result,
+        }
+
+        self.analysis_results['performance_score'] = result
+        return result
+
+    # ── Phase 8: TCP stream reassembly ─────────────────────────────────
+
+    def reassemble_tcp_stream(self, connection_id):
+        """Reassemble a TCP stream's payload for the given connection_id.
+
+        Returns client→server and server→client data segments (max 4096 bytes each).
+        """
+        indices = self._find_packets_by_connection_id(connection_id)
+        if not indices:
+            return None
+
+        # Determine client/server from first SYN or first packet
+        first_idx = min(indices)
+        first_pkt = self.packets[first_idx]
+        if not first_pkt.haslayer(IP) or not first_pkt.haslayer(TCP):
+            return None
+
+        client_ip = first_pkt[IP].src
+        client_port = first_pkt[TCP].sport
+
+        segments = []
+        for idx in sorted(indices):
+            pkt = self.packets[idx]
+            if not pkt.haslayer(TCP) or not pkt.haslayer(IP):
+                continue
+            tcp = pkt[TCP]
+            ip = pkt[IP]
+            payload = bytes(tcp.payload) if tcp.payload else b''
+            if not payload:
+                continue
+            is_client = (ip.src == client_ip and tcp.sport == client_port)
+            segments.append({
+                'seq': tcp.seq,
+                'direction': 'client' if is_client else 'server',
+                'data': payload,
+                'index': idx,
+                'timestamp': float(pkt.time)
+            })
+
+        segments.sort(key=lambda s: s['timestamp'])
+
+        client_data = b''
+        server_data = b''
+        stream_entries = []
+        max_bytes = 4096
+
+        for seg in segments:
+            if seg['direction'] == 'client' and len(client_data) < max_bytes:
+                chunk = seg['data'][:max_bytes - len(client_data)]
+                client_data += chunk
+            elif seg['direction'] == 'server' and len(server_data) < max_bytes:
+                chunk = seg['data'][:max_bytes - len(server_data)]
+                server_data += chunk
+
+            preview = seg['data'][:256]
+            stream_entries.append({
+                'direction': seg['direction'],
+                'length': len(seg['data']),
+                'packetIndex': seg['index'],
+                'timestamp': seg['timestamp'],
+                'hex': preview.hex(),
+                'ascii': ''.join(chr(b) if 32 <= b < 127 else '.' for b in preview)
+            })
+
+        return {
+            'connectionId': connection_id,
+            'clientData': {
+                'hex': client_data.hex(),
+                'ascii': ''.join(chr(b) if 32 <= b < 127 else '.' for b in client_data),
+                'length': len(client_data)
+            },
+            'serverData': {
+                'hex': server_data.hex(),
+                'ascii': ''.join(chr(b) if 32 <= b < 127 else '.' for b in server_data),
+                'length': len(server_data)
+            },
+            'segments': stream_entries,
+            'totalSegments': len(stream_entries)
+        }
 
     def save_results(self, output_file="network_analysis_results.json", public_output_dir="public/data"):
         os.makedirs(os.path.dirname(output_file) or '.', exist_ok=True)

@@ -34,13 +34,14 @@ _analyzer_cache_lock = threading.Lock()
 _ANALYZER_CACHE_MAX = 8  # max concurrent sessions cached
 
 # Regex for validating connection_id format (protocol-ip-port-ip-port[-extra])
+_IP_PART = r'(?:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|\[[0-9a-fA-F:]+\])'
 _CONNECTION_ID_RE = re.compile(
-    r'^[a-zA-Z][a-zA-Z0-9_-]{0,30}'         # protocol prefix
-    r'-\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'  # src IP
-    r'-\d{1,5}'                               # src port
-    r'-\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'  # dst IP
-    r'-\d{1,5}'                               # dst port
-    r'(?:-\d+)?$'                             # optional suffix (e.g. timeout packet index)
+    r'^[a-zA-Z][a-zA-Z0-9_-]{0,30}'  # protocol prefix
+    r'-' + _IP_PART +                 # src IP (v4 or bracketed v6)
+    r'-\d{1,5}'                       # src port
+    r'-' + _IP_PART +                 # dst IP
+    r'-\d{1,5}'                       # dst port
+    r'(?:-\d+)*$'                     # optional suffix(es)
 )
 _CONNECTION_ID_MAX_LEN = 256
 
@@ -280,6 +281,11 @@ def _run_analysis(pcap_path: Path) -> Dict[str, Any]:
     analyzer.detect_attacks()  # 攻擊偵測
     analyzer.build_mind_map()
     analyzer.generate_protocol_timelines()
+    analyzer.generate_statistics_summary()  # Phase 5
+    analyzer.extract_expert_info()          # Phase 6
+    analyzer.extract_tls_info()             # Phase 10
+    analyzer.compute_performance_score()    # Phase 11
+    analyzer.enrich_geo_info()              # Phase 12
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     analyzer.save_results(
@@ -371,7 +377,11 @@ async def get_attack_analysis(
     analysis_file = session_dir / 'network_analysis_results.json'
 
     if not analysis_file.exists():
-        raise HTTPException(status_code=404, detail='No analysis data available')
+        return {
+            'metrics': {}, 'tcp_flags': {}, 'top_sources': [], 'top_targets': [],
+            'attack_detection': {'detected': False, 'type': None, 'description': None,
+                                 'severity': 'normal', 'confidence': 0, 'anomaly_score': 0}
+        }
 
     with analysis_file.open('r', encoding='utf-8') as handle:
         data = json.load(handle)
@@ -394,6 +404,157 @@ async def get_attack_analysis(
         }
 
     return attack_analysis
+
+
+# ── Phase 5: Statistics summary ────────────────────────────────────
+
+@app.get('/api/statistics/summary')
+async def get_statistics_summary(
+    request: Request,
+    session_id: str = Depends(require_session)
+) -> Dict[str, Any]:
+    """Get protocol hierarchy, endpoint and conversation statistics."""
+    session_dir = get_session_data_dir(request)
+    analysis_file = session_dir / 'network_analysis_results.json'
+
+    if not analysis_file.exists():
+        raise HTTPException(status_code=404, detail='No analysis data available')
+
+    with analysis_file.open('r', encoding='utf-8') as handle:
+        data = json.load(handle)
+
+    summary = data.get('statistics_summary')
+    if not summary:
+        raise HTTPException(status_code=404, detail='No statistics summary available')
+    return summary
+
+
+# ── Phase 6: Expert info ───────────────────────────────────────────
+
+@app.get('/api/expert-info')
+async def get_expert_info(
+    request: Request,
+    session_id: str = Depends(require_session)
+) -> Dict[str, Any]:
+    """Get expert information events (retransmissions, RST, ZeroWindow, etc.)."""
+    session_dir = get_session_data_dir(request)
+    analysis_file = session_dir / 'network_analysis_results.json'
+
+    if not analysis_file.exists():
+        return {'events': [], 'summary': {'total': 0, 'errors': 0, 'warnings': 0, 'notes': 0}}
+
+    with analysis_file.open('r', encoding='utf-8') as handle:
+        data = json.load(handle)
+
+    events = data.get('expert_info', [])
+    error_count = sum(1 for e in events if e['severity'] == 'error')
+    warning_count = sum(1 for e in events if e['severity'] == 'warning')
+    note_count = sum(1 for e in events if e['severity'] == 'note')
+
+    return {
+        'events': events,
+        'summary': {
+            'total': len(events),
+            'errors': error_count,
+            'warnings': warning_count,
+            'notes': note_count
+        }
+    }
+
+
+# ── Phase 12: IP Geolocation ───────────────────────────────────────
+
+@app.get('/api/geo')
+async def get_geo_info(
+    request: Request,
+    session_id: str = Depends(require_session)
+) -> Dict[str, Any]:
+    """Get IP geolocation/classification info."""
+    session_dir = get_session_data_dir(request)
+    analysis_file = session_dir / 'network_analysis_results.json'
+
+    if not analysis_file.exists():
+        return {}
+
+    with analysis_file.open('r', encoding='utf-8') as handle:
+        data = json.load(handle)
+
+    return data.get('geo_info', {})
+
+
+# ── Phase 10: TLS Info ─────────────────────────────────────────────
+
+@app.get('/api/tls-info')
+async def get_tls_info(
+    request: Request,
+    session_id: str = Depends(require_session)
+) -> Dict[str, Any]:
+    """Get TLS handshake information."""
+    session_dir = get_session_data_dir(request)
+    analysis_file = session_dir / 'network_analysis_results.json'
+
+    if not analysis_file.exists():
+        return {'tls_sessions': [], 'summary': {'total_tls_connections': 0, 'tls_versions': {}, 'unique_snis': []}}
+
+    with analysis_file.open('r', encoding='utf-8') as handle:
+        data = json.load(handle)
+
+    return data.get('tls_info', {'tls_sessions': [], 'summary': {'total_tls_connections': 0, 'tls_versions': {}, 'unique_snis': []}})
+
+
+# ── Phase 11: Network Performance Score ────────────────────────────
+
+@app.get('/api/performance')
+async def get_performance(
+    request: Request,
+    session_id: str = Depends(require_session)
+) -> Dict[str, Any]:
+    """Get network performance score (latency, packet loss, throughput)."""
+    session_dir = get_session_data_dir(request)
+    analysis_file = session_dir / 'network_analysis_results.json'
+
+    if not analysis_file.exists():
+        return {}
+
+    with analysis_file.open('r', encoding='utf-8') as handle:
+        data = json.load(handle)
+
+    return data.get('performance_score', {})
+
+
+# ── Phase 8: Follow TCP Stream ─────────────────────────────────────
+
+@app.get('/api/stream/{connection_id}')
+async def get_tcp_stream(
+    connection_id: str,
+    request: Request,
+    session_id: str = Depends(require_session)
+) -> Dict[str, Any]:
+    """Reassemble and return TCP stream data for a connection."""
+    if not connection_id or len(connection_id) > _CONNECTION_ID_MAX_LEN:
+        raise HTTPException(status_code=400, detail='Invalid connection_id length.')
+    if not _CONNECTION_ID_RE.match(connection_id):
+        raise HTTPException(status_code=400, detail='Invalid connection_id format.')
+
+    session_dir = get_session_data_dir(request)
+    pcap_files = list(session_dir.glob('*.pcap')) + list(session_dir.glob('*.pcapng'))
+    if not pcap_files:
+        raise HTTPException(status_code=404, detail='No PCAP file found in session')
+
+    pcap_path = pcap_files[0]
+    cached = _get_cached_analyzer(session_id, pcap_path)
+    if cached:
+        analyzer, _ = cached
+    else:
+        analyzer = NetworkAnalyzer(str(pcap_path))
+        if not analyzer.load_packets():
+            raise HTTPException(status_code=500, detail='Failed to load PCAP')
+        _put_cached_analyzer(session_id, pcap_path, analyzer)
+
+    result = analyzer.reassemble_tcp_stream(connection_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail='No stream data found for this connection')
+    return result
 
 
 @app.post('/api/packets/batch')
@@ -876,6 +1037,11 @@ def _analyze_pcap_sync(pcap_path: Path, session_dir: Path) -> Dict[str, Any]:
     analyzer.detect_attacks()
     analyzer.build_mind_map()
     analyzer.generate_protocol_timelines()
+    analyzer.generate_statistics_summary()  # Phase 5
+    analyzer.extract_expert_info()          # Phase 6
+    analyzer.extract_tls_info()             # Phase 10
+    analyzer.compute_performance_score()    # Phase 11
+    analyzer.enrich_geo_info()              # Phase 12
 
     analyzer.save_results(
         output_file=str(session_dir / 'network_analysis_results.json'),

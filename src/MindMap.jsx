@@ -20,7 +20,7 @@ import {
   X
 } from 'lucide-react'
 import { ProtocolAnimationController } from './lib/ProtocolAnimationController'
-import { getProtocolColor } from './lib/ProtocolStates'
+import { getProtocolColor, PROTOCOL_COLORS, PROTOCOL_LINE_STYLES, DEFAULT_LINE_STYLE } from './lib/ProtocolStates'
 import PacketParticleSystem from './lib/PacketParticleSystem'
 import { parseTimelineId, clamp, calculateCanvasSize, FORCE_PARAMS, calculateDynamicForceParams, calculateForces, applyForces, buildNodeLayout } from './lib/graphLayout.js'
 import { getDepthLabel, computeSearchMatchedNodeIds, computeSearchMatchedConnectionIds } from './lib/nodeDashboard.js'
@@ -29,6 +29,13 @@ import { computeConnectionHealth, computeNodeDegreeHealth, computeOverallHealthW
 import BatchPacketViewer from './components/BatchPacketViewer'
 import TimelineControls from './components/TimelineControls'
 import FloodParticleSystem from './components/FloodParticleSystem'
+import ProtocolFilter from './components/ProtocolFilter'
+import ProtocolStatsPanel from './components/ProtocolStatsPanel'
+import PerformanceScorePanel from './components/PerformanceScorePanel'
+import HeaderToolbar from './components/HeaderToolbar'
+import SecurityPanel from './components/SecurityPanel'
+import TlsInfoPanel from './components/TlsInfoPanel'
+import StreamViewer from './components/StreamViewer'
 
 // 學習模組導入
 import { LearningModeProvider, useLearningModeOptional } from './learning/LearningModeProvider'
@@ -51,57 +58,20 @@ const ANALYZER_API_ENABLED = true
 // 攻擊類型嚴重度排序（越前面越嚴重），供 buildAggregatedConnections 選出 worst-case protocolType
 const FLOOD_SEVERITY_ORDER = ['urg-psh-fin-flood', 'ack-fin-flood', 'syn-flood', 'rst-flood', 'ack-flood', 'psh-flood', 'fin-flood', 'tcp-flood', 'timeout']
 
-const PROTOCOL_COLORS = {
-  // 基本協議顏色
-  tcp: '#38bdf8',
-  udp: '#60a5fa',
-  http: '#a855f7',
-  https: '#14b8a6',
-  dns: '#f97316',
-  icmp: '#facc15',
-  // 特定協議動畫類型顏色
-  'tcp-handshake': '#22c55e',   // 綠色 - 連線建立
-  'tcp-teardown': '#ef4444',    // 紅色 - 連線關閉
-  'tcp-data': '#38bdf8',        // 藍色 - 資料傳輸
-  'tcp-session': '#06b6d4',     // 青色 - 完整會話
-  'http-request': '#a855f7',    // 紫色 - HTTP 請求
-  'https-request': '#14b8a6',   // 藍綠色 - HTTPS 安全請求
-  'dns-query': '#f97316',       // 橙色 - DNS 查詢
-  'timeout': '#f59e0b',         // 黃橙色 - 超時
-  'udp-transfer': '#60a5fa',    // 淡藍色 - UDP 傳輸
-  'icmp-ping': '#facc15',       // 黃色 - ICMP Ping
-  'ssh-secure': '#10b981',      // 綠色 - SSH 安全連線
-  'psh-flood': '#ec4899',       // 粉紅色 - PSH 洪水攻擊
-  'syn-flood': '#ef4444',       // 紅色 - SYN 洪水攻擊
-  'fin-flood': '#dc2626',       // 深紅色 - FIN 洪水攻擊
-  'tcp-flood': '#dc2626',       // 深紅色 - TCP 通用洪水
-  'urg-psh-fin-flood': '#9f1239', // 深玫紅 - URG+PSH+FIN 複合攻擊
-  'ack-flood': '#dc2626',       // 深紅色 - ACK 洪水攻擊
-  'rst-flood': '#f43f5e',       // 玫紅色 - RST 洪水攻擊
-  'ack-fin-flood': '#9f1239',   // 深玫紅 - ACK+FIN 複合攻擊
+// 將每個 protocolType 對映到篩選器群組（tcp/udp/http/dns/icmp）
+const PROTOCOL_GROUP_MAP = {
+  'tcp-handshake': 'tcp', 'tcp-teardown': 'tcp', 'tcp-data': 'tcp',
+  'tcp-session': 'tcp', 'timeout': 'tcp',
+  'syn-flood': 'tcp', 'fin-flood': 'tcp', 'ack-flood': 'tcp',
+  'rst-flood': 'tcp', 'psh-flood': 'tcp', 'ack-fin-flood': 'tcp',
+  'urg-psh-fin-flood': 'tcp', 'tcp-flood': 'tcp', 'ssh-secure': 'tcp',
+  'udp-transfer': 'udp',
+  'http-request': 'http', 'https-request': 'http',
+  'dns-query': 'dns',
+  'icmp-ping': 'icmp',
 }
 
-const PROTOCOL_LINE_STYLES = {
-  'tcp-handshake':  { dashArray: null,         strokeWidth: 1.2, double: false }, // 實線，綠
-  'tcp-teardown':   { dashArray: '8 4',         strokeWidth: 1.0, double: false }, // 長虛線，紅
-  'tcp-data':       { dashArray: null,          strokeWidth: 1.4, double: false }, // 實線粗，藍
-  'tcp-session':    { dashArray: null,          strokeWidth: 1.2, double: false }, // 實線，青
-  'http-request':   { dashArray: '4 2',         strokeWidth: 1.0, double: false }, // 短虛線，紫
-  'https-request':  { dashArray: null,          strokeWidth: 0.7, double: true  }, // 雙實線，藍綠
-  'dns-query':      { dashArray: '1.5 2',       strokeWidth: 0.8, double: false }, // 點線，橙
-  'udp-transfer':   { dashArray: '4 2 1.5 2',   strokeWidth: 0.8, double: false }, // 點虛線，淡藍
-  'timeout':        { dashArray: '6 6',         strokeWidth: 1.0, double: false }, // 稀疏虛線，黃橙
-  'icmp-ping':      { dashArray: '1 1.5',       strokeWidth: 0.6, double: false }, // 密點線，黃
-  'psh-flood':      { dashArray: '2 1',         strokeWidth: 2.0, double: false }, // 密虛+粗，粉紅
-  'syn-flood':      { dashArray: '3 1',         strokeWidth: 2.0, double: false }, // 密虛+粗，紅
-  'fin-flood':      { dashArray: '2 1.5',       strokeWidth: 2.0, double: false }, // 密虛+粗，深紅
-  'ack-flood':      { dashArray: '3 1',         strokeWidth: 2.0, double: false }, // 密虛+粗，深紅
-  'rst-flood':      { dashArray: '2 1',         strokeWidth: 2.0, double: false }, // 密虛+粗，玫瑰紅
-  'ack-fin-flood':  { dashArray: '1.5 1',       strokeWidth: 2.2, double: false }, // 超密虛+粗，深玫紅
-  'urg-psh-fin-flood': { dashArray: '1 1',      strokeWidth: 2.4, double: false }, // 點線+最粗，深紅
-  'tcp-flood':      { dashArray: '3 1.5',       strokeWidth: 1.8, double: false }, // 密虛+粗，深紅
-}
-const DEFAULT_LINE_STYLE = { dashArray: '2 2', strokeWidth: 0.8, double: false }
+// PROTOCOL_COLORS, PROTOCOL_LINE_STYLES, DEFAULT_LINE_STYLE are imported from ProtocolStates.js
 
 const STAGE_LABEL_MAP = {
   // TCP 三次握手
@@ -125,6 +95,19 @@ const STAGE_LABEL_MAP = {
 }
 
 const translateStageLabel = (label) => STAGE_LABEL_MAP[label] ?? label
+
+// Truncate long IPv6 addresses for display (e.g. "2001:db8::1" stays, "2001:0db8:85a3:0000:0000:8a2e:0370:7334" → "2001:0db8:...:7334")
+const truncateIpLabel = (label) => {
+  if (!label || label.length <= 20) return label
+  // IPv6 full form
+  if (label.includes(':') && label.length > 20) {
+    const parts = label.split(':')
+    if (parts.length > 4) {
+      return `${parts[0]}:${parts[1]}:...:${parts[parts.length - 1]}`
+    }
+  }
+  return label
+}
 
 // 動態畫布尺寸計算（依據節點數量與複雜度）
 // 初始靜態值（會在組件中動態計算）
@@ -492,6 +475,7 @@ export default function MindMap({ isLearningMode = false }) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
   const [attackAnalysis, setAttackAnalysis] = useState(null) // 攻擊分析數據
+  const [protocolFilters, setProtocolFilters] = useState({ tcp: true, udp: true, http: true, dns: true, icmp: true })
 
   // ========== 學習模式狀態 ==========
   const [showLearningUI, setShowLearningUI] = useState(isLearningMode)
@@ -533,6 +517,24 @@ export default function MindMap({ isLearningMode = false }) {
   const lastTickRef = useRef(performance.now())
   const lastUIUpdateRef = useRef(0)
   const fileInputRef = useRef(null)
+
+  // Sidebar 可調整寬度
+  const [sidebarWidth, setSidebarWidth] = useState(320)
+  const isResizingRef = useRef(false)
+  const gridRef = useRef(null)
+  const MIN_SIDEBAR_WIDTH = 240
+  const MAX_SIDEBAR_WIDTH = 600
+
+  // Sidebar resize cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (isResizingRef.current) {
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+        isResizingRef.current = false
+      }
+    }
+  }, [])
 
   // 視圖與節點拖曳狀態
   const svgRef = useRef(null)
@@ -621,7 +623,9 @@ export default function MindMap({ isLearningMode = false }) {
   const [isPaused, setIsPaused] = useState(false)
   const [isFocusMode, setIsFocusMode] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [sidebarTab, setSidebarTab] = useState('nodes') // 'nodes' | 'health'
+  const [sidebarTab, setSidebarTab] = useState('nodes') // 'nodes' | 'health' | 'stats' | 'security' | 'tls'
+  const [geoInfo, setGeoInfo] = useState({})
+  const [followStreamId, setFollowStreamId] = useState(null) // Phase 8: TCP stream viewer
 
   // ========== 學習模式導航處理 ==========
   const getCurrentStep = useCallback(() => {
@@ -1251,11 +1255,24 @@ export default function MindMap({ isLearningMode = false }) {
     setGeneratedAt(payload.generatedAt || null)
     setAttackAnalysis(payload.attackAnalysis || null) // 提取攻擊分析數據
     setLoading(false)
+    // Phase 12: fetch geo info
+    fetch('/api/geo').then(r => r.ok ? r.json() : {}).then(setGeoInfo).catch(() => {})
   }, [])
 
   useEffect(() => {
     loadTimelines()
   }, [loadTimelines])
+
+  // 篩選後的 timelines（依協定群組過濾）
+  const filteredTimelines = useMemo(() => {
+    const allActive = Object.values(protocolFilters).every(Boolean)
+    if (allActive) return timelines
+    return timelines.filter(t => {
+      const group = PROTOCOL_GROUP_MAP[t.protocolType] ?? t.protocol?.toLowerCase() ?? 'tcp'
+      const knownGroup = ['tcp', 'udp', 'http', 'dns', 'icmp'].includes(group) ? group : 'tcp'
+      return protocolFilters[knownGroup] === true
+    })
+  }, [timelines, protocolFilters])
 
   // 計算全局時間範圍（從所有 timelines 中提取最早和最晚的時間戳）
   useEffect(() => {
@@ -1300,11 +1317,13 @@ export default function MindMap({ isLearningMode = false }) {
   }, [timelines])
 
   useEffect(() => {
-    if (!timelines.length) {
+    if (!filteredTimelines.length) {
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current)
         rafRef.current = null
       }
+      controllersRef.current.clear()
+      setRenderStates({})
       return
     }
 
@@ -1370,9 +1389,14 @@ export default function MindMap({ isLearningMode = false }) {
       }
 
       // 更新遠景動畫 controllers（循環播放）
-      if (!isPaused && timelines.length > 0) {
-        // 確保所有連線都有 controller
-        timelines.forEach(timeline => {
+      if (!isPaused && filteredTimelines.length > 0) {
+        // 移除已被篩選掉的 controller
+        const filteredIds = new Set(filteredTimelines.map(t => t.id))
+        for (const id of controllersRef.current.keys()) {
+          if (!filteredIds.has(id)) controllersRef.current.delete(id)
+        }
+        // 確保所有可見連線都有 controller
+        filteredTimelines.forEach(timeline => {
           if (!controllersRef.current.has(timeline.id)) {
             const controller = new ProtocolAnimationController(timeline)
             controller.reset()
@@ -1412,7 +1436,7 @@ export default function MindMap({ isLearningMode = false }) {
         rafRef.current = null
       }
     }
-  }, [timelines, isPaused, isGlobalPlaying, globalSpeed, globalDuration])
+  }, [filteredTimelines, isPaused, isGlobalPlaying, globalSpeed, globalDuration])
 
   const handleFileUpload = async (event) => {
     const file = event.target.files?.[0]
@@ -1739,23 +1763,23 @@ export default function MindMap({ isLearningMode = false }) {
 
   // 計算動態畫布尺寸
   useEffect(() => {
-    if (timelines.length === 0) return
+    if (filteredTimelines.length === 0) return
 
     const nodeCount = new Set(
-      timelines.flatMap(t => {
+      filteredTimelines.flatMap(t => {
         const parsed = parseTimelineId(t)
         return parsed ? [parsed.src.ip, parsed.dst.ip] : []
       })
     ).size
 
-    const connectionCount = timelines.length
+    const connectionCount = filteredTimelines.length
     const newCanvasSize = calculateCanvasSize(nodeCount, connectionCount)
 
     setCanvasSize(newCanvasSize)
-  }, [timelines])
+  }, [filteredTimelines])
 
   // 初始化節點布局（使用力導向圖）
-  const baseNodes = useMemo(() => buildNodeLayout(timelines, canvasSize), [timelines, canvasSize])
+  const baseNodes = useMemo(() => buildNodeLayout(filteredTimelines, canvasSize), [filteredTimelines, canvasSize])
 
   // 力導向圖持續模擬
   useEffect(() => {
@@ -1892,8 +1916,8 @@ export default function MindMap({ isLearningMode = false }) {
   }, [nodesComputed])
 
   // 建立兩種連線列表：詳細版（每條獨立連線）和合併版（遠景模式用）
-  const detailedConnections = useMemo(() => buildConnections(timelines), [timelines])
-  const aggregatedConnections = useMemo(() => buildAggregatedConnections(timelines), [timelines])
+  const detailedConnections = useMemo(() => buildConnections(filteredTimelines), [filteredTimelines])
+  const aggregatedConnections = useMemo(() => buildAggregatedConnections(filteredTimelines), [filteredTimelines])
 
   const overviewHealthMap = useMemo(
     () => buildOverviewHealthFromDetailed(detailedConnections, aggregatedConnections),
@@ -2011,143 +2035,32 @@ export default function MindMap({ isLearningMode = false }) {
 
       {/* ========== 主要內容區域 ========== */}
       <div className="flex-1 overflow-auto">
-      <header className="mindmap-header px-6 pt-6">
-        <div className="flex flex-col gap-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-                {showLearningUI && (
-                  <span className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-600/30 text-emerald-300 rounded-lg text-sm">
-                    <GraduationCap className="w-4 h-4" />
-                    學習模式
-                  </span>
-                )}
-                協議時間軸分析
-              </h2>
-              <p className="text-sm text-slate-400 mt-2 max-w-2xl">
-                {showLearningUI
-                  ? '跟隨教學引導，一步步學習網路協議分析技能。'
-                  : '上傳 Wireshark 擷取檔，觀察心智圖沿著時間軸動畫呈現 TCP 交握、UDP 傳輸與其他協定事件。'
-                }
-              </p>
-            </div>
-
-            {/* 學習模式控制按鈕 */}
-            {showLearningUI && (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCourseSidebar(prev => !prev)}
-                  className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
-                    showCourseSidebar
-                      ? 'bg-emerald-600/30 text-emerald-300'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  }`}
-                >
-                  <BookOpen className="w-4 h-4" />
-                  {showCourseSidebar ? '隱藏目錄' : '顯示目錄'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowTutorialOverlay(prev => !prev)}
-                  className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
-                    showTutorialOverlay
-                      ? 'bg-cyan-600/30 text-cyan-300'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  }`}
-                >
-                  {showTutorialOverlay ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  {showTutorialOverlay ? '隱藏引導' : '顯示引導'}
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            {/* 上傳按鈕 - Primary */}
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="upload-button btn-primary inline-flex items-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
-            >
-              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
-              {uploading ? '正在上傳...' : '上傳 PCAP／PCAPNG'}
-            </button>
-
-            {/* Reload 按鈕 - Ghost */}
-            <button
-              type="button"
-              onClick={loadTimelines}
-              className="btn-ghost inline-flex items-center gap-2 text-sm hover-lift"
-            >
-              <RefreshCcw className="w-4 h-4" />
-              Reload
-            </button>
-
-            {/* 暫停/播放按鈕 - 狀態切換 */}
-            <button
-              type="button"
-              onClick={() => setIsPaused(!isPaused)}
-              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-300 hover-lift ${
-                isPaused
-                  ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/25'
-                  : 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/25'
-              }`}
-            >
-              {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-              {isPaused ? '播放' : '暫停'}
-            </button>
-
-            {/* 焦點模式按鈕 - 只在有選中連線時顯示 */}
-            {selectedConnectionId && (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsFocusMode(!isFocusMode)
-                  if (!isFocusMode) {
-                    setIsPaused(true) // 進入焦點模式時自動暫停
-                    setSearchQuery('') // 進入焦點模式時清除搜尋
-                  }
-                }}
-                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-300 hover-lift ${
-                  isFocusMode
-                    ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-500/25'
-                    : 'bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-lg shadow-purple-500/25'
-                }`}
-              >
-                {isFocusMode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                {isFocusMode ? '退出焦點' : '特定顯示'}
-              </button>
-            )}
-
-            {generatedAt && (
-              <div className="text-xs text-slate-500 flex items-center gap-1">
-                <Clock className="w-4 h-4 text-slate-500" />
-                Generated {new Date(generatedAt).toLocaleString()}
-              </div>
-            )}
-
-            {sourceFiles.length > 0 && (
-              <div className="text-xs text-slate-500 flex items-center gap-1">
-                <CircleDot className="w-4 h-4 text-emerald-400" />
-                {sourceFiles.join('、')}
-              </div>
-            )}
-          </div>
-
-          {error && (
-            <div className="flex items-center gap-3 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-              <AlertTriangle className="w-4 h-4" />
-              {error}
-            </div>
-          )}
-        </div>
-      </header>
+      <HeaderToolbar
+        uploading={uploading}
+        error={error}
+        generatedAt={generatedAt}
+        sourceFiles={sourceFiles}
+        isPaused={isPaused}
+        isFocusMode={isFocusMode}
+        selectedConnectionId={selectedConnectionId}
+        showLearningUI={showLearningUI}
+        showCourseSidebar={showCourseSidebar}
+        showTutorialOverlay={showTutorialOverlay}
+        onUpload={handleFileUpload}
+        onReload={loadTimelines}
+        onTogglePause={() => setIsPaused(!isPaused)}
+        onToggleFocus={() => {
+          setIsFocusMode(!isFocusMode)
+          if (!isFocusMode) { setIsPaused(true); setSearchQuery('') }
+        }}
+        onFollowStream={() => setFollowStreamId(selectedConnectionId)}
+        onToggleCourseSidebar={() => setShowCourseSidebar(prev => !prev)}
+        onToggleTutorial={() => setShowTutorialOverlay(prev => !prev)}
+        fileInputRef={fileInputRef}
+      />
 
       <main className="px-6 pb-8">
-        <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_320px]">
+        <div ref={gridRef} className="mt-6 grid gap-1" style={{ gridTemplateColumns: `1fr 6px ${sidebarWidth}px` }}>
           <section className="glass-card rounded-2xl p-6">
             {loading ? (
               <div className="flex h-[calc(100vh-260px)] min-h-[400px] items-center justify-center">
@@ -3002,7 +2915,7 @@ export default function MindMap({ isLearningMode = false }) {
                           fill={node.isCenter ? "#a5f3fc" : "#f1f5f9"}
                           style={{ pointerEvents: 'none' }}
                         >
-                          {node.label}
+                          {truncateIpLabel(node.label)}
                         </text>
                         {node.isCenter && (
                           <text
@@ -3027,6 +2940,19 @@ export default function MindMap({ isLearningMode = false }) {
                             style={{ textTransform: 'uppercase', pointerEvents: 'none' }}
                           >
                             {node.protocols.join(' · ')}
+                          </text>
+                        )}
+                        {/* Phase 12: Geo label on SVG node */}
+                        {!node.isCenter && geoInfo[node.label] && (
+                          <text
+                            x={node.x}
+                            y={protocolY + subFontSize * 1.3}
+                            textAnchor="middle"
+                            fontSize={subFontSize * 0.85}
+                            fill="#94a3b8"
+                            style={{ pointerEvents: 'none' }}
+                          >
+                            {geoInfo[node.label].country_code || (geoInfo[node.label].type === 'private' ? 'LAN' : geoInfo[node.label].label)}
                           </text>
                         )}
                       </g>
@@ -3065,6 +2991,37 @@ export default function MindMap({ isLearningMode = false }) {
             )}
           </section>
 
+          {/* Sidebar Resize Handle */}
+          <div
+            className="cursor-col-resize group flex items-center justify-center self-stretch"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              isResizingRef.current = true
+              document.body.style.cursor = 'col-resize'
+              document.body.style.userSelect = 'none'
+
+              const handleMouseMove = (moveEvent) => {
+                if (!isResizingRef.current || !gridRef.current) return
+                const gridRect = gridRef.current.getBoundingClientRect()
+                const newWidth = gridRect.right - moveEvent.clientX
+                setSidebarWidth(Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, newWidth)))
+              }
+
+              const handleMouseUp = () => {
+                isResizingRef.current = false
+                document.body.style.cursor = ''
+                document.body.style.userSelect = ''
+                document.removeEventListener('mousemove', handleMouseMove)
+                document.removeEventListener('mouseup', handleMouseUp)
+              }
+
+              document.addEventListener('mousemove', handleMouseMove)
+              document.addEventListener('mouseup', handleMouseUp)
+            }}
+          >
+            <div className="w-1 h-10 rounded-full bg-slate-600 group-hover:bg-cyan-400/60 group-active:bg-cyan-400 transition-colors" />
+          </div>
+
           <aside className="glass-card rounded-2xl p-5 flex flex-col" style={{ maxHeight: 'calc(100vh - 200px)' }}>
             {/* Header */}
             <div className="flex items-center gap-2.5 text-sm font-semibold text-slate-100 mb-3">
@@ -3076,6 +3033,9 @@ export default function MindMap({ isLearningMode = false }) {
                 {nodesComputed.length} 節點
               </span>
             </div>
+
+            {/* 協定篩選器 */}
+            <ProtocolFilter filters={protocolFilters} onFilterChange={setProtocolFilters} compact />
 
             {/* 分頁切換 */}
             <div role="tablist" aria-label="側欄分頁" className="flex border-b border-slate-700 mb-3">
@@ -3104,6 +3064,45 @@ export default function MindMap({ isLearningMode = false }) {
                   : 'flex-1 py-2 text-sm text-slate-400 hover:text-slate-200 transition-colors'}
               >
                 健康
+              </button>
+              <button
+                type="button"
+                role="tab"
+                id="tab-stats"
+                aria-selected={sidebarTab === 'stats'}
+                aria-controls="panel-stats"
+                onClick={() => setSidebarTab('stats')}
+                className={sidebarTab === 'stats'
+                  ? 'flex-1 py-2 text-sm font-semibold text-cyan-300 border-b-2 border-cyan-400'
+                  : 'flex-1 py-2 text-sm text-slate-400 hover:text-slate-200 transition-colors'}
+              >
+                統計
+              </button>
+              <button
+                type="button"
+                role="tab"
+                id="tab-security"
+                aria-selected={sidebarTab === 'security'}
+                aria-controls="panel-security"
+                onClick={() => setSidebarTab('security')}
+                className={sidebarTab === 'security'
+                  ? 'flex-1 py-2 text-sm font-semibold text-cyan-300 border-b-2 border-cyan-400'
+                  : 'flex-1 py-2 text-sm text-slate-400 hover:text-slate-200 transition-colors'}
+              >
+                安全
+              </button>
+              <button
+                type="button"
+                role="tab"
+                id="tab-tls"
+                aria-selected={sidebarTab === 'tls'}
+                aria-controls="panel-tls"
+                onClick={() => setSidebarTab('tls')}
+                className={sidebarTab === 'tls'
+                  ? 'flex-1 py-2 text-sm font-semibold text-cyan-300 border-b-2 border-cyan-400'
+                  : 'flex-1 py-2 text-sm text-slate-400 hover:text-slate-200 transition-colors'}
+              >
+                TLS
               </button>
             </div>
 
@@ -3176,8 +3175,8 @@ export default function MindMap({ isLearningMode = false }) {
                           }}
                         >
                           <div className="flex items-center justify-between">
-                            <span className={`font-mono text-sm truncate max-w-[160px] ${isHighlighted ? 'text-cyan-200 font-semibold' : 'text-slate-200'}`}>
-                              {node.label}
+                            <span className={`font-mono text-sm truncate max-w-[160px] ${isHighlighted ? 'text-cyan-200 font-semibold' : 'text-slate-200'}`} title={node.label}>
+                              {truncateIpLabel(node.label)}
                             </span>
                             <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ml-1 ${
                               node.isCenter
@@ -3189,6 +3188,14 @@ export default function MindMap({ isLearningMode = false }) {
                               {depthLabel}
                             </span>
                           </div>
+
+                          {/* Phase 12: Geo label */}
+                          {geoInfo[node.label] && (
+                            <div className="text-[10px] text-slate-400 mt-0.5">
+                              {geoInfo[node.label].type === 'private' ? '🏠' : geoInfo[node.label].type === 'loopback' ? '🔄' : '🌐'}{' '}
+                              {geoInfo[node.label].label}
+                            </div>
+                          )}
 
                           <div className="flex flex-wrap gap-1 mt-2">
                             {node.protocols.map(proto => (
@@ -3220,6 +3227,8 @@ export default function MindMap({ isLearningMode = false }) {
             {/* ======= 健康分頁 ======= */}
             {sidebarTab === 'health' && (
               <div role="tabpanel" id="panel-health" aria-labelledby="tab-health" className="flex-1 flex flex-col overflow-hidden">
+                {/* Phase 11: 網路效能評分 */}
+                <PerformanceScorePanel />
                 {/* 總覽分數卡 */}
                 <div className="rounded-xl p-3 bg-slate-800/50 border border-slate-700/60 mb-3 shrink-0">
                   <div className="text-xs text-slate-400 mb-2">網路健康分數</div>
@@ -3381,9 +3390,46 @@ export default function MindMap({ isLearningMode = false }) {
                 </div>
               </div>
             )}
+
+            {/* ======= 統計分頁 ======= */}
+            {sidebarTab === 'stats' && (
+              <div role="tabpanel" id="panel-stats" aria-labelledby="tab-stats" className="flex-1 overflow-y-auto">
+                <ProtocolStatsPanel visible={sidebarTab === 'stats'} />
+              </div>
+            )}
+
+            {/* ======= 安全分頁（合併專家+偵測） ======= */}
+            {sidebarTab === 'security' && (
+              <div role="tabpanel" id="panel-security" aria-labelledby="tab-security" className="flex-1 overflow-y-auto">
+                <SecurityPanel
+                  onSelectConnection={(stream) => {
+                    if (stream) {
+                      const connId = connections.find(c => c.id.includes(stream.split(':')[0]))?.id
+                      if (connId) setSelectedConnectionId(connId)
+                    }
+                  }}
+                />
+              </div>
+            )}
+
+            {/* ======= TLS 分頁 ======= */}
+            {sidebarTab === 'tls' && (
+              <div role="tabpanel" id="panel-tls" aria-labelledby="tab-tls" className="flex-1 overflow-y-auto">
+                <TlsInfoPanel />
+              </div>
+            )}
           </aside>
         </div>
       </main>
+
+      {/* Phase 8: Follow TCP Stream viewer */}
+      {followStreamId && (
+        <StreamViewer
+          connectionId={followStreamId}
+          visible={!!followStreamId}
+          onClose={() => setFollowStreamId(null)}
+        />
+      )}
 
       {/* 統一封包檢視器 - 使用 BatchPacketViewer 處理所有連線 */}
       {showBatchViewer && batchViewerConnection && (

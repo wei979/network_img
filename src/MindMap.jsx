@@ -20,6 +20,8 @@ import {
   X
 } from 'lucide-react'
 import { ProtocolAnimationController } from './lib/ProtocolAnimationController'
+import useAnimationLoop from './hooks/useAnimationLoop'
+import useNodeLayout from './hooks/useNodeLayout'
 import { getProtocolColor, PROTOCOL_COLORS, PROTOCOL_LINE_STYLES, DEFAULT_LINE_STYLE } from './lib/ProtocolStates'
 import PacketParticleSystem from './lib/PacketParticleSystem'
 import { parseTimelineId, clamp, calculateCanvasSize, FORCE_PARAMS, calculateDynamicForceParams, calculateForces, applyForces, buildNodeLayout } from './lib/graphLayout.js'
@@ -502,11 +504,6 @@ export default function MindMap({ isLearningMode = false }) {
       learningStartTimeRef.current = Date.now()
     }
   }, [isLearningMode])
-  const controllersRef = useRef(new Map())
-  const [renderStates, setRenderStates] = useState({})
-  const rafRef = useRef(null)
-  const lastTickRef = useRef(performance.now())
-  const lastUIUpdateRef = useRef(0)
   const fileInputRef = useRef(null)
 
   // Sidebar 可調整寬度
@@ -533,9 +530,7 @@ export default function MindMap({ isLearningMode = false }) {
   const [isPanning, setIsPanning] = useState(false)
   const panStartRef = useRef({ x: 0, y: 0 })
   const isPanningRef = useRef(false)
-  const draggingNodeIdRef = useRef(null)
-  const [nodePositions, setNodePositions] = useState({})
-  const [draggingNodeId, setDraggingNodeId] = useState(null)
+  // A2-2: Node layout extracted to custom hook (declared after canvasSize below)
 
   // 地圖式交互狀態
   const [inertiaVelocity, setInertiaVelocity] = useState({ vx: 0, vy: 0 })
@@ -809,16 +804,8 @@ export default function MindMap({ isLearningMode = false }) {
     isActive: showLearningUI && showTutorialOverlay
   })
 
-  // 力導向圖狀態
-  const velocitiesRef = useRef(new Map())
-  const forceSimulationRef = useRef(null)
-  const [isLayoutStable, setIsLayoutStable] = useState(false)
-
   // 動態畫布尺寸
   const [canvasSize, setCanvasSize] = useState(1000)
-
-  // Fit-to-View 狀態
-  const [needsFitToView, setNeedsFitToView] = useState(false)
 
   const toWorldCoords = useCallback((clientX, clientY) => {
     const rect = svgRef.current?.getBoundingClientRect()
@@ -1307,127 +1294,27 @@ export default function MindMap({ isLearningMode = false }) {
     setGlobalTimeDisplay(0)
   }, [timelines])
 
-  useEffect(() => {
-    if (!filteredTimelines.length) {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current)
-        rafRef.current = null
-      }
-      controllersRef.current.clear()
-      setRenderStates({})
-      return
-    }
+  // A2-1: Animation loop extracted to custom hook (stable ref to avoid RAF restarts)
+  const animationExternalRefsRef = useRef({})
+  animationExternalRefsRef.current.isGlobalPlaying = isGlobalPlaying
+  animationExternalRefsRef.current.globalSpeed = globalSpeed
+  animationExternalRefsRef.current.globalDuration = globalDuration
+  animationExternalRefsRef.current.globalTimeRef = globalTimeRef
+  animationExternalRefsRef.current.particleSystemRef = particleSystemRef
+  animationExternalRefsRef.current.selectedConnectionIdRef = selectedConnectionIdRef
+  animationExternalRefsRef.current.activeParticleIndices = activeParticleIndices
+  animationExternalRefsRef.current.setGlobalTimeDisplay = setGlobalTimeDisplay
+  animationExternalRefsRef.current.setParticleTimeInfo = setParticleTimeInfo
+  animationExternalRefsRef.current.setActiveParticleIndices = setActiveParticleIndices
+  const { renderStates, controllersRef } = useAnimationLoop(filteredTimelines, isPaused, animationExternalRefsRef)
 
-    lastTickRef.current = performance.now()
-
-    const tick = (timestamp) => {
-      const delta = Math.min(timestamp - lastTickRef.current, 100)
-      lastTickRef.current = timestamp
-
-      // 更新全局時間（統一時間軸）- 使用 ref 避免觸發重新渲染
-      if (isGlobalPlaying && !isPaused && globalDuration > 0) {
-        globalTimeRef.current += delta * globalSpeed
-        // 循環播放
-        while (globalTimeRef.current >= globalDuration) {
-          globalTimeRef.current -= globalDuration
-        }
-        while (globalTimeRef.current < 0) {
-          globalTimeRef.current += globalDuration
-        }
-
-        // 每 100ms 更新一次 UI 時間顯示（確定性節流，避免每幀 setState）
-        const nowMs = performance.now()
-        if (nowMs - lastUIUpdateRef.current > 100) {
-          setGlobalTimeDisplay(globalTimeRef.current)
-          lastUIUpdateRef.current = nowMs
-        }
-      }
-
-      // 更新粒子系統（使用全局時間同步）
-      if (particleSystemRef.current && selectedConnectionIdRef.current && globalDuration > 0) {
-        // 使用全局時間來更新粒子系統（同步模式）
-        // 傳遞全局時間和全局時長，讓粒子系統根據進度計算本地時間
-        particleSystemRef.current.setGlobalTime(
-          globalTimeRef.current,
-          globalDuration
-        )
-
-        // 更新時間資訊以觸發 UI 重新渲染（確定性節流）
-        const globalProgress = globalDuration > 0 ? globalTimeRef.current / globalDuration : 0
-        const nowMs2 = performance.now()
-        if (nowMs2 - lastUIUpdateRef.current > 100) {
-          setParticleTimeInfo({
-            current: (globalTimeRef.current / 1000).toFixed(2),
-            total: (globalDuration / 1000).toFixed(2),
-            progress: globalProgress
-          })
-          lastUIUpdateRef.current = nowMs2
-        }
-
-        // 更新活躍粒子索引（用於側邊欄高亮同步）- 每幀都更新確保同步
-        const activeParticles = particleSystemRef.current.getActiveParticles()
-        const newActiveIndices = new Set(activeParticles.map(p => p.index))
-        // 只在有變化時更新，避免不必要的渲染
-        if (newActiveIndices.size > 0 || activeParticleIndices.size > 0) {
-          const currentIndicesArray = [...activeParticleIndices].sort()
-          const newIndicesArray = [...newActiveIndices].sort()
-          const hasChanged = currentIndicesArray.length !== newIndicesArray.length ||
-            currentIndicesArray.some((v, i) => v !== newIndicesArray[i])
-          if (hasChanged) {
-            setActiveParticleIndices(newActiveIndices)
-          }
-        }
-      }
-
-      // 更新遠景動畫 controllers（循環播放）
-      if (!isPaused && filteredTimelines.length > 0) {
-        // 移除已被篩選掉的 controller
-        const filteredIds = new Set(filteredTimelines.map(t => t.id))
-        for (const id of controllersRef.current.keys()) {
-          if (!filteredIds.has(id)) controllersRef.current.delete(id)
-        }
-        // 確保所有可見連線都有 controller
-        filteredTimelines.forEach(timeline => {
-          if (!controllersRef.current.has(timeline.id)) {
-            const controller = new ProtocolAnimationController(timeline)
-            controller.reset()
-            controllersRef.current.set(timeline.id, controller)
-          }
-        })
-
-        // 更新所有 controllers（循環模式）
-        const newRenderStates = {}
-        controllersRef.current.forEach((controller, id) => {
-          // 推進動畫
-          controller.advance(delta)
-
-          // 檢查是否完成，如果完成則重置（循環播放）
-          if (controller.isCompleted) {
-            controller.reset()
-          }
-
-          // 獲取渲染狀態
-          newRenderStates[id] = controller.getRenderableState()
-        })
-
-        setRenderStates(newRenderStates)
-      }
-
-      rafRef.current = requestAnimationFrame(tick)
-    }
-
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current)
-    }
-    rafRef.current = requestAnimationFrame(tick)
-
-    return () => {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current)
-        rafRef.current = null
-      }
-    }
-  }, [filteredTimelines, isPaused, isGlobalPlaying, globalSpeed, globalDuration])
+  // A2-2: Node layout extracted to custom hook
+  const {
+    nodePositions, setNodePositions,
+    draggingNodeId, setDraggingNodeId, draggingNodeIdRef,
+    isLayoutStable, nodesComputed,
+    needsFitToView, setNeedsFitToView,
+  } = useNodeLayout(filteredTimelines, canvasSize, timelines)
 
   const handleFileUpload = async (event) => {
     const file = event.target.files?.[0]
@@ -1769,129 +1656,7 @@ export default function MindMap({ isLearningMode = false }) {
     setCanvasSize(newCanvasSize)
   }, [filteredTimelines])
 
-  // 初始化節點布局（使用力導向圖）
-  const baseNodes = useMemo(() => buildNodeLayout(filteredTimelines, canvasSize), [filteredTimelines, canvasSize])
-
-  // 力導向圖持續模擬
-  useEffect(() => {
-    if (!baseNodes.length) {
-      setNodePositions({})
-      setIsLayoutStable(false)
-      return
-    }
-
-    // 初始化節點位置
-    const initialPositions = {}
-    baseNodes.forEach(node => {
-      initialPositions[node.id] = { x: node.x, y: node.y, isCenter: node.isCenter }
-    })
-    setNodePositions(initialPositions)
-
-    // 初始化速度
-    velocitiesRef.current.clear()
-    baseNodes.forEach(node => {
-      velocitiesRef.current.set(node.id, { x: 0, y: 0 })
-    })
-
-    // 建立連線資訊
-    const connections = []
-    timelines.forEach((timeline) => {
-      const parsed = parseTimelineId(timeline)
-      if (parsed && parsed.src?.ip && parsed.dst?.ip) {
-        connections.push({
-          src: parsed.src.ip,
-          dst: parsed.dst.ip
-        })
-      }
-    })
-
-    // 動態計算力導向圖參數
-    const forceParams = calculateDynamicForceParams(baseNodes.length, canvasSize)
-    const params = {
-      ...FORCE_PARAMS,
-      ...forceParams
-    }
-
-    let animationFrameId = null
-    let iterationCount = 0
-    let lastStableCheck = 0
-
-    // 力導向圖模擬循環
-    const simulate = () => {
-      // 如果拖曳中或已暫停，跳過模擬
-      if (draggingNodeId) {
-        animationFrameId = requestAnimationFrame(simulate)
-        return
-      }
-
-      // 從 state 獲取當前節點位置
-      setNodePositions(currentPositions => {
-        const currentNodes = baseNodes.map(node => ({
-          ...node,
-          x: currentPositions[node.id]?.x ?? node.x,
-          y: currentPositions[node.id]?.y ?? node.y
-        }))
-
-        // 計算力並更新位置
-        const forces = calculateForces(currentNodes, connections, params)
-        const updatedNodes = applyForces(currentNodes, forces, velocitiesRef.current, params)
-
-        // 轉換為位置字典
-        const newPositions = {}
-        updatedNodes.forEach(node => {
-          newPositions[node.id] = { x: node.x, y: node.y, isCenter: node.isCenter }
-        })
-
-        // 每隔一段時間檢查穩定性
-        iterationCount++
-        if (iterationCount - lastStableCheck > 30) {
-          lastStableCheck = iterationCount
-
-          // 計算總動能判斷是否穩定
-          let totalKineticEnergy = 0
-          velocitiesRef.current.forEach(vel => {
-            totalKineticEnergy += vel.x * vel.x + vel.y * vel.y
-          })
-
-          if (totalKineticEnergy < params.stabilityThreshold) {
-            if (!isLayoutStable) {
-              setIsLayoutStable(true)
-              setNeedsFitToView(true) // 觸發 Fit-to-View
-            }
-            // 穩定後繼續運行一小段時間，然後停止
-            if (iterationCount > params.initialIterations + 50) {
-              return currentPositions // 保持當前位置，不再更新
-            }
-          } else {
-            setIsLayoutStable(false)
-          }
-        }
-
-        return newPositions
-      })
-
-      animationFrameId = requestAnimationFrame(simulate)
-    }
-
-    // 啟動模擬
-    animationFrameId = requestAnimationFrame(simulate)
-
-    // 清理函數
-    return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId)
-      }
-    }
-  }, [baseNodes, timelines, draggingNodeId])
-
-  const nodesComputed = useMemo(() => baseNodes.map(n => {
-    const pos = nodePositions[n.id]
-    // 如果 nodePositions 中的座標無效，使用 baseNodes 的原始座標
-    if (pos && isFinite(pos.x) && isFinite(pos.y)) {
-      return { ...n, ...pos }
-    }
-    return n
-  }), [baseNodes, nodePositions])
+  // baseNodes, force simulation, and nodesComputed are now in useNodeLayout hook
   const nodeMap = useMemo(() => {
     const map = new Map()
     nodesComputed.forEach((node) => map.set(node.id, node))

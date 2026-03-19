@@ -6,6 +6,20 @@
  */
 
 /**
+ * Truncate long IPv6 addresses for display.
+ */
+export function truncateIpLabel(label) {
+  if (!label || label.length <= 20) return label
+  if (label.includes(':') && label.length > 20) {
+    const parts = label.split(':')
+    if (parts.length > 4) {
+      return `${parts[0]}:${parts[1]}:...:${parts[parts.length - 1]}`
+    }
+  }
+  return label
+}
+
+/**
  * Returns a human-readable depth label for a node.
  *
  * @param {number} depth - Topological depth of the node (0 = center)

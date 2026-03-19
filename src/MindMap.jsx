@@ -23,7 +23,7 @@ import { ProtocolAnimationController } from './lib/ProtocolAnimationController'
 import { getProtocolColor, PROTOCOL_COLORS, PROTOCOL_LINE_STYLES, DEFAULT_LINE_STYLE } from './lib/ProtocolStates'
 import PacketParticleSystem from './lib/PacketParticleSystem'
 import { parseTimelineId, clamp, calculateCanvasSize, FORCE_PARAMS, calculateDynamicForceParams, calculateForces, applyForces, buildNodeLayout } from './lib/graphLayout.js'
-import { getDepthLabel, computeSearchMatchedNodeIds, computeSearchMatchedConnectionIds } from './lib/nodeDashboard.js'
+import { truncateIpLabel, getDepthLabel, computeSearchMatchedNodeIds, computeSearchMatchedConnectionIds } from './lib/nodeDashboard.js'
 import { computeConnectionHealth, computeNodeDegreeHealth, computeOverallHealthWithNodes, buildOverviewHealthFromDetailed, computeOverallHealthFromMapWithNodes } from './lib/connectionHealth.js'
 // PacketViewer 已整合到 BatchPacketViewer，不再單獨使用
 import BatchPacketViewer from './components/BatchPacketViewer'
@@ -33,6 +33,8 @@ import ProtocolFilter from './components/ProtocolFilter'
 import ProtocolStatsPanel from './components/ProtocolStatsPanel'
 import PerformanceScorePanel from './components/PerformanceScorePanel'
 import HeaderToolbar from './components/HeaderToolbar'
+import NodesTab from './components/NodesTab'
+import HealthTab from './components/HealthTab'
 import SecurityPanel from './components/SecurityPanel'
 import TlsInfoPanel from './components/TlsInfoPanel'
 import StreamViewer from './components/StreamViewer'
@@ -96,18 +98,7 @@ const STAGE_LABEL_MAP = {
 
 const translateStageLabel = (label) => STAGE_LABEL_MAP[label] ?? label
 
-// Truncate long IPv6 addresses for display (e.g. "2001:db8::1" stays, "2001:0db8:85a3:0000:0000:8a2e:0370:7334" → "2001:0db8:...:7334")
-const truncateIpLabel = (label) => {
-  if (!label || label.length <= 20) return label
-  // IPv6 full form
-  if (label.includes(':') && label.length > 20) {
-    const parts = label.split(':')
-    if (parts.length > 4) {
-      return `${parts[0]}:${parts[1]}:...:${parts[parts.length - 1]}`
-    }
-  }
-  return label
-}
+// truncateIpLabel imported from './lib/nodeDashboard.js'
 
 // 動態畫布尺寸計算（依據節點數量與複雜度）
 // 初始靜態值（會在組件中動態計算）
@@ -2046,7 +2037,6 @@ export default function MindMap({ isLearningMode = false }) {
         showLearningUI={showLearningUI}
         showCourseSidebar={showCourseSidebar}
         showTutorialOverlay={showTutorialOverlay}
-        onUpload={handleFileUpload}
         onReload={loadTimelines}
         onTogglePause={() => setIsPaused(!isPaused)}
         onToggleFocus={() => {
@@ -3108,287 +3098,48 @@ export default function MindMap({ isLearningMode = false }) {
 
             {/* ======= 節點分頁 ======= */}
             {sidebarTab === 'nodes' && (
-              <div role="tabpanel" id="panel-nodes" aria-labelledby="tab-nodes" className="contents">
-                {/* Search Box */}
-                <div className="relative mb-3">
-                  <input
-                    type="text"
-                    placeholder="搜尋 IP 位址..."
-                    aria-label="搜尋 IP 位址"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-colors"
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      aria-label="清除搜尋"
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Match count */}
-                {searchMatchedNodeIds !== null && (
-                  <div className="text-xs text-slate-400 mb-3 px-1">
-                    找到 <span className="text-cyan-400 font-semibold">{searchMatchedNodeIds.size}</span> 節點，
-                    <span className="text-cyan-400 font-semibold">{searchMatchedConnectionIds?.size || 0}</span> 條連線
-                  </div>
-                )}
-
-                {/* Node List */}
-                <div className="flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
-                  {nodesComputed
-                    .filter(node => {
-                      if (searchMatchedNodeIds === null) return true
-                      return searchMatchedNodeIds.has(node.id)
-                    })
-                    .sort((a, b) => {
-                      if (a.isCenter) return -1
-                      if (b.isCenter) return 1
-                      return b.connectionCount - a.connectionCount
-                    })
-                    .map(node => {
-                      const depthLabel = getDepthLabel(node.depth, node.isCenter)
-                      const isHighlighted = searchMatchedNodeIds?.has(node.id)
-
-                      return (
-                        <div
-                          key={node.id}
-                          role="button"
-                          tabIndex={0}
-                          aria-label={`選取節點 ${node.id}`}
-                          className={`rounded-xl p-3 transition-all duration-300 cursor-pointer ${
-                            isHighlighted
-                              ? 'bg-cyan-500/15 border border-cyan-500/50 shadow-lg shadow-cyan-500/10'
-                              : 'bg-slate-800/40 border border-slate-700/50 hover:bg-slate-700/40 hover:border-slate-600'
-                          }`}
-                          onClick={() => setSearchQuery(node.id)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault()
-                              setSearchQuery(node.id)
-                            }
-                          }}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className={`font-mono text-sm truncate max-w-[160px] ${isHighlighted ? 'text-cyan-200 font-semibold' : 'text-slate-200'}`} title={node.label}>
-                              {truncateIpLabel(node.label)}
-                            </span>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ml-1 ${
-                              node.isCenter
-                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                : node.depth === 1
-                                  ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                                  : 'bg-slate-600/30 text-slate-400 border border-slate-600/40'
-                            }`}>
-                              {depthLabel}
-                            </span>
-                          </div>
-
-                          {/* Phase 12: Geo label */}
-                          {geoInfo[node.label] && (
-                            <div className="text-[10px] text-slate-400 mt-0.5">
-                              {geoInfo[node.label].type === 'private' ? '🏠' : geoInfo[node.label].type === 'loopback' ? '🔄' : '🌐'}{' '}
-                              {geoInfo[node.label].label}
-                            </div>
-                          )}
-
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {node.protocols.map(proto => (
-                              <span
-                                key={proto}
-                                className="text-[10px] px-1.5 py-0.5 rounded-md font-mono uppercase"
-                                style={{
-                                  backgroundColor: `${PROTOCOL_COLORS[proto.toLowerCase()] || '#64748b'}20`,
-                                  color: PROTOCOL_COLORS[proto.toLowerCase()] || '#94a3b8',
-                                  border: `1px solid ${PROTOCOL_COLORS[proto.toLowerCase()] || '#64748b'}40`
-                                }}
-                              >
-                                {proto}
-                              </span>
-                            ))}
-                          </div>
-
-                          <div className="flex items-center justify-between mt-2 text-xs text-slate-500">
-                            <span>連線數</span>
-                            <span className="font-mono text-slate-300">{node.connectionCount}</span>
-                          </div>
-                        </div>
-                      )
-                    })}
-                </div>
-            </div>
+              <NodesTab
+                nodesComputed={nodesComputed}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                searchMatchedNodeIds={searchMatchedNodeIds}
+                searchMatchedConnectionIds={searchMatchedConnectionIds}
+                geoInfo={geoInfo}
+              />
             )}
 
             {/* ======= 健康分頁 ======= */}
             {sidebarTab === 'health' && (
-              <div role="tabpanel" id="panel-health" aria-labelledby="tab-health" className="flex-1 flex flex-col overflow-hidden">
-                {/* Phase 11: 網路效能評分 */}
-                <PerformanceScorePanel />
-                {/* 總覽分數卡 */}
-                <div className="rounded-xl p-3 bg-slate-800/50 border border-slate-700/60 mb-3 shrink-0">
-                  <div className="text-xs text-slate-400 mb-2">網路健康分數</div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="flex-1 h-2 rounded-full bg-slate-700 overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${overallHealth.score}%`,
-                          backgroundColor: overallHealth.score >= 80 ? '#22c55e' : overallHealth.score >= 50 ? '#f59e0b' : '#ef4444'
-                        }}
-                      />
-                    </div>
-                    <span className="text-sm font-mono font-semibold text-slate-100 shrink-0">
-                      {overallHealth.score} / 100
-                    </span>
-                  </div>
-                  {/* 連線健康統計 */}
-                  <div className="flex items-center gap-2 text-xs flex-wrap">
-                    <span className="text-slate-500 text-[10px]">連線:</span>
-                    <span className="text-green-400">🟢 {overallHealth.healthy} 健康</span>
-                    <span className="text-yellow-400">🟡 {overallHealth.warning} 警告</span>
-                    <span className="text-red-400">🔴 {overallHealth.critical} 異常</span>
-                  </div>
-                  {/* 節點健康統計 */}
-                  <div className="flex items-center gap-2 text-xs flex-wrap mt-1">
-                    <span className="text-slate-500 text-[10px]">節點:</span>
-                    <span className="text-green-400">🟢 {Math.max(0, nodesComputed.length - (overallHealth.nodeCritical || 0) - (overallHealth.nodeWarning || 0))} 正常</span>
-                    <span className="text-yellow-400">🟡 {overallHealth.nodeWarning || 0} 警戒</span>
-                    <span className="text-red-400">🔴 {overallHealth.nodeCritical || 0} 高危</span>
-                  </div>
-                  {/* 節點連線數風險詳情（若有） */}
-                  {(() => {
-                    const dangerNodes = nodesComputed
-                      .map(node => ({ node, health: nodeHealthMap.get(node.id) }))
-                      .filter(({ health }) => health && health.status !== 'healthy')
-                      .sort((a, b) => {
-                        if (a.health.status === b.health.status) return b.node.connectionCount - a.node.connectionCount
-                        return a.health.status === 'critical' ? -1 : 1
-                      })
-                    if (dangerNodes.length === 0) return null
-                    return (
-                      <div className="border-t border-slate-700/40 mt-2 pt-2">
-                        {dangerNodes.map(({ node, health }) => (
-                          <div
-                            key={node.id}
-                            className={`mb-1 p-2 rounded text-xs border-l-4 bg-slate-700/50 ${
-                              health.status === 'critical' ? 'border-red-500' : 'border-yellow-500'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="font-mono text-slate-200">{node.id}</span>
-                              <span className={`font-bold ${health.status === 'critical' ? 'text-red-400' : 'text-yellow-400'}`}>
-                                {node.connectionCount} 條連線
-                              </span>
-                            </div>
-                            <div className={`mt-0.5 ${health.status === 'critical' ? 'text-red-300' : 'text-yellow-300'}`}>
-                              {health.issues[0]}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )
-                  })()}
-                </div>
-
-                {/* 連線健康清單 */}
-                <div className="flex-1 space-y-1.5 overflow-y-auto pr-1 custom-scrollbar">
-                  {[...connections]
-                    .sort((a, b) => {
-                      const order = { critical: 0, warning: 1, healthy: 2 }
-                      const ha = connectionHealthMap.get(a.id) ?? { status: 'healthy' }
-                      const hb = connectionHealthMap.get(b.id) ?? { status: 'healthy' }
-                      return (order[ha.status] ?? 2) - (order[hb.status] ?? 2)
-                    })
-                    .map(connection => {
-                      const health = connectionHealthMap.get(connection.id) ?? { status: 'healthy', score: 100, issues: [], mainMetric: '' }
-                      const isSelected = selectedConnectionId === connection.id
-
-                      const borderColor = health.status === 'critical' ? 'border-l-red-500' : health.status === 'warning' ? 'border-l-yellow-500' : 'border-l-green-500'
-                      const statusDot = health.status === 'critical' ? '🔴' : health.status === 'warning' ? '🟡' : '🟢'
-
-                      // IP 短縮顯示
-                      const srcLabel = connection.src || ''
-                      const dstLabel = connection.dst || ''
-
-                      const srcNodeHealth = nodeHealthMap.get(connection.src)
-                      const dstNodeHealth = nodeHealthMap.get(connection.dst)
-
-                      const ptLabel = (connection.protocolType || connection.primaryProtocolType || 'UNKNOWN').toUpperCase().replace(/-/g, '\u2011')
-
-                      return (
-                        <div
-                          key={connection.id}
-                          role="button"
-                          tabIndex={0}
-                          aria-label={`選取連線 ${connection.id}`}
-                          className={`rounded-lg p-2.5 border-l-4 cursor-pointer transition-all duration-200 ${borderColor} ${
-                            isSelected
-                              ? 'bg-cyan-500/15 border border-cyan-500/40 border-l-4'
-                              : 'bg-slate-800/40 border border-slate-700/40 hover:bg-slate-700/40'
-                          }`}
-                          onClick={() => {
-                            if (isSelected) {
-                              setShowBatchViewer(false)
-                              setBatchViewerConnection(null)
-                              setSelectedConnectionId(null)
-                              setConnectionPackets(null)
-                            } else if (connection.id?.startsWith('aggregated-')) {
-                              setShowBatchViewer(true)
-                              setBatchViewerConnection(connection)
-                              setSelectedConnectionId(connection.id)
-                              const isAttackTraffic = (connection.connectionCount || 0) > 50
-                              if (isAttackTraffic) {
-                                fetchBatchPacketsForAnimation(connection)
-                              } else {
-                                const firstChildId = connection.connections?.[0]?.originalId || connection.originalId
-                                fetchConnectionPackets(firstChildId)
-                              }
-                            } else {
-                              const singleConnection = {
-                                ...connection,
-                                connectionCount: 1,
-                                connections: [{ originalId: connection.originalId || connection.id, ...connection }]
-                              }
-                              setShowBatchViewer(true)
-                              setBatchViewerConnection(singleConnection)
-                              setSelectedConnectionId(connection.id)
-                              fetchConnectionPackets(connection.originalId || connection.id)
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault()
-                              setSelectedConnectionId(isSelected ? null : connection.id)
-                            }
-                          }}
-                        >
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <span className="text-[10px] leading-none">{statusDot}</span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold bg-slate-700/60 text-slate-200 truncate max-w-[100px]">
-                              {ptLabel}
-                            </span>
-                            <span className="text-[9px] text-slate-400 font-mono truncate">
-                              {srcLabel}{srcNodeHealth?.status === 'critical' ? ' 🔴' : srcNodeHealth?.status === 'warning' ? ' 🟡' : ''}{' → '}{dstLabel}{dstNodeHealth?.status === 'critical' ? ' 🔴' : dstNodeHealth?.status === 'warning' ? ' 🟡' : ''}
-                            </span>
-                          </div>
-                          {health.mainMetric && (
-                            <div className="text-[10px] text-cyan-300 font-mono pl-4">{health.mainMetric}</div>
-                          )}
-                          {health.issues.length > 0 && health.status !== 'healthy' && (
-                            <div className={`text-[10px] pl-4 mt-0.5 truncate ${health.status === 'critical' ? 'text-red-400' : 'text-yellow-400'}`}>
-                              {health.issues[0]}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                </div>
-              </div>
+              <HealthTab
+                overallHealth={overallHealth}
+                connections={connections}
+                connectionHealthMap={connectionHealthMap}
+                nodeHealthMap={nodeHealthMap}
+                nodesComputed={nodesComputed}
+                selectedConnectionId={selectedConnectionId}
+                onSelectConnection={(connection, isSelected) => {
+                  if (isSelected) {
+                    setShowBatchViewer(false)
+                    setBatchViewerConnection(null)
+                    setSelectedConnectionId(null)
+                    setConnectionPackets(null)
+                  } else if (connection.id?.startsWith('aggregated-')) {
+                    setShowBatchViewer(true)
+                    setBatchViewerConnection(connection)
+                    setSelectedConnectionId(connection.id)
+                    if ((connection.connectionCount || 0) > 50) {
+                      fetchBatchPacketsForAnimation(connection)
+                    } else {
+                      fetchConnectionPackets(connection.connections?.[0]?.originalId || connection.originalId)
+                    }
+                  } else {
+                    setShowBatchViewer(true)
+                    setBatchViewerConnection({ ...connection, connectionCount: 1, connections: [{ originalId: connection.originalId || connection.id, ...connection }] })
+                    setSelectedConnectionId(connection.id)
+                    fetchConnectionPackets(connection.originalId || connection.id)
+                  }
+                }}
+              />
             )}
 
             {/* ======= 統計分頁 ======= */}

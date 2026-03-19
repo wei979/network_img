@@ -9,7 +9,7 @@ export default function HeaderToolbar({
   uploading, error, generatedAt, sourceFiles,
   isPaused, isFocusMode, selectedConnectionId,
   showLearningUI, showCourseSidebar, showTutorialOverlay,
-  onUpload, onReload, onTogglePause, onToggleFocus,
+  onReload, onTogglePause, onToggleFocus,
   onFollowStream, onToggleCourseSidebar, onToggleTutorial,
   fileInputRef,
 }) {

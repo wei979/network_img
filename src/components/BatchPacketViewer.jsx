@@ -643,6 +643,28 @@ export default function BatchPacketViewer({
                           </div>
                         )}
                       </div>
+
+                      {/* Inline packet detail — expands directly below selected packet */}
+                      {isSelected && selectedPacketIndex !== null && (
+                        <div style={{ marginTop: 8, borderTop: `1px solid ${S.border}`, paddingTop: 8 }}
+                             onClick={e => e.stopPropagation()}
+                        >
+                          {inspectLoading ? (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '16px 0', color: S.text.secondary }}>
+                              <Loader className="w-4 h-4 animate-spin" />
+                              <span style={{ fontSize: '0.875rem' }}>載入封包詳情...</span>
+                            </div>
+                          ) : inspectedPacket ? (
+                            <PacketInspector
+                              packetDetail={inspectedPacket}
+                              onClose={() => {
+                                setInspectedPacket(null)
+                                onPacketSelect?.(null)
+                              }}
+                            />
+                          ) : null}
+                        </div>
+                      )}
                     </div>
                   )
                 })}
@@ -697,25 +719,7 @@ export default function BatchPacketViewer({
               </div>
             )}
 
-            {/* Packet Inspector */}
-            {selectedPacketIndex !== null && (
-              <div style={{ marginTop: 16, borderTop: `1px solid ${S.border}`, paddingTop: 16 }}>
-                {inspectLoading ? (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '32px 0', color: S.text.secondary }}>
-                    <Loader className="w-4 h-4 animate-spin" />
-                    <span style={{ fontSize: '0.875rem' }}>載入封包詳情...</span>
-                  </div>
-                ) : inspectedPacket ? (
-                  <PacketInspector
-                    packetDetail={inspectedPacket}
-                    onClose={() => {
-                      setInspectedPacket(null)
-                      onPacketSelect?.(null)
-                    }}
-                  />
-                ) : null}
-              </div>
-            )}
+            {/* PacketInspector now renders inline below the selected packet card */}
           </div>
         )}
       </div>

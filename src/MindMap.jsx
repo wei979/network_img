@@ -506,6 +506,10 @@ export default function MindMap({ isLearningMode = false }) {
   }, [isLearningMode])
   const fileInputRef = useRef(null)
 
+  // Timeline controls drag position
+  const timelineControlsDragRef = useRef(null)
+  const [timelineControlsPos, setTimelineControlsPos] = useState({ x: '50%', y: 24 })
+
   // Sidebar 可調整寬度
   const [sidebarWidth, setSidebarWidth] = useState(320)
   const isResizingRef = useRef(false)
@@ -2968,12 +2972,43 @@ export default function MindMap({ isLearningMode = false }) {
         />
       )}
 
-      {/* 時間軸控制面板 */}
+      {/* 時間軸控制面板 — draggable */}
       {(() => {
         const shouldShowControls = selectedConnectionId && particleSystemRef.current && connectionPackets
         return shouldShowControls
       })() && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-2xl px-4">
+        <div
+          ref={timelineControlsDragRef}
+          className="fixed z-50 w-full max-w-2xl px-4"
+          style={{
+            bottom: timelineControlsPos.y,
+            left: timelineControlsPos.x,
+            transform: timelineControlsPos.x === '50%' ? 'translateX(-50%)' : 'none',
+            cursor: 'grab',
+            userSelect: 'none',
+          }}
+          onMouseDown={(e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.closest('button')) return
+            e.preventDefault()
+            const el = timelineControlsDragRef.current
+            if (!el) return
+            const rect = el.getBoundingClientRect()
+            const offsetX = e.clientX - rect.left
+            const offsetY = e.clientY - rect.top
+            const onMove = (ev) => {
+              setTimelineControlsPos({
+                x: ev.clientX - offsetX,
+                y: window.innerHeight - ev.clientY + offsetY - rect.height,
+              })
+            }
+            const onUp = () => {
+              document.removeEventListener('mousemove', onMove)
+              document.removeEventListener('mouseup', onUp)
+            }
+            document.addEventListener('mousemove', onMove)
+            document.addEventListener('mouseup', onUp)
+          }}
+        >
           <TimelineControls
             isPlaying={isGlobalPlaying}
             speed={globalSpeed}

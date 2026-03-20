@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { X, Database, Clock, AlertTriangle, ChevronDown, ChevronUp, Loader, Network, BarChart3 } from 'lucide-react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { X, Database, Clock, AlertTriangle, ChevronDown, ChevronUp, Loader, Network, BarChart3, CheckCircle, Circle, AlertCircle } from 'lucide-react'
 import { S } from '../lib/swiss-tokens'
+import { buildPacketStageMap, groupPacketsByStage } from '../lib/protocolStageMapper'
 import AttackTimelineChart from './AttackTimelineChart'
 import PacketInspector from './PacketInspector'
 
@@ -554,121 +555,21 @@ export default function BatchPacketViewer({
         {/* 封包列表 Tab */}
         {activeTab === 'packets' && (
           <div ref={scrollContainerRef} style={{ height: '100%', overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {/* 預載入封包模式 */}
+            {/* 預載入封包模式 — 協議階段分組 */}
             {preloadedPackets?.packets?.length > 0 ? (
-              <>
-                <div style={{ marginBottom: 12, padding: 12, background: `${S.accent}12`, borderRadius: S.radius.sm, border: `1px solid ${S.accent}30` }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: S.accent, fontSize: '0.875rem' }}>
-                    <Database className="w-4 h-4" />
-                    <span style={{ fontWeight: 500 }}>動畫封包列表</span>
-                    <span style={{ fontSize: '0.75rem', color: S.text.secondary }}>（{preloadedPackets.packets.length} 封包，與動畫同步）</span>
-                  </div>
-                </div>
-                {preloadedPackets.packets.map((packet) => {
-                  const isActive = activeParticleIndices.has(packet.index)
-                  const isSelected = selectedPacketIndex === packet.index
-                  const hl = getHighlightStyle(isSelected, isActive)
-
-                  return (
-                    <div
-                      key={packet.index}
-                      ref={el => {
-                        if (el) packetRefsMap.current.set(packet.index, el)
-                      }}
-                      data-packet-index={packet.index}
-                      style={{ borderRadius: S.radius.sm, padding: 12, cursor: 'pointer', ...hl }}
-                      onClick={() => onPacketSelect?.(packet.index)}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: isSelected ? S.accent : isActive ? S.accent : S.text.primary }}>
-                            封包 #{packet.index}
-                          </span>
-                          {/* TCP Flags 標籤 */}
-                          {packet.headers?.tcp?.flags && (
-                            <span style={{
-                              fontSize: '0.625rem', padding: '2px 6px', borderRadius: S.radius.sm,
-                              fontFamily: S.font.mono,
-                              ...getFlagBadgeStyle(packet.headers.tcp.flags),
-                            }}>
-                              {packet.headers.tcp.flags}
-                            </span>
-                          )}
-                          {packet.errorType && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: S.radius.sm, background: `${S.protocol.ICMP}20`, border: `1px solid ${S.protocol.ICMP}40` }}>
-                              <AlertTriangle className="w-3 h-3" style={{ color: S.protocol.ICMP }} />
-                              <span style={{ fontSize: '0.625rem', fontWeight: 600, color: S.protocol.ICMP }}>
-                                {packet.errorType}
-                              </span>
-                            </div>
-                          )}
-                          {/* 活躍指示器 */}
-                          {isActive && (
-                            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.625rem', color: S.accent }}>
-                              <span style={{ width: 6, height: 6, borderRadius: '50%', background: S.accent }} className="animate-pulse" />
-                              動畫中
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: S.text.secondary }}>
-                          <Clock className="w-3 h-3" />
-                          {packet.relativeTime || '0.000s'}
-                        </div>
-                      </div>
-
-                      {/* 簡化的封包資訊 */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: '0.75rem' }}>
-                        <div>
-                          <span style={{ color: S.text.tertiary }}>來源</span>
-                          <div style={{ color: S.text.primary, fontFamily: S.font.mono, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {packet.fiveTuple?.srcIp}:{packet.fiveTuple?.srcPort}
-                          </div>
-                        </div>
-                        <div>
-                          <span style={{ color: S.text.tertiary }}>目的</span>
-                          <div style={{ color: S.text.primary, fontFamily: S.font.mono, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {packet.fiveTuple?.dstIp}:{packet.fiveTuple?.dstPort}
-                          </div>
-                        </div>
-                        {packet.length && (
-                          <div>
-                            <span style={{ color: S.text.tertiary }}>長度</span>
-                            <div style={{ color: S.text.primary, fontFamily: S.font.mono }}>{packet.length} bytes</div>
-                          </div>
-                        )}
-                        {packet.headers?.tcp?.seq && (
-                          <div>
-                            <span style={{ color: S.text.tertiary }}>Seq</span>
-                            <div style={{ color: S.text.primary, fontFamily: S.font.mono }}>{packet.headers.tcp.seq}</div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Inline packet detail — expands directly below selected packet */}
-                      {isSelected && selectedPacketIndex !== null && (
-                        <div style={{ marginTop: 8, borderTop: `1px solid ${S.border}`, paddingTop: 8 }}
-                             onClick={e => e.stopPropagation()}
-                        >
-                          {inspectLoading ? (
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '16px 0', color: S.text.secondary }}>
-                              <Loader className="w-4 h-4 animate-spin" />
-                              <span style={{ fontSize: '0.875rem' }}>載入封包詳情...</span>
-                            </div>
-                          ) : inspectedPacket ? (
-                            <PacketInspector
-                              packetDetail={inspectedPacket}
-                              onClose={() => {
-                                setInspectedPacket(null)
-                                onPacketSelect?.(null)
-                              }}
-                            />
-                          ) : null}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </>
+              <PreloadedPacketList
+                preloadedPackets={preloadedPackets}
+                aggregatedConnection={aggregatedConnection}
+                activeParticleIndices={activeParticleIndices}
+                selectedPacketIndex={selectedPacketIndex}
+                onPacketSelect={onPacketSelect}
+                packetRefsMap={packetRefsMap}
+                getHighlightStyle={getHighlightStyle}
+                getFlagBadgeStyle={getFlagBadgeStyle}
+                inspectLoading={inspectLoading}
+                inspectedPacket={inspectedPacket}
+                setInspectedPacket={setInspectedPacket}
+              />
             ) : (
               connectionIds.slice(0, loadedCount).map((connId, index) => renderConnectionCard(connId, index))
             )}
@@ -724,5 +625,275 @@ export default function BatchPacketViewer({
         )}
       </div>
     </div>
+  )
+}
+
+/* ════════════════════════════════════════════════════════════
+   PreloadedPacketList — Protocol-stage-grouped packet display
+   ════════════════════════════════════════════════════════════ */
+
+const MAX_VISIBLE_PER_STAGE = 10
+
+function PreloadedPacketList({
+  preloadedPackets, aggregatedConnection,
+  activeParticleIndices, selectedPacketIndex, onPacketSelect,
+  packetRefsMap, getHighlightStyle, getFlagBadgeStyle,
+  inspectLoading, inspectedPacket, setInspectedPacket,
+}) {
+  const [expandedStages, setExpandedStages] = useState(new Set())
+
+  // Build stage grouping using backend timeline stages (with packetRefs)
+  // Pass client IP/port for direction-based HTTP(S) grouping
+  const stageGrouping = useMemo(() => {
+    const conn = aggregatedConnection?.connections?.[0]
+    if (!conn?.stages) return null
+    const stageMap = buildPacketStageMap([conn])
+    // Determine client: src is always the initiator in WireMap's connection model
+    const clientIp = conn.src || aggregatedConnection?.src
+    // Extract client port from connection ID: "http-{srcIp}-{srcPort}-{dstIp}-{dstPort}"
+    const idParts = (conn.originalId || conn.id || '').split('-')
+    const clientPort = idParts.length >= 3 ? parseInt(idParts[2], 10) : undefined
+    return groupPacketsByStage(
+      preloadedPackets.packets, stageMap, conn.protocolType, conn.stages,
+      { clientIp, clientPort }
+    )
+  }, [preloadedPackets, aggregatedConnection])
+
+  // Packet card renderer (reusable)
+  const renderPacketCard = (packet) => {
+    const isActive = activeParticleIndices.has(packet.index)
+    const isSelected = selectedPacketIndex === packet.index
+    const hl = getHighlightStyle(isSelected, isActive)
+
+    return (
+      <div
+        key={packet.index}
+        ref={el => { if (el) packetRefsMap.current.set(packet.index, el) }}
+        data-packet-index={packet.index}
+        style={{ borderRadius: S.radius.sm, padding: 10, cursor: 'pointer', ...hl }}
+        onClick={() => onPacketSelect?.(packet.index)}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: isSelected ? S.accent : isActive ? S.accent : S.text.primary, fontFamily: S.font.mono }}>
+              #{packet.index}
+            </span>
+            {packet.headers?.tcp?.flags && (
+              <span style={{
+                fontSize: 10, padding: '1px 5px', borderRadius: S.radius.sm,
+                fontFamily: S.font.mono, ...getFlagBadgeStyle(packet.headers.tcp.flags),
+              }}>
+                {packet.headers.tcp.flags}
+              </span>
+            )}
+            {packet.errorType && (
+              <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: S.radius.sm, background: `${S.protocol.ICMP}20`, color: S.protocol.ICMP, fontFamily: S.font.mono }}>
+                {packet.errorType}
+              </span>
+            )}
+            {isActive && (
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: S.accent, animation: 'pulse 2s infinite' }} />
+            )}
+          </div>
+          <span style={{ fontSize: 10, color: S.text.tertiary, fontFamily: S.font.mono }}>
+            {packet.relativeTime || '0.000s'}
+          </span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 11 }}>
+          <div>
+            <span style={{ color: S.text.tertiary, fontSize: 9.5, letterSpacing: '0.08em', textTransform: 'uppercase' }}>來源</span>
+            <div style={{ color: S.text.primary, fontFamily: S.font.mono, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {packet.fiveTuple?.srcIp}:{packet.fiveTuple?.srcPort}
+            </div>
+          </div>
+          <div>
+            <span style={{ color: S.text.tertiary, fontSize: 9.5, letterSpacing: '0.08em', textTransform: 'uppercase' }}>目的</span>
+            <div style={{ color: S.text.primary, fontFamily: S.font.mono, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {packet.fiveTuple?.dstIp}:{packet.fiveTuple?.dstPort}
+            </div>
+          </div>
+          {packet.length && (
+            <div>
+              <span style={{ color: S.text.tertiary, fontSize: 9.5, letterSpacing: '0.08em', textTransform: 'uppercase' }}>長度</span>
+              <div style={{ color: S.text.primary, fontFamily: S.font.mono }}>{packet.length} bytes</div>
+            </div>
+          )}
+          {packet.headers?.tcp?.seq && (
+            <div>
+              <span style={{ color: S.text.tertiary, fontSize: 9.5, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Seq</span>
+              <div style={{ color: S.text.primary, fontFamily: S.font.mono }}>{packet.headers.tcp.seq}</div>
+            </div>
+          )}
+        </div>
+
+        {/* Inline packet detail */}
+        {isSelected && selectedPacketIndex !== null && (
+          <div style={{ marginTop: 8, borderTop: `1px solid ${S.border}`, paddingTop: 8 }}
+               onClick={e => e.stopPropagation()}>
+            {inspectLoading ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '16px 0', color: S.text.secondary }}>
+                <Loader className="w-4 h-4 animate-spin" />
+                <span style={{ fontSize: '0.875rem' }}>載入封包詳情...</span>
+              </div>
+            ) : inspectedPacket ? (
+              <PacketInspector
+                packetDetail={inspectedPacket}
+                onClose={() => { setInspectedPacket(null); onPacketSelect?.(null) }}
+              />
+            ) : null}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // No stage data → flat list fallback
+  if (!stageGrouping || stageGrouping.groups.length === 0) {
+    return (
+      <>
+        <div style={{ marginBottom: 12, padding: 10, background: `${S.accent}12`, borderRadius: S.radius.sm, border: `1px solid ${S.accent}30` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: S.accent, fontSize: 12 }}>
+            <Database size={14} />
+            <span style={{ fontWeight: 500 }}>封包列表</span>
+            <span style={{ fontSize: 11, color: S.text.secondary }}>（{preloadedPackets.packets.length} 封包）</span>
+          </div>
+        </div>
+        {preloadedPackets.packets.map(renderPacketCard)}
+      </>
+    )
+  }
+
+  const { groups, orphanPackets, completedStages, totalStages, description } = stageGrouping
+  const isComplete = completedStages === totalStages
+
+  return (
+    <>
+      {/* ── Protocol Progress Header ── */}
+      <div style={{
+        padding: '12px 14px', marginBottom: 8,
+        background: S.surface, border: `1px solid ${S.border}`, borderRadius: S.radius.md,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: S.text.primary, fontFamily: S.font.sans }}>
+            {description}
+          </span>
+          <span style={{
+            fontSize: 12, fontWeight: 600, fontFamily: S.font.mono,
+            color: isComplete ? S.protocol.HTTP : S.protocol.ICMP,
+            display: 'flex', alignItems: 'center', gap: 4,
+          }}>
+            {isComplete ? <CheckCircle size={13} /> : <AlertCircle size={13} />}
+            {completedStages}/{totalStages}
+          </span>
+        </div>
+        {/* Stage dots */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {groups.map((g, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{
+                width: 7, height: 7, borderRadius: 1.5,
+                background: g.missing ? 'transparent' : g.color,
+                border: g.missing ? `1.5px dashed ${S.text.faint}` : 'none',
+              }} />
+              <span style={{
+                fontSize: 10, fontWeight: 500, fontFamily: S.font.mono,
+                color: g.missing ? S.text.faint : g.color,
+                textDecoration: g.missing ? 'line-through' : 'none',
+              }}>
+                {g.stageKey}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Stage Groups ── */}
+      {groups.map((group) => {
+        const isExpanded = expandedStages.has(group.stageKey)
+        const visiblePackets = group.packets.length > MAX_VISIBLE_PER_STAGE && !isExpanded
+          ? group.packets.slice(0, MAX_VISIBLE_PER_STAGE)
+          : group.packets
+        const hasMore = group.packets.length > MAX_VISIBLE_PER_STAGE && !isExpanded
+
+        return (
+          <div key={group.stageKey} style={{
+            borderLeft: `3px ${group.missing ? 'dashed' : 'solid'} ${group.missing ? S.text.faint : group.color}`,
+            paddingLeft: 12, marginBottom: 12,
+          }}>
+            {/* Stage header */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              marginBottom: 6, padding: '4px 0',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 10, fontWeight: 600, color: S.text.tertiary, fontFamily: S.font.mono }}>
+                  {group.stageIndex + 1}/{totalStages}
+                </span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: group.missing ? S.text.faint : group.color, fontFamily: S.font.sans }}>
+                  {group.stageLabel}
+                </span>
+                {group.icon && (
+                  <span style={{ fontSize: 11, color: S.text.faint }}>{group.icon}</span>
+                )}
+              </div>
+              {group.missing ? (
+                <span style={{ fontSize: 10, color: S.protocol.ICMP, display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <AlertCircle size={11} /> 缺失
+                </span>
+              ) : (
+                <span style={{ fontSize: 10, color: S.text.tertiary, fontFamily: S.font.mono }}>
+                  {group.packets.length} 封包
+                </span>
+              )}
+            </div>
+
+            {/* Packet cards or missing placeholder */}
+            {group.missing ? (
+              <div style={{
+                border: `1px dashed ${S.text.faint}`, borderRadius: S.radius.sm,
+                padding: '10px 12px', color: S.text.faint, fontSize: 11,
+                fontFamily: S.font.sans,
+              }}>
+                預期: {group.stageLabel} 封包
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {visiblePackets.map(renderPacketCard)}
+                {hasMore && (
+                  <button
+                    onClick={() => setExpandedStages(prev => { const next = new Set(prev); next.add(group.stageKey); return next })}
+                    style={{
+                      padding: '6px 12px', fontSize: 10, fontWeight: 500,
+                      color: group.color, background: group.color + '10',
+                      border: `1px solid ${group.color}30`, borderRadius: S.radius.sm,
+                      cursor: 'pointer', fontFamily: S.font.mono,
+                    }}
+                  >
+                    展開剩餘 {group.packets.length - MAX_VISIBLE_PER_STAGE} 封包
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })}
+
+      {/* ── Orphan Packets ── */}
+      {orphanPackets.length > 0 && (
+        <div style={{
+          borderLeft: `3px solid ${S.text.faint}`,
+          paddingLeft: 12, marginBottom: 12,
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: S.text.tertiary, marginBottom: 6, fontFamily: S.font.sans }}>
+            其他封包
+            <span style={{ fontWeight: 400, marginLeft: 6, fontFamily: S.font.mono }}>{orphanPackets.length}</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {orphanPackets.map(renderPacketCard)}
+          </div>
+        </div>
+      )}
+    </>
   )
 }

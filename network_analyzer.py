@@ -985,19 +985,22 @@ class NetworkAnalyzer:
                             'key': 'request',
                             'label': 'HTTP Request',
                             'direction': 'forward',
-                            'durationMs': max(600, int(duration * 0.3))  # 最小 600ms
+                            'durationMs': max(600, int(duration * 0.3)),  # 最小 600ms
+                            'packetRefs': [session['start_packet']]
                         },
                         {
                             'key': 'processing',
                             'label': 'Processing',
                             'direction': 'wait',
-                            'durationMs': max(800, int(duration * 0.4))  # 最小 800ms
+                            'durationMs': max(800, int(duration * 0.4)),  # 最小 800ms
+                            'packetRefs': []
                         },
                         {
                             'key': 'response',
                             'label': '200 OK',
                             'direction': 'backward',
-                            'durationMs': max(600, int(duration * 0.3))  # 最小 600ms
+                            'durationMs': max(600, int(duration * 0.3)),  # 最小 600ms
+                            'packetRefs': [index]
                         }
                     ],
                     'metrics': {
@@ -1069,13 +1072,15 @@ class NetworkAnalyzer:
                                     'key': 'waiting',
                                     'label': '等待回應',
                                     'direction': 'forward',
-                                    'durationMs': int(time_gap * 1000 * 0.5)
+                                    'durationMs': int(time_gap * 1000 * 0.5),
+                                    'packetRefs': [conn['start_packet']]
                                 },
                                 {
                                     'key': 'timeout',
                                     'label': '連線超時',
                                     'direction': 'none',
-                                    'durationMs': int(time_gap * 1000 * 0.5)
+                                    'durationMs': int(time_gap * 1000 * 0.5),
+                                    'packetRefs': [index]
                                 }
                             ],
                             'metrics': {

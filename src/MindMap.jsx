@@ -118,8 +118,8 @@ let VIEWBOX_CENTER = {
 const BASE_SPREAD_MULTIPLIER = 25
 const SPREAD_DECAY = 0.9
 
-const NODE_OUTER_RADIUS = 2
-const NODE_INNER_RADIUS = 1.2
+const NODE_OUTER_RADIUS = 4.5
+const NODE_INNER_RADIUS = 2.8
 const NODE_LABEL_OFFSET_TOP = 5.4
 const NODE_PROTOCOL_OFFSET = 6.2
 const CENTRAL_NODE_OUTER_RADIUS = NODE_OUTER_RADIUS * 2.5  // 增大中心節點（1.7 -> 2.5）
@@ -2252,7 +2252,7 @@ export default function MindMap({ isLearningMode = false }) {
                     </filter>
                     {/* Swiss dot-grid background pattern */}
                     <pattern id="dotGrid" width="20" height="20" patternUnits="userSpaceOnUse">
-                      <circle cx="10" cy="10" r="0.4" fill="#2e2d2a" opacity="0.35" />
+                      <circle cx="10" cy="10" r="0.4" fill="#3d3a34" opacity="0.33" />
                     </pattern>
                   </defs>
 
@@ -2482,7 +2482,7 @@ export default function MindMap({ isLearningMode = false }) {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeOpacity={finalOpacity * (isActiveFloodConnection ? 0.6 : 0.35)}
-                                strokeDasharray={strokeDasharray || undefined}
+                                strokeDasharray={isActiveFloodConnection ? strokeDasharray : undefined}
                                 fill="none"
                                 filter={warningFilter}
                               />
@@ -2511,6 +2511,29 @@ export default function MindMap({ isLearningMode = false }) {
                             onIntensityChange={handleFloodIntensityChange}
                           />
                         )}
+
+                        {/* Swiss flowing dots — 2 dots per connection */}
+                        {renderState && !isAggregated && (() => {
+                          const dp = renderState.dotPosition ?? 0
+                          const dotOpacity = finalOpacity * 0.67
+                          return [0, 0.5].map((offset, di) => {
+                            const t = (dp + offset) % 1
+                            const dotPt = {
+                              x: adjustedFromPoint.x + (adjustedToPoint.x - adjustedFromPoint.x) * t,
+                              y: adjustedFromPoint.y + (adjustedToPoint.y - adjustedFromPoint.y) * t
+                            }
+                            return (
+                              <circle
+                                key={di}
+                                cx={dotPt.x} cy={dotPt.y}
+                                r={isSelected ? 1.6 : isHovered ? 1.4 : 1.0}
+                                fill={color + 'aa'}
+                                opacity={dotOpacity}
+                                style={{ pointerEvents: 'none' }}
+                              />
+                            )
+                          })
+                        })()}
 
                         {/* 靜態中點標籤 - 僅在 hover 或 selected 時顯示 */}
                         {shouldShowLabel && (
@@ -2641,42 +2664,53 @@ export default function MindMap({ isLearningMode = false }) {
                       return null
                     }
 
-                    // 根據是否為中心節點使用不同的視覺樣式
+                    // Swiss Editorial — 3-layer node: halo + protocol-colored ring + center dot
                     const outerRadius = node.isCenter ? CENTRAL_NODE_OUTER_RADIUS : NODE_OUTER_RADIUS
-                    const innerRadius = node.isCenter ? CENTRAL_NODE_INNER_RADIUS : NODE_INNER_RADIUS
-                    const outerFill = "#1b1a17"
-                    const strokeWidth = node.isCenter ? 0.55 : 0.45
+                    const nodeProtoColor = node.protocols?.[0]
+                      ? (PROTOCOL_COLORS[node.protocols[0].toLowerCase()] || '#706b61')
+                      : '#706b61'
 
-                    // 字體大小：SVG user units（跟隨 viewBox 與 zoom 縮放，非 CSS px）
-                    const ipFontSize  = canvasSize / 75   // ~12 units at 900-unit canvas
-                    const subFontSize = canvasSize / 100  // ~9 units for subtitle/protocol
+                    // 字體大小
+                    const ipFontSize  = canvasSize / 85
+                    const subFontSize = canvasSize / 110
 
-                    // Label 位置（SVG user units，隨 viewBox 縮放）
-                    const ipLabelY   = node.isCenter
-                      ? node.y + outerRadius + ipFontSize * 1.4   // 中心節點：IP 在圓下方
-                      : node.y - outerRadius - ipFontSize * 0.3   // 一般節點：IP 在圓上方
+                    // IP 標籤位置：全部在節點下方（Swiss 一致性）
+                    const ipLabelY   = node.y + outerRadius + ipFontSize * 1.6
                     const subtitleY  = ipLabelY + ipFontSize * 1.3
-                    const protocolY  = node.y + outerRadius + subFontSize * 1.4
 
                     // 搜尋高亮
                     const isNodeSearchMatch = searchMatchedNodeIds ? searchMatchedNodeIds.has(node.id) : false
                     const isNodeSearchActive = searchMatchedNodeIds !== null
                     const nodeOpacity = isNodeSearchActive && !isNodeSearchMatch ? 0.1 : 1.0
-                    const nodeGlowFilter = isNodeSearchActive && isNodeSearchMatch
-                      ? "url(#searchHighlightGlow)"
-                      : "url(#nodeGlow)"
 
                     return (
                       <g key={node.id} className="mindmap-node" opacity={nodeOpacity} onMouseDown={(e) => { e.stopPropagation(); draggingNodeIdRef.current = node.id; setDraggingNodeId(node.id) }} style={{ cursor: node.isCenter ? 'default' : 'grab' }}>
-                        <circle cx={node.x} cy={node.y} r={outerRadius} fill={outerFill} stroke="#2e2d2a" strokeWidth={strokeWidth} />
-                        <circle cx={node.x} cy={node.y} r={innerRadius} fill="#222120" stroke={node.isCenter ? '#e05a33' : '#3d3c38'} strokeWidth={strokeWidth} filter={nodeGlowFilter} />
+                        {/* Center node: breathing pulse ring */}
+                        {node.isCenter && (
+                          <circle cx={node.x} cy={node.y} r={outerRadius + 2} fill="#e05a3308" stroke="none">
+                            <animate attributeName="r" values={`${outerRadius + 1.5};${outerRadius + 3.5};${outerRadius + 1.5}`} dur="3s" repeatCount="indefinite" />
+                            <animate attributeName="opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" />
+                          </circle>
+                        )}
+                        {/* Layer 1: Faint protocol-colored halo */}
+                        <circle cx={node.x} cy={node.y} r={outerRadius + 1} fill={node.isCenter ? '#e05a330c' : nodeProtoColor + '0c'} stroke="none" />
+                        {/* Layer 2: Protocol-colored ring */}
+                        <circle
+                          cx={node.x} cy={node.y} r={outerRadius}
+                          fill={node.isCenter ? '#e05a3312' : nodeProtoColor + '18'}
+                          stroke={node.isCenter ? '#e05a3388' : nodeProtoColor + '66'}
+                          strokeWidth={node.isCenter ? 0.5 : 0.3}
+                        />
+                        {/* Layer 3: Solid center dot */}
+                        <circle cx={node.x} cy={node.y} r={node.isCenter ? 1.2 : 0.4} fill={node.isCenter ? '#e05a33' : nodeProtoColor} />
+                        {/* IP label */}
                         <text
                           x={node.x}
                           y={ipLabelY}
                           textAnchor="middle"
                           fontSize={ipFontSize}
-                          fontWeight={node.isCenter ? "700" : "600"}
-                          fill="#e8e5df"
+                          fontWeight={node.isCenter ? "600" : "500"}
+                          fill={node.isCenter ? '#e8e5df' : '#706b61'}
                           fontFamily="'IBM Plex Mono', monospace"
                           style={{ pointerEvents: 'none' }}
                         >
@@ -2688,39 +2722,12 @@ export default function MindMap({ isLearningMode = false }) {
                             y={subtitleY}
                             textAnchor="middle"
                             fontSize={subFontSize}
-                            fontWeight="600"
-                            fill="#a09b91"
+                            fontWeight="400"
+                            fill="#706b61"
                             fontFamily="'DM Sans', sans-serif"
                             style={{ pointerEvents: 'none' }}
                           >
                             網路中心
-                          </text>
-                        )}
-                        {!node.isCenter && node.protocols.length > 0 && (
-                          <text
-                            x={node.x}
-                            y={protocolY}
-                            textAnchor="middle"
-                            fontSize={subFontSize}
-                            fill="#706b61"
-                            fontFamily="'DM Sans', sans-serif"
-                            style={{ textTransform: 'uppercase', pointerEvents: 'none' }}
-                          >
-                            {node.protocols.join(' · ')}
-                          </text>
-                        )}
-                        {/* Phase 12: Geo label on SVG node */}
-                        {!node.isCenter && geoInfo[node.label] && (
-                          <text
-                            x={node.x}
-                            y={protocolY + subFontSize * 1.3}
-                            textAnchor="middle"
-                            fontSize={subFontSize * 0.85}
-                            fill="#706b61"
-                            fontFamily="'IBM Plex Mono', monospace"
-                            style={{ pointerEvents: 'none' }}
-                          >
-                            {geoInfo[node.label].country_code || (geoInfo[node.label].type === 'private' ? 'LAN' : geoInfo[node.label].label)}
                           </text>
                         )}
                       </g>

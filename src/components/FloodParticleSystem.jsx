@@ -5,18 +5,21 @@
  * - 粒子密度 = 封包率（越多封包，粒子越密集）
  * - 粒子顏色 = SYN (紅/橙) / ACK (綠) / RST (藍)
  * - 類似「洪水」或「雨點」的視覺效果
+ *
+ * Swiss Editorial Dark: particle colors derive from protocol tokens.
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { S } from '../lib/swiss-tokens'
 
-// 粒子顏色配置
+// 粒子顏色配置 — Swiss protocol palette
 const PARTICLE_COLORS = {
-  SYN: '#ef4444',      // 紅色 - SYN 封包
-  SYN_ACK: '#f97316',  // 橙色 - SYN-ACK
-  ACK: '#22c55e',      // 綠色 - ACK
-  RST: '#3b82f6',      // 藍色 - RST
-  FIN: '#a855f7',      // 紫色 - FIN
-  DEFAULT: '#94a3b8'   // 灰色 - 其他
+  SYN: S.protocol.TCP,       // red-orange - SYN 封包
+  SYN_ACK: '#f97316',        // orange - SYN-ACK
+  ACK: '#10b981',            // green - ACK
+  RST: S.protocol.UDP,       // blue - RST
+  FIN: S.protocol.DNS,       // purple - FIN
+  DEFAULT: S.text.tertiary   // muted - 其他
 }
 
 // 粒子配置
@@ -299,17 +302,6 @@ export default function FloodParticleSystem({
   // 渲染
   return (
     <g className={`flood-particle-system ${className}`}>
-      {/* 發光濾鏡 */}
-      <defs>
-        <filter id="particleGlow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-          <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-      </defs>
-
       {/* 渲染所有粒子 */}
       {particlesRef.current.map(particle => {
         const pos = getParticlePosition(particle.progress)
@@ -348,7 +340,6 @@ export default function FloodParticleSystem({
               r={particle.size}
               fill={particle.color}
               opacity={particle.opacity}
-              filter="url(#particleGlow)"
             />
           </g>
         )
@@ -359,7 +350,7 @@ export default function FloodParticleSystem({
         <text
           x={fromPoint.x}
           y={fromPoint.y - 20}
-          fill="#fff"
+          fill={S.text.primary}
           fontSize="10"
           textAnchor="middle"
         >

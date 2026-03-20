@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { ProtocolAnimationController } from '../lib/ProtocolAnimationController'
 import { Play, Pause, RotateCcw, Wifi } from 'lucide-react'
+import { S } from '../lib/swiss-tokens'
 import TimelineControl from './TimelineControl'
 
 const TcpHandshakeDemo = () => {
@@ -12,7 +13,6 @@ const TcpHandshakeDemo = () => {
   const lastTickRef = useRef(performance.now())
 
   useEffect(() => {
-    // 建立 TCP 握手動畫控制器
     const controller = ProtocolAnimationController.createTcpHandshake(
       'demo-tcp-handshake-192.168.1.100-80-192.168.1.200-12345',
       {
@@ -52,7 +52,6 @@ const TcpHandshakeDemo = () => {
       const delta = timestamp - lastTickRef.current
       lastTickRef.current = timestamp
 
-      // 統一播放速度處理：控制器內部負責縮放
       controllerRef.current.advance(delta)
       const newState = controllerRef.current.getRenderableState()
       setRenderState(newState)
@@ -74,20 +73,14 @@ const TcpHandshakeDemo = () => {
     }
   }, [isPlaying, playbackSpeed])
 
-  // 當播放速度變更時，更新控制器的速度
   useEffect(() => {
     if (controllerRef.current) {
       controllerRef.current.setPlaybackSpeed(playbackSpeed)
     }
   }, [playbackSpeed])
 
-  const handlePlay = () => {
-    setIsPlaying(true)
-  }
-
-  const handlePause = () => {
-    setIsPlaying(false)
-  }
+  const handlePlay = () => setIsPlaying(true)
+  const handlePause = () => setIsPlaying(false)
 
   const handleReset = () => {
     setIsPlaying(false)
@@ -99,7 +92,6 @@ const TcpHandshakeDemo = () => {
 
   const handleSeek = (progress) => {
     if (controllerRef.current) {
-      // 根據進度設定動畫時間
       controllerRef.current.seekToProgress(progress)
       setRenderState(controllerRef.current.getRenderableState())
     }
@@ -107,7 +99,6 @@ const TcpHandshakeDemo = () => {
 
   const handleSpeedChange = (newSpeed) => {
     setPlaybackSpeed(newSpeed)
-    // 立即同步到控制器（即時生效）
     if (controllerRef.current) {
       controllerRef.current.setPlaybackSpeed(newSpeed)
     }
@@ -118,47 +109,32 @@ const TcpHandshakeDemo = () => {
   const visualEffects = renderState?.visualEffects || {}
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-slate-900 rounded-lg border border-slate-700">
-      <div className="flex items-center gap-3 mb-6">
-        <Wifi className="w-6 h-6 text-green-400" />
-        <h2 className="text-xl font-semibold text-slate-100">TCP 三次握手演示</h2>
+    <div style={{ maxWidth: '56rem', margin: '0 auto', padding: 24, background: S.bg, borderRadius: S.radius.md, border: `1px solid ${S.border}`, fontFamily: S.font.sans }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <Wifi size={24} style={{ color: S.protocol.HTTP }} />
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: S.text.primary, margin: 0 }}>TCP 三次握手演示</h2>
       </div>
 
       {/* 動畫視覺化區域 */}
-      <div className="bg-slate-800 rounded-lg p-6 mb-6">
-        <svg viewBox="0 0 100 40" className="w-full h-32 text-slate-400">
-          <defs>
-            <filter id="glow" filterUnits="userSpaceOnUse">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="1" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
+      <div style={{ background: S.surface, borderRadius: S.radius.sm, padding: 24, marginBottom: 24 }}>
+        <svg viewBox="0 0 100 40" style={{ width: '100%', height: '8rem' }}>
           {/* 客戶端節點 */}
-          <circle cx="20" cy="20" r="3" fill="#1f2937" stroke="#22c55e" strokeWidth="0.5" filter="url(#glow)" />
-          <text x="20" y="30" textAnchor="middle" className="text-[3px] fill-slate-200 font-semibold">
+          <circle cx="20" cy="20" r="3" fill={S.bg} stroke={S.protocol.TCP} strokeWidth="0.5" />
+          <text x="20" y="30" textAnchor="middle" fill={S.text.primary} fontSize="3" fontWeight="600" fontFamily={S.font.sans}>
             客戶端
           </text>
 
           {/* 伺服器節點 */}
-          <circle cx="80" cy="20" r="3" fill="#1f2937" stroke="#22c55e" strokeWidth="0.5" filter="url(#glow)" />
-          <text x="80" y="30" textAnchor="middle" className="text-[3px] fill-slate-200 font-semibold">
+          <circle cx="80" cy="20" r="3" fill={S.bg} stroke={S.protocol.TCP} strokeWidth="0.5" />
+          <text x="80" y="30" textAnchor="middle" fill={S.text.primary} fontSize="3" fontWeight="600" fontFamily={S.font.sans}>
             伺服器
           </text>
 
           {/* 連接線 */}
           <line
-            x1="20"
-            y1="20"
-            x2="80"
-            y2="20"
-            stroke={renderState?.protocolColor || '#22c55e'}
-            strokeWidth="1"
-            strokeLinecap="round"
-            strokeOpacity="0.4"
+            x1="20" y1="20" x2="80" y2="20"
+            stroke={renderState?.protocolColor || S.protocol.TCP}
+            strokeWidth="1" strokeLinecap="round" strokeOpacity="0.4"
             strokeDasharray={renderState?.connectionStyle === 'dashed' ? '2,2' : 'none'}
           />
 
@@ -168,37 +144,21 @@ const TcpHandshakeDemo = () => {
               cx={20 + (80 - 20) * Math.max(0, Math.min(1, renderState.dotPosition || 0))}
               cy="20"
               r={visualEffects.pulsing ? "2" : "1.5"}
-              fill={renderState.protocolColor || '#22c55e'}
-              filter="url(#glow)"
+              fill={renderState.protocolColor || S.protocol.TCP}
               opacity={visualEffects.blinking ? "0.5" : "1"}
             >
               {visualEffects.pulsing && (
-                <animate
-                  attributeName="r"
-                  values="1.5;2.5;1.5"
-                  dur="1s"
-                  repeatCount="indefinite"
-                />
+                <animate attributeName="r" values="1.5;2.5;1.5" dur="1s" repeatCount="indefinite" />
               )}
               {visualEffects.blinking && (
-                <animate
-                  attributeName="opacity"
-                  values="0.3;1;0.3"
-                  dur="0.8s"
-                  repeatCount="indefinite"
-                />
+                <animate attributeName="opacity" values="0.3;1;0.3" dur="0.8s" repeatCount="indefinite" />
               )}
             </circle>
           )}
 
           {/* 階段標籤 */}
           {currentStage && (
-            <text
-              x="50"
-              y="12"
-              textAnchor="middle"
-              className="text-[2.5px] fill-slate-200 font-semibold"
-            >
+            <text x="50" y="12" textAnchor="middle" fill={S.text.primary} fontSize="2.5" fontWeight="600">
               {currentStage.label || currentStage.step}
             </text>
           )}
@@ -218,30 +178,30 @@ const TcpHandshakeDemo = () => {
         playbackSpeed={playbackSpeed}
         onSpeedChange={handleSpeedChange}
         isCompleted={renderState?.isCompleted || false}
-        className="mb-4"
+        wrapperStyle={{ marginBottom: 16 }}
       />
 
       {/* 階段資訊 */}
       {currentStage && (
-        <div className="bg-slate-800 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-slate-200 mb-2">當前階段</h3>
-          <div className="space-y-2 text-xs text-slate-400">
-            <div className="flex justify-between">
+        <div style={{ background: S.surface, borderRadius: S.radius.sm, padding: 16, marginTop: 16 }}>
+          <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: S.text.primary, marginBottom: 8, marginTop: 0 }}>當前階段</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.75rem', color: S.text.secondary }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>階段:</span>
-              <span className="text-slate-200">{currentStage.label || currentStage.step}</span>
+              <span style={{ color: S.text.primary }}>{currentStage.label || currentStage.step}</span>
             </div>
-            <div className="flex justify-between">
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>方向:</span>
-              <span className="text-slate-200">{currentStage.direction}</span>
+              <span style={{ color: S.text.primary }}>{currentStage.direction}</span>
             </div>
-            <div className="flex justify-between">
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>持續時間:</span>
-              <span className="text-slate-200">{currentStage.duration}ms</span>
+              <span style={{ color: S.text.primary }}>{currentStage.duration}ms</span>
             </div>
             {currentStage.description && (
-              <div className="flex justify-between">
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span>描述:</span>
-                <span className="text-slate-200">{currentStage.description}</span>
+                <span style={{ color: S.text.primary }}>{currentStage.description}</span>
               </div>
             )}
           </div>

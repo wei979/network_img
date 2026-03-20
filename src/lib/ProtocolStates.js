@@ -124,7 +124,7 @@ export const PROTOCOL_STATES = {
         step: 'Request',
         label: '發送請求',
         direction: 'forward',
-        color: '#06b6d4', // 藍色
+        color: '#10b981', // HTTP 綠
         duration: 400,
         icon: '→'
       },
@@ -132,7 +132,7 @@ export const PROTOCOL_STATES = {
         step: 'Processing',
         label: '等待回應',
         direction: 'wait',
-        color: '#06b6d4',
+        color: '#10b981',
         duration: 600,
         icon: '⋯',
         pulsing: true
@@ -174,7 +174,7 @@ export const PROTOCOL_STATES = {
         step: 'GET', 
         label: '發送請求',
         direction: 'forward', 
-        color: '#06b6d4', // 藍色
+        color: '#10b981', // HTTP 綠
         duration: 200,
         icon: '→'
       },
@@ -182,7 +182,7 @@ export const PROTOCOL_STATES = {
         step: 'Processing', 
         label: '等待回應',
         direction: 'wait', 
-        color: '#06b6d4', 
+        color: '#10b981', 
         duration: 300,
         icon: '⋯',
         pulsing: true
@@ -294,7 +294,7 @@ export const PROTOCOL_STATES = {
         step: 'Transfer',
         label: '資料傳輸',
         direction: 'forward',
-        color: '#38bdf8', // 藍色
+        color: '#3b82f6', // UDP 藍
         duration: 800,
         icon: '→'
       },
@@ -302,13 +302,13 @@ export const PROTOCOL_STATES = {
         step: 'Response',
         label: '回應',
         direction: 'backward',
-        color: '#38bdf8',
+        color: '#3b82f6',
         duration: 800,
         icon: '←'
       }
     ],
     finalState: 'completed',
-    finalColor: '#38bdf8',
+    finalColor: '#3b82f6',
     totalDuration: 1600,
     description: 'TCP 資料傳輸'
   },
@@ -328,7 +328,7 @@ export const PROTOCOL_STATES = {
         step: 'Transfer',
         label: '資料傳輸',
         direction: 'both',
-        color: '#38bdf8', // 藍色
+        color: '#3b82f6', // UDP 藍
         duration: 1000,
         icon: '⇆'
       },
@@ -765,35 +765,35 @@ function getStatusText(statusCode) {
  * 獲取協議的預設顏色
  */
 export const PROTOCOL_COLORS = {
-  // 基本協議顏色
-  tcp: '#38bdf8',
-  udp: '#60a5fa',
-  http: '#a855f7',
-  https: '#14b8a6',
-  dns: '#f97316',
-  icmp: '#facc15',
-  ssh: '#fbbf24',
-  tls: '#fbbf24',
-  // 特定協議動畫類型顏色
-  'tcp-handshake': '#22c55e',
+  // Swiss Editorial — protocol color coding
+  tcp: '#e05a33',
+  udp: '#3b82f6',
+  http: '#10b981',
+  https: '#10b981',
+  dns: '#8b5cf6',
+  icmp: '#ef4444',
+  ssh: '#10b981',
+  tls: '#10b981',
+  // Specific protocol animation type colors
+  'tcp-handshake': '#e05a33',
   'tcp-teardown': '#ef4444',
-  'tcp-data': '#38bdf8',
-  'tcp-session': '#06b6d4',
-  'http-request': '#a855f7',
-  'https-request': '#14b8a6',
-  'dns-query': '#f97316',
-  'timeout': '#f59e0b',
-  'udp-transfer': '#60a5fa',
-  'icmp-ping': '#facc15',
+  'tcp-data': '#e05a33',
+  'tcp-session': '#e05a33',
+  'http-request': '#10b981',
+  'https-request': '#10b981',
+  'dns-query': '#8b5cf6',
+  'timeout': '#b8452a',
+  'udp-transfer': '#3b82f6',
+  'icmp-ping': '#ef4444',
   'ssh-secure': '#10b981',
-  'psh-flood': '#ec4899',
+  'psh-flood': '#ef4444',
   'syn-flood': '#ef4444',
   'fin-flood': '#dc2626',
   'tcp-flood': '#dc2626',
-  'urg-psh-fin-flood': '#9f1239',
+  'urg-psh-fin-flood': '#dc2626',
   'ack-flood': '#dc2626',
-  'rst-flood': '#f43f5e',
-  'ack-fin-flood': '#9f1239',
+  'rst-flood': '#ef4444',
+  'ack-fin-flood': '#dc2626',
 }
 
 export const PROTOCOL_LINE_STYLES = {

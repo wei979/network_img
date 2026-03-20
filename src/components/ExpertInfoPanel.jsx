@@ -1,32 +1,33 @@
 import React, { useState, useEffect } from 'react'
 import { AlertTriangle, AlertCircle, Info, Loader2, Filter } from 'lucide-react'
+import { S } from '../lib/swiss-tokens'
 
 const SEVERITY_CONFIG = {
   error: {
     icon: AlertCircle,
-    color: 'text-red-500',
-    border: 'border-red-500',
-    bg: 'bg-red-500/10',
-    badgeBg: 'bg-red-500/20',
-    badgeText: 'text-red-400',
+    color: S.protocol.ICMP,
+    border: S.protocol.ICMP,
+    bg: `${S.protocol.ICMP}18`,
+    badgeBg: `${S.protocol.ICMP}28`,
+    badgeText: S.protocol.ICMP,
     label: 'Error',
   },
   warning: {
     icon: AlertTriangle,
-    color: 'text-yellow-500',
-    border: 'border-yellow-500',
-    bg: 'bg-yellow-500/10',
-    badgeBg: 'bg-yellow-500/20',
-    badgeText: 'text-yellow-400',
+    color: '#eab308',
+    border: '#eab308',
+    bg: '#eab30818',
+    badgeBg: '#eab30828',
+    badgeText: '#fbbf24',
     label: 'Warning',
   },
   note: {
     icon: Info,
-    color: 'text-blue-400',
-    border: 'border-blue-400',
-    bg: 'bg-blue-400/10',
-    badgeBg: 'bg-blue-400/20',
-    badgeText: 'text-blue-300',
+    color: S.protocol.UDP,
+    border: S.protocol.UDP,
+    bg: `${S.protocol.UDP}18`,
+    badgeBg: `${S.protocol.UDP}28`,
+    badgeText: S.protocol.UDP,
     label: 'Note',
   },
 }
@@ -93,18 +94,24 @@ const ExpertInfoPanel = ({ visible = true, onSelectConnection }) => {
   }
 
   return (
-    <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+    <div style={{
+      background: S.surface,
+      borderRadius: S.radius.md,
+      border: `1px solid ${S.border}`,
+      overflow: 'hidden',
+      fontFamily: S.font.sans,
+    }}>
       {/* Header */}
-      <div className="px-3 py-2.5 border-b border-slate-700 bg-slate-800/80">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <AlertCircle size={14} className="text-slate-400" />
-            <span className="text-xs font-semibold text-slate-200">
+      <div style={{ padding: '10px 12px', borderBottom: `1px solid ${S.border}`, background: S.surface }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <AlertCircle size={14} style={{ color: S.text.secondary }} />
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: S.text.primary }}>
               Expert Info
             </span>
           </div>
           {summary && (
-            <span className="text-xs text-slate-500">
+            <span style={{ fontSize: '0.75rem', color: S.text.tertiary }}>
               {summary.total} events
             </span>
           )}
@@ -113,8 +120,8 @@ const ExpertInfoPanel = ({ visible = true, onSelectConnection }) => {
 
       {/* Summary Bar */}
       {summary && !loading && !error && (
-        <div className="px-3 py-2 border-b border-slate-700/60 bg-slate-900/40">
-          <div className="flex items-center gap-3">
+        <div style={{ padding: '8px 12px', borderBottom: `1px solid ${S.border}`, background: S.bgRaised }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {[
               { key: 'errors', severity: 'error' },
               { key: 'warnings', severity: 'warning' },
@@ -124,9 +131,9 @@ const ExpertInfoPanel = ({ visible = true, onSelectConnection }) => {
               const Icon = config.icon
               const count = summary[key] || 0
               return (
-                <div key={key} className="flex items-center gap-1">
-                  <Icon size={11} className={config.color} />
-                  <span className={`text-xs font-mono ${config.color}`}>
+                <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <Icon size={11} style={{ color: config.color }} />
+                  <span style={{ fontSize: '0.75rem', fontFamily: S.font.mono, color: config.color }}>
                     {count}
                   </span>
                 </div>
@@ -137,9 +144,9 @@ const ExpertInfoPanel = ({ visible = true, onSelectConnection }) => {
       )}
 
       {/* Filter Buttons */}
-      <div className="px-3 py-2 border-b border-slate-700/60 bg-slate-850">
-        <div className="flex items-center gap-1.5">
-          <Filter size={11} className="text-slate-500 mr-1 shrink-0" />
+      <div style={{ padding: '8px 12px', borderBottom: `1px solid ${S.border}`, background: S.bgRaised }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Filter size={11} style={{ color: S.text.tertiary, marginRight: 4, flexShrink: 0 }} />
           {/* All toggle */}
           <button
             type="button"
@@ -151,11 +158,13 @@ const ExpertInfoPanel = ({ visible = true, onSelectConnection }) => {
                 note: !allActive,
               })
             }}
-            className={`px-2 py-0.5 rounded text-xs font-medium transition-all duration-150 border ${
-              activeFilterCount === 3
-                ? 'border-slate-500 bg-slate-700/80 text-slate-200'
-                : 'border-slate-700 bg-slate-800/50 text-slate-500 hover:text-slate-300'
-            }`}
+            style={{
+              padding: '2px 8px', borderRadius: S.radius.sm, fontSize: '0.75rem', fontWeight: 500,
+              border: `1px solid ${activeFilterCount === 3 ? S.borderStrong : S.border}`,
+              background: activeFilterCount === 3 ? S.surfaceHover : 'transparent',
+              color: activeFilterCount === 3 ? S.text.primary : S.text.tertiary,
+              cursor: 'pointer',
+            }}
           >
             All
           </button>
@@ -167,11 +176,15 @@ const ExpertInfoPanel = ({ visible = true, onSelectConnection }) => {
                 key={key}
                 type="button"
                 onClick={() => toggleFilter(key)}
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition-all duration-150 border ${
-                  isActive
-                    ? `${config.border} ${config.bg} ${config.badgeText}`
-                    : 'border-slate-700 bg-slate-800/50 text-slate-500 hover:text-slate-300'
-                }`}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  padding: '2px 8px', borderRadius: S.radius.sm,
+                  fontSize: '0.75rem', fontWeight: 500,
+                  border: `1px solid ${isActive ? config.border : S.border}`,
+                  background: isActive ? config.bg : 'transparent',
+                  color: isActive ? config.badgeText : S.text.tertiary,
+                  cursor: 'pointer',
+                }}
               >
                 {config.label}
               </button>
@@ -181,66 +194,78 @@ const ExpertInfoPanel = ({ visible = true, onSelectConnection }) => {
       </div>
 
       {/* Content Area */}
-      <div className="max-h-80 overflow-y-auto">
+      <div style={{ maxHeight: 320, overflowY: 'auto' }}>
         {loading ? (
-          <div className="px-3 py-8 text-center">
+          <div style={{ padding: '32px 12px', textAlign: 'center' }}>
             <Loader2
               size={20}
-              className="mx-auto text-slate-500 animate-spin"
+              style={{ color: S.text.tertiary, margin: '0 auto', display: 'block', animation: 'spin 1s linear infinite' }}
             />
-            <p className="text-xs text-slate-500 mt-2">Loading events...</p>
+            <p style={{ fontSize: '0.75rem', color: S.text.tertiary, marginTop: 8 }}>Loading events...</p>
           </div>
         ) : error ? (
-          <div className="px-3 py-8 text-center">
-            <AlertTriangle size={20} className="mx-auto text-yellow-500" />
-            <p className="text-xs text-slate-400 mt-2">
+          <div style={{ padding: '32px 12px', textAlign: 'center' }}>
+            <AlertTriangle size={20} style={{ color: '#eab308', margin: '0 auto', display: 'block' }} />
+            <p style={{ fontSize: '0.75rem', color: S.text.secondary, marginTop: 8 }}>
               Failed to load expert info
             </p>
-            <p className="text-xs text-slate-600 mt-1">{error}</p>
+            <p style={{ fontSize: '0.75rem', color: S.text.faint, marginTop: 4 }}>{error}</p>
           </div>
         ) : filteredEvents.length === 0 ? (
-          <div className="px-3 py-8 text-center">
-            <Info size={20} className="mx-auto text-slate-600" />
-            <p className="text-xs text-slate-500 mt-2">
+          <div style={{ padding: '32px 12px', textAlign: 'center' }}>
+            <Info size={20} style={{ color: S.text.faint, margin: '0 auto', display: 'block' }} />
+            <p style={{ fontSize: '0.75rem', color: S.text.tertiary, marginTop: 8 }}>
               {events.length === 0
                 ? 'No expert info events detected'
                 : 'No events match the current filters'}
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-700/40">
+          <div>
             {filteredEvents.map((event, index) => {
               const config = getSeverityConfig(event.severity)
               const Icon = config.icon
               return (
                 <div
                   key={`${event.packetIndex}-${index}`}
-                  className={`px-3 py-2 border-l-2 ${config.border} hover:bg-slate-700/40 transition-colors duration-100 cursor-pointer`}
+                  style={{
+                    padding: '8px 12px',
+                    borderLeft: `2px solid ${config.border}`,
+                    borderBottom: `1px solid ${S.border}30`,
+                    cursor: 'pointer',
+                  }}
                   onClick={() => {
                     if (onSelectConnection && event.stream) {
                       onSelectConnection(event.stream)
                     }
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = S.surfaceHover}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
-                  <div className="flex items-start gap-2">
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                     <Icon
                       size={12}
-                      className={`${config.color} mt-0.5 shrink-0`}
+                      style={{ color: config.color, marginTop: 2, flexShrink: 0 }}
                     />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 mb-0.5">
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                         <span
-                          className={`inline-block px-1.5 py-0 rounded text-xs font-mono font-medium ${config.badgeBg} ${config.badgeText}`}
+                          style={{
+                            display: 'inline-block', padding: '0 6px',
+                            borderRadius: S.radius.sm, fontSize: '0.75rem',
+                            fontFamily: S.font.mono, fontWeight: 500,
+                            background: config.badgeBg, color: config.badgeText,
+                          }}
                         >
                           {event.type}
                         </span>
                         {event.packetIndex != null && (
-                          <span className="text-xs text-slate-600 font-mono">
+                          <span style={{ fontSize: '0.75rem', color: S.text.faint, fontFamily: S.font.mono }}>
                             #{event.packetIndex}
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-300 leading-snug break-all">
+                      <p style={{ fontSize: '0.75rem', color: S.text.primary, lineHeight: 1.5, wordBreak: 'break-all', margin: 0 }}>
                         {event.message}
                       </p>
                     </div>

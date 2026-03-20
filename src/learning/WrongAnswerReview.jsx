@@ -23,6 +23,7 @@ import {
   RotateCcw
 } from 'lucide-react'
 import { LearningStorage } from './LearningStorage'
+import { S } from '../lib/swiss-tokens'
 
 /**
  * 單一錯題卡片組件
@@ -87,51 +88,51 @@ function WrongAnswerCard({
   }, [wrongAnswer.quizId])
 
   return (
-    <div className={`
-      rounded-xl border transition-all duration-200
-      ${wrongAnswer.masteredAt
-        ? 'bg-emerald-500/10 border-emerald-500/30'
-        : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
-      }
-    `}>
+    <div
+      className="transition-all duration-200"
+      style={{
+        borderRadius: S.radius.md,
+        background: wrongAnswer.masteredAt ? `${S.protocol.HTTP}0c` : S.surface,
+        border: `1px solid ${wrongAnswer.masteredAt ? `${S.protocol.HTTP}30` : S.border}`,
+      }}
+    >
       {/* 卡片頭部 */}
       <button
         onClick={onToggle}
         className="w-full p-4 flex items-start gap-3 text-left"
       >
-        <div className={`
-          flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center
-          ${wrongAnswer.masteredAt
-            ? 'bg-emerald-500/20'
-            : 'bg-red-500/20'
-          }
-        `}>
+        <div
+          className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+          style={{
+            background: wrongAnswer.masteredAt ? `${S.protocol.HTTP}20` : `${S.protocol.ICMP}20`,
+          }}
+        >
           {wrongAnswer.masteredAt ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4" style={{ color: S.protocol.HTTP }} />
           ) : (
-            <XCircle className="w-4 h-4 text-red-400" />
+            <XCircle className="w-4 h-4" style={{ color: S.protocol.ICMP }} />
           )}
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs text-slate-500">{levelName}</span>
+            <span className="text-xs" style={{ color: S.text.tertiary }}>{levelName}</span>
             {wrongAnswer.reviewCount > 0 && (
-              <span className="text-xs text-amber-400">
+              <span className="text-xs" style={{ color: S.accent }}>
                 已複習 {wrongAnswer.reviewCount} 次
               </span>
             )}
           </div>
-          <p className="text-white font-medium line-clamp-2">
+          <p className="font-medium line-clamp-2" style={{ color: S.text.primary }}>
             {wrongAnswer.question}
           </p>
         </div>
 
         <div className="flex-shrink-0">
           {isExpanded ? (
-            <ChevronUp className="w-5 h-5 text-slate-400" />
+            <ChevronUp className="w-5 h-5" style={{ color: S.text.tertiary }} />
           ) : (
-            <ChevronDown className="w-5 h-5 text-slate-400" />
+            <ChevronDown className="w-5 h-5" style={{ color: S.text.tertiary }} />
           )}
         </div>
       </button>
@@ -146,20 +147,32 @@ function WrongAnswerCard({
               const isCorrectAnswer = wrongAnswer.correctAnswer === index
               const wasUserAnswer = wrongAnswer.userAnswer === index
 
-              let optionStyle = 'border-slate-600 hover:border-cyan-500/50'
+              let borderColor = S.border
+              let bg = 'transparent'
+              let textColor = S.text.secondary
 
               if (hasAnswered || showAnswer) {
                 if (isCorrectAnswer) {
-                  optionStyle = 'border-emerald-500 bg-emerald-500/20'
+                  borderColor = S.protocol.HTTP
+                  bg = `${S.protocol.HTTP}18`
+                  textColor = S.protocol.HTTP
                 } else if (isSelected && !isCorrectAnswer) {
-                  optionStyle = 'border-red-500 bg-red-500/20'
+                  borderColor = S.protocol.ICMP
+                  bg = `${S.protocol.ICMP}18`
+                  textColor = S.protocol.ICMP
                 } else if (wasUserAnswer && !showAnswer) {
-                  optionStyle = 'border-amber-500/50 bg-amber-500/10'
+                  borderColor = `${S.accent}60`
+                  bg = `${S.accent}0c`
+                  textColor = S.accent
                 } else {
-                  optionStyle = 'border-slate-700 opacity-50'
+                  borderColor = S.border
+                  bg = 'transparent'
+                  textColor = S.text.faint
                 }
               } else if (isSelected) {
-                optionStyle = 'border-cyan-500 bg-cyan-500/20'
+                borderColor = S.accent
+                bg = `${S.accent}18`
+                textColor = S.accent
               }
 
               return (
@@ -167,40 +180,46 @@ function WrongAnswerCard({
                   key={index}
                   onClick={() => handleSelectAnswer(index)}
                   disabled={hasAnswered || showAnswer}
-                  className={`
-                    w-full p-3 rounded-lg border-2 transition-all duration-200
-                    flex items-center gap-3 text-left text-sm
-                    ${optionStyle}
-                    ${(hasAnswered || showAnswer) ? 'cursor-default' : 'cursor-pointer'}
-                  `}
+                  className="w-full p-3 transition-all duration-200 flex items-center gap-3 text-left text-sm"
+                  style={{
+                    borderRadius: S.radius.sm,
+                    border: `2px solid ${borderColor}`,
+                    background: bg,
+                    cursor: (hasAnswered || showAnswer) ? 'default' : 'pointer',
+                  }}
                 >
-                  <div className={`
-                    w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0
-                    ${isSelected ? 'border-cyan-400' : 'border-slate-500'}
-                    ${(hasAnswered || showAnswer) && isCorrectAnswer ? 'border-emerald-400 bg-emerald-400' : ''}
-                    ${(hasAnswered || showAnswer) && isSelected && !isCorrectAnswer ? 'border-red-400 bg-red-400' : ''}
-                  `}>
+                  <div
+                    className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{
+                      border: `2px solid ${
+                        (hasAnswered || showAnswer) && isCorrectAnswer ? S.protocol.HTTP
+                        : (hasAnswered || showAnswer) && isSelected && !isCorrectAnswer ? S.protocol.ICMP
+                        : isSelected ? S.accent
+                        : S.text.tertiary
+                      }`,
+                      background:
+                        (hasAnswered || showAnswer) && isCorrectAnswer ? S.protocol.HTTP
+                        : (hasAnswered || showAnswer) && isSelected && !isCorrectAnswer ? S.protocol.ICMP
+                        : 'transparent',
+                    }}
+                  >
                     {(hasAnswered || showAnswer) && isCorrectAnswer && (
-                      <CheckCircle2 className="w-3 h-3 text-white" />
+                      <CheckCircle2 className="w-3 h-3" style={{ color: '#fff' }} />
                     )}
                     {hasAnswered && isSelected && !isCorrectAnswer && (
-                      <XCircle className="w-3 h-3 text-white" />
+                      <XCircle className="w-3 h-3" style={{ color: '#fff' }} />
                     )}
                     {!hasAnswered && !showAnswer && isSelected && (
-                      <div className="w-2 h-2 rounded-full bg-cyan-400" />
+                      <div className="w-2 h-2 rounded-full" style={{ background: S.accent }} />
                     )}
                   </div>
 
-                  <span className={`
-                    ${(hasAnswered || showAnswer) && isCorrectAnswer ? 'text-emerald-300 font-medium' : ''}
-                    ${hasAnswered && isSelected && !isCorrectAnswer ? 'text-red-300' : ''}
-                    ${!hasAnswered && !showAnswer ? 'text-slate-200' : ''}
-                  `}>
+                  <span style={{ color: textColor }}>
                     {option}
                   </span>
 
                   {showAnswer && wasUserAnswer && !isCorrectAnswer && (
-                    <span className="ml-auto text-xs text-amber-400">你的答案</span>
+                    <span className="ml-auto text-xs" style={{ color: S.accent }}>你的答案</span>
                   )}
                 </button>
               )
@@ -209,18 +228,17 @@ function WrongAnswerCard({
 
           {/* 解釋 */}
           {(hasAnswered || showAnswer) && wrongAnswer.explanation && (
-            <div className={`
-              ml-11 p-3 rounded-lg border text-sm
-              ${isCorrect
-                ? 'bg-emerald-500/10 border-emerald-500/30'
-                : 'bg-amber-500/10 border-amber-500/30'
-              }
-            `}>
+            <div
+              className="ml-11 p-3 text-sm"
+              style={{
+                borderRadius: S.radius.sm,
+                background: isCorrect ? `${S.protocol.HTTP}0c` : `${S.accent}0c`,
+                border: `1px solid ${isCorrect ? `${S.protocol.HTTP}30` : `${S.accent}30`}`,
+              }}
+            >
               <div className="flex items-start gap-2">
-                <BookOpen className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
-                  isCorrect ? 'text-emerald-400' : 'text-amber-400'
-                }`} />
-                <p className={isCorrect ? 'text-emerald-200' : 'text-amber-200'}>
+                <BookOpen className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: isCorrect ? S.protocol.HTTP : S.accent }} />
+                <p style={{ color: isCorrect ? S.protocol.HTTP : S.accent }}>
                   {wrongAnswer.explanation}
                 </p>
               </div>
@@ -234,13 +252,13 @@ function WrongAnswerCard({
                 <button
                   onClick={handleSubmitAnswer}
                   disabled={selectedAnswer === null}
-                  className={`
-                    px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-all
-                    ${selectedAnswer !== null
-                      ? 'bg-cyan-600 hover:bg-cyan-500 text-white'
-                      : 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                    }
-                  `}
+                  className="px-4 py-2 font-medium text-sm flex items-center gap-2 transition-all"
+                  style={{
+                    borderRadius: S.radius.sm,
+                    background: selectedAnswer !== null ? S.accent : S.surface,
+                    color: selectedAnswer !== null ? '#fff' : S.text.faint,
+                    cursor: selectedAnswer !== null ? 'pointer' : 'not-allowed',
+                  }}
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   確認答案
@@ -248,14 +266,20 @@ function WrongAnswerCard({
               ) : (
                 <>
                   {isCorrect ? (
-                    <div className="flex items-center gap-2 text-emerald-400">
+                    <div className="flex items-center gap-2" style={{ color: S.protocol.HTTP }}>
                       <Award className="w-4 h-4" />
                       <span className="text-sm font-medium">已掌握！</span>
                     </div>
                   ) : (
                     <button
                       onClick={handleReset}
-                      className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm flex items-center gap-2"
+                      className="px-4 py-2 text-sm flex items-center gap-2"
+                      style={{
+                        borderRadius: S.radius.sm,
+                        background: S.surface,
+                        color: S.text.primary,
+                        border: `1px solid ${S.border}`,
+                      }}
                     >
                       <RotateCcw className="w-4 h-4" />
                       再試一次
@@ -333,62 +357,75 @@ export default function WrongAnswerReview({
     <div className="fixed inset-0 z-[9998] flex items-center justify-center">
       {/* 背景遮罩 */}
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/80"
         onClick={onClose}
       />
 
       {/* 彈窗內容 */}
-      <div className="relative w-[90vw] max-w-2xl max-h-[85vh] bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col">
+      <div
+        className="relative w-[90vw] max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
+        style={{
+          background: S.bgRaised,
+          borderRadius: S.radius.lg,
+          border: `1px solid ${S.border}`,
+        }}
+      >
         {/* 標題列 */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700 bg-slate-800/50">
+        <div
+          className="flex items-center justify-between px-6 py-4"
+          style={{ borderBottom: `1px solid ${S.border}`, background: S.surface }}
+        >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-500/20 rounded-lg">
-              <AlertCircle className="w-5 h-5 text-red-400" />
+            <div className="p-2" style={{ background: `${S.protocol.ICMP}20`, borderRadius: S.radius.sm }}>
+              <AlertCircle className="w-5 h-5" style={{ color: S.protocol.ICMP }} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">錯題本</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-lg font-bold" style={{ color: S.text.primary }}>錯題本</h2>
+              <p className="text-xs" style={{ color: S.text.secondary }}>
                 複習答錯的題目，強化薄弱環節
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-slate-700 transition-colors"
+            className="p-2 transition-colors"
+            style={{ borderRadius: S.radius.sm }}
+            onMouseEnter={e => e.currentTarget.style.background = S.surfaceHover}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
           >
-            <X className="w-5 h-5 text-slate-400" />
+            <X className="w-5 h-5" style={{ color: S.text.tertiary }} />
           </button>
         </div>
 
         {/* 統計資訊 */}
         {stats && (
-          <div className="px-6 py-4 bg-slate-800/30 border-b border-slate-700/50">
+          <div className="px-6 py-4" style={{ background: `${S.surface}80`, borderBottom: `1px solid ${S.border}80` }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-6">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{stats.total}</div>
-                  <div className="text-xs text-slate-500">總錯題</div>
+                  <div className="text-2xl font-bold" style={{ color: S.text.primary, fontFamily: S.font.serif }}>{stats.total}</div>
+                  <div className="text-xs" style={{ color: S.text.tertiary }}>總錯題</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-emerald-400">{stats.mastered}</div>
-                  <div className="text-xs text-slate-500">已掌握</div>
+                  <div className="text-2xl font-bold" style={{ color: S.protocol.HTTP, fontFamily: S.font.serif }}>{stats.mastered}</div>
+                  <div className="text-xs" style={{ color: S.text.tertiary }}>已掌握</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-amber-400">{stats.unmastered}</div>
-                  <div className="text-xs text-slate-500">待複習</div>
+                  <div className="text-2xl font-bold" style={{ color: S.accent, fontFamily: S.font.serif }}>{stats.unmastered}</div>
+                  <div className="text-xs" style={{ color: S.text.tertiary }}>待複習</div>
                 </div>
               </div>
 
               {/* 掌握率進度條 */}
               <div className="w-32">
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="text-slate-500">掌握率</span>
-                  <span className="text-emerald-400">{stats.masteryRate}%</span>
+                  <span style={{ color: S.text.tertiary }}>掌握率</span>
+                  <span style={{ color: S.protocol.HTTP }}>{stats.masteryRate}%</span>
                 </div>
-                <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                <div className="h-2 overflow-hidden" style={{ background: S.border, borderRadius: 9999 }}>
                   <div
-                    className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all duration-500"
-                    style={{ width: `${stats.masteryRate}%` }}
+                    className="h-full transition-all duration-500"
+                    style={{ width: `${stats.masteryRate}%`, background: S.protocol.HTTP, borderRadius: 9999 }}
                   />
                 </div>
               </div>
@@ -397,14 +434,22 @@ export default function WrongAnswerReview({
         )}
 
         {/* 工具列 */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-slate-700/50">
+        <div
+          className="flex items-center justify-between px-6 py-3"
+          style={{ borderBottom: `1px solid ${S.border}80` }}
+        >
           {/* 篩選 */}
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-slate-500" />
+            <Filter className="w-4 h-4" style={{ color: S.text.tertiary }} />
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="bg-slate-700 border-none rounded-lg px-3 py-1.5 text-sm text-white focus:ring-2 focus:ring-cyan-500"
+              className="border-none px-3 py-1.5 text-sm focus:outline-none"
+              style={{
+                background: S.surface,
+                color: S.text.primary,
+                borderRadius: S.radius.sm,
+              }}
             >
               <option value="all">全部錯題</option>
               <option value="unmastered">待複習</option>
@@ -414,12 +459,13 @@ export default function WrongAnswerReview({
 
           {/* 操作按鈕 */}
           <div className="flex items-center gap-2">
-            <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: S.text.secondary }}>
               <input
                 type="checkbox"
                 checked={showAnswers}
                 onChange={(e) => setShowAnswers(e.target.checked)}
-                className="rounded bg-slate-700 border-slate-600 text-cyan-500 focus:ring-cyan-500"
+                className="rounded"
+                style={{ accentColor: S.accent }}
               />
               顯示答案
             </label>
@@ -427,8 +473,11 @@ export default function WrongAnswerReview({
             {stats?.mastered > 0 && (
               <button
                 onClick={handleClearMastered}
-                className="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-amber-400 transition-colors"
+                className="p-2 transition-colors"
+                style={{ borderRadius: S.radius.sm, color: S.text.tertiary }}
                 title="清除已掌握"
+                onMouseEnter={e => { e.currentTarget.style.background = S.surfaceHover; e.currentTarget.style.color = S.accent }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = S.text.tertiary }}
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
@@ -437,8 +486,11 @@ export default function WrongAnswerReview({
             {stats?.total > 0 && (
               <button
                 onClick={handleClearAll}
-                className="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-red-400 transition-colors"
+                className="p-2 transition-colors"
+                style={{ borderRadius: S.radius.sm, color: S.text.tertiary }}
                 title="清除全部"
+                onMouseEnter={e => { e.currentTarget.style.background = S.surfaceHover; e.currentTarget.style.color = S.protocol.ICMP }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = S.text.tertiary }}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -450,13 +502,16 @@ export default function WrongAnswerReview({
         <div className="flex-1 overflow-auto p-4 space-y-3">
           {filteredWrongAnswers.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mb-4">
-                <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                style={{ background: `${S.protocol.HTTP}20` }}
+              >
+                <CheckCircle2 className="w-8 h-8" style={{ color: S.protocol.HTTP }} />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">
+              <h3 className="text-lg font-semibold mb-2" style={{ color: S.text.primary }}>
                 {filter === 'unmastered' ? '沒有待複習的錯題' : '沒有錯題記錄'}
               </h3>
-              <p className="text-slate-400 text-sm">
+              <p className="text-sm" style={{ color: S.text.secondary }}>
                 {filter === 'unmastered'
                   ? '太棒了！你已經掌握了所有錯題'
                   : '完成測驗後，答錯的題目會自動記錄在這裡'
@@ -479,9 +534,9 @@ export default function WrongAnswerReview({
 
         {/* 底部提示 */}
         {filteredWrongAnswers.length > 0 && !showAnswers && (
-          <div className="px-6 py-3 bg-slate-800/50 border-t border-slate-700 text-center">
-            <p className="text-xs text-slate-500">
-              💡 點擊題目展開後重新作答，答對即標記為「已掌握」
+          <div className="px-6 py-3 text-center" style={{ background: S.surface, borderTop: `1px solid ${S.border}` }}>
+            <p className="text-xs" style={{ color: S.text.tertiary }}>
+              點擊題目展開後重新作答，答對即標記為「已掌握」
             </p>
           </div>
         )}

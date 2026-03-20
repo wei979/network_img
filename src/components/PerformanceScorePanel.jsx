@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
+import { S } from '../lib/swiss-tokens'
 
 const GRADE_COLORS = {
-  'A+': 'text-emerald-400',
-  'A': 'text-green-400',
-  'B': 'text-yellow-400',
-  'C': 'text-orange-400',
-  'D': 'text-red-400',
-  'F': 'text-red-500',
+  'A+': '#34d399',
+  'A': '#4ade80',
+  'B': '#facc15',
+  'C': '#fb923c',
+  'D': '#f87171',
+  'F': '#ef4444',
 }
 
 const RING_COLORS = {
@@ -28,15 +29,14 @@ function ScoreRing({ score, grade, size = 80 }) {
   return (
     <svg width={size} height={size} className="flex-shrink-0">
       <circle cx={size / 2} cy={size / 2} r={r}
-        fill="none" stroke="currentColor" strokeWidth={4}
-        className="text-slate-700" />
+        fill="none" stroke={S.border} strokeWidth={4} />
       <circle cx={size / 2} cy={size / 2} r={r}
         fill="none" stroke={color} strokeWidth={4}
         strokeDasharray={circumference} strokeDashoffset={offset}
         strokeLinecap="round"
         transform={`rotate(-90 ${size / 2} ${size / 2})`} />
       <text x={size / 2} y={size / 2 - 4} textAnchor="middle"
-        className="fill-slate-100 text-lg font-bold" fontSize={size * 0.22}>
+        fill={S.text.primary} fontSize={size * 0.22} fontWeight="bold">
         {score}
       </text>
       <text x={size / 2} y={size / 2 + 12} textAnchor="middle"
@@ -50,11 +50,11 @@ function ScoreRing({ score, grade, size = 80 }) {
 function MetricCard({ label, score, grade, detail }) {
   const color = GRADE_COLORS[grade] || GRADE_COLORS.F
   return (
-    <div className="flex-1 bg-slate-800/60 rounded-lg p-2 text-center">
-      <div className="text-[10px] text-slate-400 mb-1">{label}</div>
-      <div className={`text-lg font-bold ${color}`}>{score}</div>
-      <div className={`text-[10px] font-semibold ${color}`}>{grade}</div>
-      <div className="text-[9px] text-slate-500 mt-0.5">{detail}</div>
+    <div className="flex-1 rounded-[4px] p-2 text-center" style={{ background: S.surface }}>
+      <div className="text-[10px] mb-1" style={{ color: S.text.secondary }}>{label}</div>
+      <div className="text-lg font-bold" style={{ color }}>{score}</div>
+      <div className="text-[10px] font-semibold" style={{ color }}>{grade}</div>
+      <div className="text-[9px] mt-0.5" style={{ color: S.text.tertiary }}>{detail}</div>
     </div>
   )
 }
@@ -85,14 +85,14 @@ export default function PerformanceScorePanel() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-6">
-        <Loader2 className="w-5 h-5 animate-spin text-slate-500" />
+        <Loader2 className="w-5 h-5 animate-spin" style={{ color: S.text.tertiary }} />
       </div>
     )
   }
 
   if (!data || !data.overall) {
     return (
-      <div className="text-center text-slate-500 text-xs py-4">
+      <div className="text-center text-xs py-4" style={{ color: S.text.tertiary }}>
         請先上傳 PCAP 檔案以取得效能分析
       </div>
     )
@@ -101,12 +101,12 @@ export default function PerformanceScorePanel() {
   const { overall, grade, latency, packet_loss, throughput } = data
 
   return (
-    <div className="mb-3 bg-slate-800/40 rounded-xl p-3 border border-slate-700/50">
+    <div className="mb-3 rounded-[4px] p-3" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
       <div className="flex items-center gap-3 mb-2">
         <ScoreRing score={overall} grade={grade} size={72} />
         <div>
-          <div className="text-sm font-semibold text-slate-200">網路效能</div>
-          <div className="text-[10px] text-slate-400">延遲×40% + 丟包×35% + 吞吐×25%</div>
+          <div className="text-sm font-semibold" style={{ color: S.text.primary }}>網路效能</div>
+          <div className="text-[10px]" style={{ color: S.text.secondary }}>延遲x40% + 丟包x35% + 吞吐x25%</div>
         </div>
       </div>
       <div className="flex gap-1.5">

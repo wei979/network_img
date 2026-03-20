@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Play, Pause, RotateCcw, WifiOff } from 'lucide-react'
 import { ProtocolAnimationController } from '../lib/ProtocolAnimationController'
+import { S } from '../lib/swiss-tokens'
 import TimelineControl from './TimelineControl'
 
 const TcpTeardownDemo = () => {
@@ -12,104 +13,46 @@ const TcpTeardownDemo = () => {
   const lastTickRef = useRef(performance.now())
 
   useEffect(() => {
-    // 建立 TCP 四次揮手動畫控制器
     const controller = ProtocolAnimationController.createTcpTeardown(
       'demo-tcp-teardown-192.168.1.100-80-192.168.1.200-12345',
       {
-        onStageEnter: (stage) => {
-          console.log('進入階段:', stage)
-        },
-        onComplete: () => {
-          console.log('TCP 四次揮手完成')
-          setIsPlaying(false)
-        }
+        onStageEnter: (stage) => console.log('進入階段:', stage),
+        onComplete: () => { console.log('TCP 四次揮手完成'); setIsPlaying(false) }
       }
     )
-
     controllerRef.current = controller
     controller.reset()
     controller.setPlaybackSpeed(playbackSpeed)
     setRenderState(controller.getRenderableState())
-
-    return () => {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current)
-      }
-    }
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
   }, [])
 
   useEffect(() => {
     if (!isPlaying || !controllerRef.current) {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current)
-        rafRef.current = null
-      }
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
       return
     }
-
     lastTickRef.current = performance.now()
-
     const tick = (timestamp) => {
       const delta = timestamp - lastTickRef.current
       lastTickRef.current = timestamp
-
       controllerRef.current.advance(delta)
       const newState = controllerRef.current.getRenderableState()
       setRenderState(newState)
-
-      if (isPlaying && !newState.isCompleted) {
-        rafRef.current = requestAnimationFrame(tick)
-      } else if (newState.isCompleted) {
-        setIsPlaying(false)
-      }
+      if (isPlaying && !newState.isCompleted) rafRef.current = requestAnimationFrame(tick)
+      else if (newState.isCompleted) setIsPlaying(false)
     }
-
     rafRef.current = requestAnimationFrame(tick)
-
-    return () => {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current)
-        rafRef.current = null
-      }
-    }
+    return () => { if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null } }
   }, [isPlaying])
 
-  useEffect(() => {
-    if (controllerRef.current) {
-      controllerRef.current.setPlaybackSpeed(playbackSpeed)
-    }
-  }, [playbackSpeed])
+  useEffect(() => { if (controllerRef.current) controllerRef.current.setPlaybackSpeed(playbackSpeed) }, [playbackSpeed])
 
-  const handlePlay = () => {
-    setIsPlaying(true)
-  }
-
-  const handlePause = () => {
-    setIsPlaying(false)
-  }
-
-  const handleReset = () => {
-    setIsPlaying(false)
-    if (controllerRef.current) {
-      controllerRef.current.reset()
-      controllerRef.current.setPlaybackSpeed(playbackSpeed)
-      setRenderState(controllerRef.current.getRenderableState())
-    }
-  }
-
-  const handleSeek = (progressRatio) => {
-    if (controllerRef.current) {
-      controllerRef.current.seekToProgress(progressRatio)
-      setRenderState(controllerRef.current.getRenderableState())
-    }
-  }
-
-  const handleSpeedChange = (nextSpeed) => {
-    setPlaybackSpeed(nextSpeed)
-    if (controllerRef.current) {
-      controllerRef.current.setPlaybackSpeed(nextSpeed)
-    }
-  }
+  const handlePlay = () => setIsPlaying(true)
+  const handlePause = () => setIsPlaying(false)
+  const handleReset = () => { setIsPlaying(false); if (controllerRef.current) { controllerRef.current.reset(); controllerRef.current.setPlaybackSpeed(playbackSpeed); setRenderState(controllerRef.current.getRenderableState()) } }
+  const handleSeek = (p) => { if (controllerRef.current) { controllerRef.current.seekToProgress(p); setRenderState(controllerRef.current.getRenderableState()) } }
+  const handleSpeedChange = (s) => { setPlaybackSpeed(s); if (controllerRef.current) controllerRef.current.setPlaybackSpeed(s) }
 
   const timelineProgress = renderState?.timelineProgress || 0
   const totalDuration = controllerRef.current?.totalDuration || 100
@@ -119,186 +62,86 @@ const TcpTeardownDemo = () => {
   const visualEffects = renderState?.visualEffects || {}
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-slate-900 rounded-lg border border-slate-700">
-      <div className="flex items-center gap-3 mb-6">
-        <WifiOff className="w-6 h-6 text-red-400" />
-        <h2 className="text-xl font-semibold text-slate-100">TCP 四次揮手演示</h2>
+    <div style={{ maxWidth: '56rem', margin: '0 auto', padding: 24, background: S.bg, borderRadius: S.radius.md, border: `1px solid ${S.border}`, fontFamily: S.font.sans }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <WifiOff size={24} style={{ color: S.protocol.ICMP }} />
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: S.text.primary, margin: 0 }}>TCP 四次揮手演示</h2>
       </div>
 
-      {/* 動畫視覺化區域 */}
-      <div className="bg-slate-800 rounded-lg p-6 mb-6">
-        <svg viewBox="0 0 100 40" className="w-full h-32 text-slate-400">
-          <defs>
-            <filter id="glow-teardown" filterUnits="userSpaceOnUse">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="1" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
-          {/* 客戶端節點 */}
-          <circle cx="20" cy="20" r="3" fill="#1f2937" stroke="#ef4444" strokeWidth="0.5" filter="url(#glow-teardown)" />
-          <text x="20" y="30" textAnchor="middle" className="text-[3px] fill-slate-200 font-semibold">
-            客戶端
-          </text>
-
-          {/* 伺服器節點 */}
-          <circle cx="80" cy="20" r="3" fill="#1f2937" stroke="#ef4444" strokeWidth="0.5" filter="url(#glow-teardown)" />
-          <text x="80" y="30" textAnchor="middle" className="text-[3px] fill-slate-200 font-semibold">
-            伺服器
-          </text>
-
-          {/* 連接線 */}
-          <line
-            x1="20"
-            y1="20"
-            x2="80"
-            y2="20"
-            stroke={renderState?.protocolColor || '#ef4444'}
-            strokeWidth="1"
-            strokeLinecap="round"
-            strokeOpacity="0.4"
-            strokeDasharray={renderState?.connectionStyle === 'dashed' ? '2,2' : 'none'}
-          />
-
-          {/* 動畫圓點 */}
+      <div style={{ background: S.surface, borderRadius: S.radius.sm, padding: 24, marginBottom: 24 }}>
+        <svg viewBox="0 0 100 40" style={{ width: '100%', height: '8rem' }}>
+          <circle cx="20" cy="20" r="3" fill={S.bg} stroke={S.protocol.ICMP} strokeWidth="0.5" />
+          <text x="20" y="30" textAnchor="middle" fill={S.text.primary} fontSize="3" fontWeight="600">{'\u5BA2\u6236\u7AEF'}</text>
+          <circle cx="80" cy="20" r="3" fill={S.bg} stroke={S.protocol.ICMP} strokeWidth="0.5" />
+          <text x="80" y="30" textAnchor="middle" fill={S.text.primary} fontSize="3" fontWeight="600">{'\u4F3A\u670D\u5668'}</text>
+          <line x1="20" y1="20" x2="80" y2="20" stroke={renderState?.protocolColor || S.protocol.ICMP} strokeWidth="1" strokeLinecap="round" strokeOpacity="0.4" strokeDasharray={renderState?.connectionStyle === 'dashed' ? '2,2' : 'none'} />
           {renderState && (
-            <circle
-              cx={20 + (80 - 20) * Math.max(0, Math.min(1, renderState.dotPosition || 0))}
-              cy="20"
-              r={visualEffects.pulsing ? "2" : "1.5"}
-              fill={renderState.protocolColor || '#ef4444'}
-              filter="url(#glow-teardown)"
-              opacity={visualEffects.blinking ? "0.5" : "1"}
-            >
-              {visualEffects.pulsing && (
-                <animate
-                  attributeName="r"
-                  values="1.5;2.5;1.5"
-                  dur="1s"
-                  repeatCount="indefinite"
-                />
-              )}
-              {visualEffects.blinking && (
-                <animate
-                  attributeName="opacity"
-                  values="0.3;1;0.3"
-                  dur="0.8s"
-                  repeatCount="indefinite"
-                />
-              )}
+            <circle cx={20 + 60 * Math.max(0, Math.min(1, renderState.dotPosition || 0))} cy="20" r={visualEffects.pulsing ? "2" : "1.5"} fill={renderState.protocolColor || S.protocol.ICMP} opacity={visualEffects.blinking ? "0.5" : "1"}>
+              {visualEffects.pulsing && <animate attributeName="r" values="1.5;2.5;1.5" dur="1s" repeatCount="indefinite" />}
+              {visualEffects.blinking && <animate attributeName="opacity" values="0.3;1;0.3" dur="0.8s" repeatCount="indefinite" />}
             </circle>
           )}
-
-          {/* 階段標籤 */}
-          {currentStage && (
-            <text
-              x="50"
-              y="12"
-              textAnchor="middle"
-              className="text-[2.5px] fill-slate-200 font-semibold"
-            >
-              {currentStage.label || currentStage.step}
-            </text>
-          )}
+          {currentStage && <text x="50" y="12" textAnchor="middle" fill={S.text.primary} fontSize="2.5" fontWeight="600">{currentStage.label || currentStage.step}</text>}
         </svg>
       </div>
 
-      <TimelineControl
-        isPlaying={isPlaying}
-        onPlay={handlePlay}
-        onPause={handlePause}
-        onReset={handleReset}
-        progress={timelineProgress}
-        onSeek={handleSeek}
-        currentTime={currentTimeValue}
-        duration={totalDuration}
-        playbackSpeed={playbackSpeed}
-        onSpeedChange={handleSpeedChange}
-        isCompleted={renderState?.isCompleted || false}
-        className="mb-4"
-        showTimeDisplay={false}
-      />
+      <TimelineControl isPlaying={isPlaying} onPlay={handlePlay} onPause={handlePause} onReset={handleReset} progress={timelineProgress} onSeek={handleSeek} currentTime={currentTimeValue} duration={totalDuration} playbackSpeed={playbackSpeed} onSpeedChange={handleSpeedChange} isCompleted={renderState?.isCompleted || false} wrapperStyle={{ marginBottom: 16 }} showTimeDisplay={false} />
 
       {/* 控制面板 */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={isPlaying ? handlePause : handlePlay}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-            disabled={renderState?.isCompleted}
-          >
-            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, marginTop: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={isPlaying ? handlePause : handlePlay} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: S.accent, color: S.text.primary, borderRadius: S.radius.sm, border: 'none', cursor: 'pointer' }} disabled={renderState?.isCompleted}>
+            {isPlaying ? <Pause size={16} /> : <Play size={16} />}
             {isPlaying ? '暫停' : '播放'}
           </button>
-          
-          <button
-            onClick={handleReset}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors"
-          >
-            <RotateCcw className="w-4 h-4" />
+          <button onClick={handleReset} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: S.surfaceHover, color: S.text.primary, borderRadius: S.radius.sm, border: 'none', cursor: 'pointer' }}>
+            <RotateCcw size={16} />
             重設
           </button>
         </div>
-
-        <div className="text-sm text-slate-400">
-          進度: {stageProgress}%
-        </div>
+        <div style={{ fontSize: '0.875rem', color: S.text.secondary }}>進度: {stageProgress}%</div>
       </div>
 
       {/* 階段資訊 */}
-      <div className="bg-slate-800 rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-slate-100 mb-3">當前階段</h3>
-        
+      <div style={{ background: S.surface, borderRadius: S.radius.sm, padding: 16 }}>
+        <h3 style={{ fontSize: '1rem', fontWeight: 600, color: S.text.primary, marginBottom: 12, marginTop: 0 }}>當前階段</h3>
         {currentStage ? (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-slate-300">階段:</span>
-              <span className="text-red-400 font-medium">{currentStage.label || currentStage.step}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ color: S.text.secondary }}>階段:</span>
+              <span style={{ color: S.protocol.ICMP, fontWeight: 500 }}>{currentStage.label || currentStage.step}</span>
             </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="text-slate-300">方向:</span>
-              <span className="text-slate-400">{currentStage.direction === 'forward' ? '客戶端 → 伺服器' : '伺服器 → 客戶端'}</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ color: S.text.secondary }}>方向:</span>
+              <span style={{ color: S.text.secondary }}>{currentStage.direction === 'forward' ? '客戶端 → 伺服器' : '伺服器 → 客戶端'}</span>
             </div>
-            
             {currentStage.description && (
-              <div className="mt-2">
-                <span className="text-slate-300">說明:</span>
-                <p className="text-slate-400 text-sm mt-1">{currentStage.description}</p>
+              <div style={{ marginTop: 8 }}>
+                <span style={{ color: S.text.secondary }}>說明:</span>
+                <p style={{ color: S.text.secondary, fontSize: '0.875rem', marginTop: 4 }}>{currentStage.description}</p>
               </div>
             )}
           </div>
         ) : (
-          <p className="text-slate-400">等待開始...</p>
+          <p style={{ color: S.text.secondary }}>等待開始...</p>
         )}
 
-        {/* 視覺效果指示器 */}
         {Object.keys(visualEffects).some(key => visualEffects[key] && key !== 'opacity' && key !== 'connectionStyle') && (
-          <div className="mt-4 pt-3 border-t border-slate-700">
-            <span className="text-slate-300 text-sm">視覺效果:</span>
-            <div className="flex gap-2 mt-1">
-              {visualEffects.blinking && (
-                <span className="px-2 py-1 bg-yellow-600/20 text-yellow-400 text-xs rounded">閃爍</span>
-              )}
-              {visualEffects.pulsing && (
-                <span className="px-2 py-1 bg-blue-600/20 text-blue-400 text-xs rounded">脈衝</span>
-              )}
-              {visualEffects.spinning && (
-                <span className="px-2 py-1 bg-purple-600/20 text-purple-400 text-xs rounded">旋轉</span>
-              )}
+          <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${S.border}` }}>
+            <span style={{ color: S.text.secondary, fontSize: '0.875rem' }}>視覺效果:</span>
+            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+              {visualEffects.blinking && <span style={{ padding: '4px 8px', background: `#eab30820`, color: '#fbbf24', fontSize: '0.75rem', borderRadius: S.radius.sm }}>閃爍</span>}
+              {visualEffects.pulsing && <span style={{ padding: '4px 8px', background: `${S.protocol.UDP}20`, color: S.protocol.UDP, fontSize: '0.75rem', borderRadius: S.radius.sm }}>脈衝</span>}
+              {visualEffects.spinning && <span style={{ padding: '4px 8px', background: `${S.protocol.DNS}20`, color: S.protocol.DNS, fontSize: '0.75rem', borderRadius: S.radius.sm }}>旋轉</span>}
             </div>
           </div>
         )}
 
-        {/* 完成狀態 */}
         {renderState?.isCompleted && (
-          <div className="mt-4 pt-3 border-t border-slate-700">
-            <div className="flex items-center gap-2 text-red-400">
-              <WifiOff className="w-4 h-4" />
-              <span className="font-medium">連線已斷開</span>
+          <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${S.border}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: S.protocol.ICMP }}>
+              <WifiOff size={16} />
+              <span style={{ fontWeight: 500 }}>連線已斷開</span>
             </div>
           </div>
         )}

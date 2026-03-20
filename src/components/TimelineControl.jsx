@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Play, Pause, RotateCcw, SkipBack, SkipForward } from 'lucide-react'
+import { S } from '../lib/swiss-tokens'
 
 const SPEED_PRESETS = [0.25, 0.5, 1, 1.5, 2, 4]
 
@@ -17,7 +18,7 @@ const TimelineControl = ({
   isCompleted = false,
   showSpeedControl = true,
   showTimeDisplay = true,
-  className = ''
+  wrapperStyle,
 }) => {
   const [isDragging, setIsDragging] = useState(false)
   const [dragProgress, setDragProgress] = useState(progress)
@@ -107,12 +108,20 @@ const TimelineControl = ({
   const progressPercent = Math.round(effectiveProgress * 100)
 
   return (
-    <div className={`bg-slate-800 rounded-lg p-4 ${className}`}>
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-slate-400">?????</span>
+    <div
+      style={{
+        background: S.surface,
+        borderRadius: S.radius.md,
+        padding: 16,
+        fontFamily: S.font.sans,
+        ...wrapperStyle,
+      }}
+    >
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <span style={{ fontSize: '0.875rem', color: S.text.secondary }}>Timeline</span>
           {showTimeDisplay && (
-            <span className="text-sm text-slate-400 font-mono">
+            <span style={{ fontSize: '0.875rem', color: S.text.secondary, fontFamily: S.font.mono }}>
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
           )}
@@ -120,80 +129,124 @@ const TimelineControl = ({
 
         <div
           ref={progressBarRef}
-          className="relative h-3 bg-slate-700 rounded-full cursor-pointer group"
+          style={{
+            position: 'relative',
+            height: 12,
+            background: S.borderStrong,
+            borderRadius: 6,
+            cursor: 'pointer',
+          }}
           onMouseDown={handleMouseDown}
         >
-          <div className="absolute inset-0 bg-slate-700 rounded-full" />
           <div
-            className="absolute left-0 top-0 h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-150"
-            style={{ width: `${effectiveProgress * 100}%` }}
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              height: '100%',
+              background: S.accent,
+              borderRadius: 6,
+              transition: isDragging ? 'none' : 'width 0.15s',
+              width: `${effectiveProgress * 100}%`,
+            }}
           />
           <div
-            className="absolute top-1/2 transform -translate-y-1/2 w-4 h-4 bg-blue-400 rounded-full border-2 border-white shadow-lg cursor-grab active:cursor-grabbing transition-all duration-150 group-hover:scale-110"
-            style={{ left: `calc(${effectiveProgress * 100}% - 8px)` }}
+            style={{
+              position: 'absolute',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: 16,
+              height: 16,
+              background: S.accent,
+              borderRadius: '50%',
+              border: `2px solid ${S.text.primary}`,
+              cursor: isDragging ? 'grabbing' : 'grab',
+              transition: isDragging ? 'none' : 'left 0.15s',
+              left: `calc(${effectiveProgress * 100}% - 8px)`,
+            }}
           />
-          <div className="absolute inset-0 bg-blue-400 opacity-0 group-hover:opacity-10 rounded-full transition-opacity duration-150" />
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
             onClick={handleResetClick}
-            className="flex items-center justify-center w-10 h-10 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors"
-            title="??"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 40, height: 40,
+              background: S.surfaceHover, color: S.text.secondary,
+              borderRadius: S.radius.sm, border: 'none', cursor: 'pointer',
+            }}
+            title="Reset"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw size={16} />
           </button>
 
           <button
             onClick={handleSkipBackward}
-            className="flex items-center justify-center w-10 h-10 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors"
-            title="?? 10%"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 40, height: 40,
+              background: S.surfaceHover, color: S.text.secondary,
+              borderRadius: S.radius.sm, border: 'none', cursor: 'pointer',
+              opacity: effectiveProgress <= 0 ? 0.3 : 1,
+            }}
+            title="Back 10%"
             disabled={effectiveProgress <= 0}
           >
-            <SkipBack className="w-4 h-4" />
+            <SkipBack size={16} />
           </button>
 
           <button
             onClick={handlePlayToggle}
-            className={`flex items-center justify-center w-12 h-12 text-white rounded-lg transition-colors ${
-              isCompleted
-                ? 'bg-green-600 hover:bg-green-700'
-                : isPlaying
-                ? 'bg-red-600 hover:bg-red-700'
-                : 'bg-blue-600 hover:bg-blue-700'
-            }`}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 48, height: 48,
+              background: isCompleted ? S.protocol.HTTP : isPlaying ? S.accent : S.accentDim,
+              color: S.text.primary,
+              borderRadius: S.radius.sm, border: 'none', cursor: 'pointer',
+            }}
             disabled={isCompleted && progress >= 1}
-            title={isPlaying ? '??' : '??'}
+            title={isPlaying ? 'Pause' : 'Play'}
           >
-            {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+            {isPlaying ? <Pause size={20} /> : <Play size={20} />}
           </button>
 
           <button
             onClick={handleSkipForward}
-            className="flex items-center justify-center w-10 h-10 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors"
-            title="?? 10%"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 40, height: 40,
+              background: S.surfaceHover, color: S.text.secondary,
+              borderRadius: S.radius.sm, border: 'none', cursor: 'pointer',
+              opacity: effectiveProgress >= 1 ? 0.3 : 1,
+            }}
+            title="Forward 10%"
             disabled={effectiveProgress >= 1}
           >
-            <SkipForward className="w-4 h-4" />
+            <SkipForward size={16} />
           </button>
         </div>
 
         {showSpeedControl && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-400">?????</span>
-            <div className="flex items-center gap-1">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: '0.875rem', color: S.text.secondary }}>Speed</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               {SPEED_PRESETS.map((speed) => (
                 <button
                   key={speed}
                   type="button"
                   onClick={() => handleSpeedSelect(speed)}
-                  className={`px-2 py-1 text-xs rounded transition-colors ${
-                    playbackSpeed === speed
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  }`}
+                  style={{
+                    padding: '4px 8px',
+                    fontSize: '0.75rem',
+                    borderRadius: S.radius.sm,
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: playbackSpeed === speed ? S.accent : S.surfaceHover,
+                    color: playbackSpeed === speed ? S.text.primary : S.text.secondary,
+                  }}
                 >
                   {speed}x
                 </button>
@@ -203,21 +256,21 @@ const TimelineControl = ({
         )}
       </div>
 
-      <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
-        <div className="flex items-center gap-4">
-          <span>???{progressPercent}%</span>
-          {playbackSpeed !== 1 && <span>?????{playbackSpeed}x</span>}
+      <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: S.text.secondary }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <span>{progressPercent}%</span>
+          {playbackSpeed !== 1 && <span>Speed: {playbackSpeed}x</span>}
         </div>
 
-        <div className="flex items-center gap-2">
-          {isCompleted && <span className="text-green-400 font-medium">???</span>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {isCompleted && <span style={{ color: S.protocol.HTTP, fontWeight: 500 }}>Done</span>}
           {isPlaying && (
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
-              <span>???</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ width: 8, height: 8, background: S.accent, borderRadius: '50%', animation: 'pulse 2s cubic-bezier(0.4,0,0.6,1) infinite' }} />
+              <span>Playing</span>
             </div>
           )}
-          {isDragging && <span className="text-blue-400 font-medium">?????</span>}
+          {isDragging && <span style={{ color: S.accent, fontWeight: 500 }}>Seeking</span>}
         </div>
       </div>
     </div>

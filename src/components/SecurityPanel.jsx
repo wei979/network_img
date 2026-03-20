@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import { Shield, AlertTriangle, Info, Loader2 } from 'lucide-react'
+import { S } from '../lib/swiss-tokens'
 
 const SEVERITY_CONFIG = {
-  error: { icon: '⊘', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30', label: 'Error' },
-  warning: { icon: '△', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', label: 'Warning' },
-  note: { icon: '◎', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/30', label: 'Note' },
+  error: { icon: '⊘', color: '#ef4444', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.3)', label: 'Error' },
+  warning: { icon: '△', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.3)', label: 'Warning' },
+  note: { icon: '◎', color: '#3b82f6', bg: 'rgba(59,130,246,0.1)', border: 'rgba(59,130,246,0.3)', label: 'Note' },
 }
 
 function ScoreBadge({ score }) {
-  const color = score >= 60 ? 'text-red-400' : score >= 30 ? 'text-yellow-400' : 'text-green-400'
-  return <span className={`font-mono font-bold ${color}`}>{score}/100</span>
+  const color = score >= 60 ? '#ef4444' : score >= 30 ? '#f59e0b' : '#22c55e'
+  return <span style={{ fontFamily: S.font.mono, fontWeight: 700, color }}>{score}/100</span>
 }
 
 export default function SecurityPanel({ onSelectConnection }) {
@@ -45,7 +46,7 @@ export default function SecurityPanel({ onSelectConnection }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-10">
-        <Loader2 className="w-5 h-5 animate-spin text-slate-500" />
+        <Loader2 className="w-5 h-5 animate-spin" style={{ color: S.text.tertiary }} />
       </div>
     )
   }
@@ -60,51 +61,56 @@ export default function SecurityPanel({ onSelectConnection }) {
 
   return (
     <div className="flex flex-col gap-3 text-xs">
-      {/* ── 攻擊偵測摘要 ── */}
-      <div className="rounded-xl p-3 bg-slate-800/50 border border-slate-700/60">
+      {/* -- Attack detection summary -- */}
+      <div className="rounded-[4px] p-3" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
         <div className="flex items-center gap-2 mb-2">
-          <Shield className="w-4 h-4 text-cyan-400" />
-          <span className="text-sm font-semibold text-slate-200">攻擊偵測</span>
+          <Shield className="w-4 h-4" style={{ color: S.accent }} />
+          <span className="text-sm font-semibold" style={{ color: S.text.primary }}>攻擊偵測</span>
         </div>
 
         {det.detected ? (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-red-400 font-semibold">{det.type}</span>
-              <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                det.severity === 'high' ? 'bg-red-500/20 text-red-400'
-                : det.severity === 'medium' ? 'bg-yellow-500/20 text-yellow-400'
-                : 'bg-green-500/20 text-green-400'
-              }`}>
+              <span className="font-semibold" style={{ color: '#ef4444' }}>{det.type}</span>
+              <span
+                className="px-1.5 py-0.5 rounded-[3px] text-[10px] font-medium"
+                style={
+                  det.severity === 'high'
+                    ? { background: 'rgba(239,68,68,0.2)', color: '#ef4444' }
+                    : det.severity === 'medium'
+                      ? { background: 'rgba(245,158,11,0.2)', color: '#f59e0b' }
+                      : { background: 'rgba(34,197,94,0.2)', color: '#22c55e' }
+                }
+              >
                 {det.severity === 'high' ? '高' : det.severity === 'medium' ? '中' : '低'}
               </span>
             </div>
-            <p className="text-slate-400 leading-relaxed">{det.description}</p>
+            <p style={{ color: S.text.secondary }} className="leading-relaxed">{det.description}</p>
             <div className="grid grid-cols-2 gap-2 pt-1">
               <div>
-                <div className="text-slate-500">異常評分</div>
+                <div style={{ color: S.text.tertiary }}>異常評分</div>
                 <ScoreBadge score={det.anomaly_score || 0} />
               </div>
               <div>
-                <div className="text-slate-500">信心度</div>
-                <span className="font-mono text-slate-200">{((det.confidence || 0) * 100).toFixed(0)}%</span>
+                <div style={{ color: S.text.tertiary }}>信心度</div>
+                <span style={{ fontFamily: S.font.mono, color: S.text.primary }}>{((det.confidence || 0) * 100).toFixed(0)}%</span>
               </div>
               <div>
-                <div className="text-slate-500">TCP 封包</div>
-                <span className="font-mono text-slate-200">{(metrics.total_tcp_packets || 0).toLocaleString()}</span>
+                <div style={{ color: S.text.tertiary }}>TCP 封包</div>
+                <span style={{ fontFamily: S.font.mono, color: S.text.primary }}>{(metrics.total_tcp_packets || 0).toLocaleString()}</span>
               </div>
               <div>
-                <div className="text-slate-500">連線速率</div>
-                <span className="font-mono text-slate-200">{metrics.connections_per_second || 0}/s</span>
+                <div style={{ color: S.text.tertiary }}>連線速率</div>
+                <span style={{ fontFamily: S.font.mono, color: S.text.primary }}>{metrics.connections_per_second || 0}/s</span>
               </div>
             </div>
           </div>
         ) : (
           <div className="flex items-center gap-2 py-2">
-            <Shield className="w-4 h-4 text-green-400" />
+            <Shield className="w-4 h-4" style={{ color: '#22c55e' }} />
             <div>
-              <div className="text-green-400 font-medium">未偵測到攻擊行為</div>
-              <div className="text-slate-500 text-[10px]">
+              <div className="font-medium" style={{ color: '#22c55e' }}>未偵測到攻擊行為</div>
+              <div className="text-[10px]" style={{ color: S.text.tertiary }}>
                 {metrics.total_tcp_packets
                   ? `已分析 ${metrics.total_tcp_packets.toLocaleString()} 個 TCP 封包`
                   : '請先上傳 PCAP 檔案'}
@@ -114,21 +120,21 @@ export default function SecurityPanel({ onSelectConnection }) {
         )}
       </div>
 
-      {/* ── 專家事件 ── */}
-      <div className="rounded-xl bg-slate-800/50 border border-slate-700/60 flex flex-col min-h-0 flex-1">
+      {/* -- Expert events -- */}
+      <div className="rounded-[4px] flex flex-col min-h-0 flex-1" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
         <div className="flex items-center justify-between px-3 pt-3 pb-1">
           <div className="flex items-center gap-2">
-            <Info className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-sm font-semibold text-slate-200">專家事件</span>
+            <Info className="w-3.5 h-3.5" style={{ color: S.text.secondary }} />
+            <span className="text-sm font-semibold" style={{ color: S.text.primary }}>專家事件</span>
           </div>
-          <span className="text-slate-500">{summary?.total || 0} events</span>
+          <span style={{ color: S.text.tertiary }}>{summary?.total || 0} events</span>
         </div>
 
         {/* Severity counts */}
         <div className="flex gap-2 px-3 py-1 text-[10px]">
-          <span className="text-red-400">⊘ {summary?.errors || 0}</span>
-          <span className="text-yellow-400">△ {summary?.warnings || 0}</span>
-          <span className="text-blue-400">◎ {summary?.notes || 0}</span>
+          <span style={{ color: '#ef4444' }}>⊘ {summary?.errors || 0}</span>
+          <span style={{ color: '#f59e0b' }}>△ {summary?.warnings || 0}</span>
+          <span style={{ color: '#3b82f6' }}>◎ {summary?.notes || 0}</span>
         </div>
 
         {/* Filter buttons */}
@@ -136,19 +142,24 @@ export default function SecurityPanel({ onSelectConnection }) {
           <button
             type="button"
             onClick={() => setActiveFilters({ error: true, warning: true, note: true })}
-            className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+            className="px-2 py-0.5 rounded-[3px] text-[10px] font-medium transition-colors"
+            style={
               Object.values(activeFilters).every(Boolean)
-                ? 'bg-slate-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-            }`}
+                ? { background: S.borderStrong, color: S.text.primary }
+                : { background: S.bgRaised, color: S.text.secondary }
+            }
           >All</button>
           {Object.entries(SEVERITY_CONFIG).map(([sev, cfg]) => (
             <button
               key={sev}
               type="button"
               onClick={() => toggleFilter(sev)}
-              className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                activeFilters[sev] ? `${cfg.bg} ${cfg.color} border ${cfg.border}` : 'bg-slate-800 text-slate-500 hover:bg-slate-700'
-              }`}
+              className="px-2 py-0.5 rounded-[3px] text-[10px] font-medium transition-colors"
+              style={
+                activeFilters[sev]
+                  ? { background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }
+                  : { background: S.bgRaised, color: S.text.tertiary }
+              }
             >{cfg.label}</button>
           ))}
         </div>
@@ -156,7 +167,7 @@ export default function SecurityPanel({ onSelectConnection }) {
         {/* Event list */}
         <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-1 custom-scrollbar">
           {filteredEvents.length === 0 ? (
-            <div className="text-center text-slate-500 py-4">
+            <div className="text-center py-4" style={{ color: S.text.tertiary }}>
               {events.length === 0 ? 'No expert info events detected' : 'No events match the current filter'}
             </div>
           ) : (
@@ -165,7 +176,13 @@ export default function SecurityPanel({ onSelectConnection }) {
               return (
                 <div
                   key={`${event.type}-${event.packetIndex}-${idx}`}
-                  className={`px-2 py-1.5 rounded-lg border ${cfg.border} ${cfg.bg} cursor-pointer hover:brightness-125 transition-all`}
+                  className="px-2 py-1.5 rounded-[4px] cursor-pointer transition-all"
+                  style={{
+                    border: `1px solid ${cfg.border}`,
+                    background: cfg.bg,
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.25)' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.filter = 'none' }}
                   onClick={() => {
                     if (onSelectConnection && event.stream) {
                       onSelectConnection(event.stream)
@@ -173,12 +190,12 @@ export default function SecurityPanel({ onSelectConnection }) {
                   }}
                 >
                   <div className="flex items-center gap-1.5">
-                    <span className={`${cfg.color} font-semibold text-[11px]`}>{event.type}</span>
+                    <span className="font-semibold text-[11px]" style={{ color: cfg.color }}>{event.type}</span>
                     {event.packetIndex != null && (
-                      <span className="text-slate-600 text-[9px]">#{event.packetIndex}</span>
+                      <span className="text-[9px]" style={{ color: S.text.faint }}>{`#${event.packetIndex}`}</span>
                     )}
                   </div>
-                  <div className="text-slate-400 text-[10px] leading-relaxed mt-0.5">{event.message}</div>
+                  <div className="text-[10px] leading-relaxed mt-0.5" style={{ color: S.text.secondary }}>{event.message}</div>
                 </div>
               )
             })

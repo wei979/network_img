@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react'
 import { X } from 'lucide-react'
+import { S } from '../lib/swiss-tokens'
 import PacketDetailPane from './PacketDetailPane'
 import HexDumpViewer from './HexDumpViewer'
 
@@ -23,7 +24,7 @@ export default function PacketInspector({ packetDetail, onClose }) {
     setHighlightByteRange(byteRange)
   }, [])
 
-  // Build a lookup: byteIndex → field's byteRange for reverse highlighting
+  // Build a lookup: byteIndex -> field's byteRange for reverse highlighting
   const byteToFieldRange = useMemo(() => {
     const map = new Map()
     if (!packetDetail?.layers) return map
@@ -52,17 +53,36 @@ export default function PacketInspector({ packetDetail, onClose }) {
   if (!packetDetail) return null
 
   return (
-    <div className="flex flex-col gap-2 bg-slate-900/95 border border-slate-700 rounded-lg p-3">
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+        background: S.bg,
+        border: `1px solid ${S.border}`,
+        borderRadius: S.radius.md,
+        padding: 12,
+      }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-300 font-medium">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: '0.875rem', color: S.text.primary, fontWeight: 500 }}>
           Packet #{packetDetail.index} Detail
         </span>
         {onClose && (
           <button
             aria-label="close"
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-700"
+            style={{
+              color: S.text.secondary,
+              padding: 4,
+              borderRadius: S.radius.sm,
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = S.surface; e.currentTarget.style.color = S.text.primary }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = S.text.secondary }}
           >
             <X size={14} />
           </button>

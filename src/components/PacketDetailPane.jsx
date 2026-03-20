@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
 import { ChevronRight, ChevronDown } from 'lucide-react'
+import { S } from '../lib/swiss-tokens'
 
 /**
  * PacketDetailPane - Wireshark-style collapsible layer tree
  *
- * Displays the dissected layers of a single packet (Frame → Ethernet → IPv4 → TCP/UDP/ICMP → Data)
+ * Displays the dissected layers of a single packet (Frame -> Ethernet -> IPv4 -> TCP/UDP/ICMP -> Data)
  * with collapsible sections and per-field byte range highlighting.
  *
  * Props:
@@ -18,7 +19,19 @@ export default function PacketDetailPane({ packetDetail, onFieldHover, highlight
   const { layers = [] } = packetDetail
 
   return (
-    <div className="flex flex-col text-xs font-mono bg-slate-900 border border-slate-700 rounded overflow-y-auto max-h-[400px]">
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        fontSize: '0.75rem',
+        fontFamily: S.font.mono,
+        background: S.bg,
+        border: `1px solid ${S.border}`,
+        borderRadius: S.radius.sm,
+        overflowY: 'auto',
+        maxHeight: 400,
+      }}
+    >
       {layers.map((layer, idx) => (
         <LayerNode
           key={`${layer.name}-${idx}`}
@@ -59,21 +72,29 @@ function LayerNode({ layer, onFieldHover, highlightByteRange }) {
     >
       {/* Layer header */}
       <div
-        className={`flex items-center gap-1 px-2 py-0.5 cursor-pointer select-none hover:bg-slate-700/50 ${
-          isLayerHighlighted ? 'bg-cyan-900/40' : ''
-        }`}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          padding: '2px 8px',
+          cursor: 'pointer',
+          userSelect: 'none',
+          background: isLayerHighlighted ? `${S.accent}40` : 'transparent',
+        }}
         onClick={() => setExpanded(!expanded)}
+        onMouseEnter={(e) => e.currentTarget.style.background = isLayerHighlighted ? `${S.accent}60` : S.surfaceHover}
+        onMouseLeave={(e) => e.currentTarget.style.background = isLayerHighlighted ? `${S.accent}40` : 'transparent'}
       >
         {expanded
-          ? <ChevronDown size={12} className="text-slate-400 flex-shrink-0" />
-          : <ChevronRight size={12} className="text-slate-400 flex-shrink-0" />
+          ? <ChevronDown size={12} style={{ color: S.text.secondary, flexShrink: 0 }} />
+          : <ChevronRight size={12} style={{ color: S.text.secondary, flexShrink: 0 }} />
         }
-        <span className="text-slate-200 truncate">{layer.displayName}</span>
+        <span style={{ color: S.text.primary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{layer.displayName}</span>
       </div>
 
       {/* Fields */}
       {expanded && (
-        <div className="pl-5">
+        <div style={{ paddingLeft: 20 }}>
           {(layer.fields ?? []).map((field, fidx) => (
             <FieldRow
               key={`${field.name}-${fidx}`}
@@ -116,23 +137,34 @@ function FieldRow({ field, depth = 0, onFieldHover, highlightByteRange }) {
     <div>
       <div
         data-field={field.name}
-        className={`flex items-center gap-2 px-2 py-px hover:bg-slate-700/30 ${
-          hasChildren ? 'cursor-pointer' : 'cursor-default'
-        } ${isHighlighted ? 'highlight bg-cyan-900/50' : ''}`}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '1px 8px',
+          cursor: hasChildren ? 'pointer' : 'default',
+          background: isHighlighted ? `${S.accent}50` : 'transparent',
+        }}
+        onMouseEnter={(e) => {
+          handleMouseEnter()
+          if (!isHighlighted) e.currentTarget.style.background = `${S.surfaceHover}50`
+        }}
+        onMouseLeave={(e) => {
+          handleMouseLeave()
+          e.currentTarget.style.background = isHighlighted ? `${S.accent}50` : 'transparent'
+        }}
         onClick={hasChildren ? () => setChildExpanded(!childExpanded) : undefined}
       >
         {hasChildren && (
           childExpanded
-            ? <ChevronDown size={10} className="text-slate-400 flex-shrink-0" />
-            : <ChevronRight size={10} className="text-slate-400 flex-shrink-0" />
+            ? <ChevronDown size={10} style={{ color: S.text.secondary, flexShrink: 0 }} />
+            : <ChevronRight size={10} style={{ color: S.text.secondary, flexShrink: 0 }} />
         )}
-        <span className="text-slate-400">{field.name}:</span>
-        <span className="text-slate-200">{field.value}</span>
+        <span style={{ color: S.text.secondary }}>{field.name}:</span>
+        <span style={{ color: S.text.primary }}>{field.value}</span>
       </div>
       {hasChildren && childExpanded && (
-        <div className="pl-4">
+        <div style={{ paddingLeft: 16 }}>
           {field.children.map((child, cidx) => (
             <FieldRow
               key={`${child.name}-${cidx}`}

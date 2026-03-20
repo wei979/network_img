@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Layers, Users, ArrowLeftRight, Loader2, AlertTriangle, ChevronRight, ChevronDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { S } from '../lib/swiss-tokens'
 
 const TABS = [
   { key: 'hierarchy', label: '協議階層', icon: Layers },
@@ -24,29 +25,32 @@ const HierarchyNode = ({ node, depth = 0 }) => {
   return (
     <>
       <tr
-        className="hover:bg-slate-700/40 transition-colors cursor-pointer"
+        className="transition-colors cursor-pointer"
+        style={{ background: 'transparent' }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = S.surfaceHover }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
         onClick={() => hasChildren && setExpanded(prev => !prev)}
       >
-        <td className="py-1 pr-2 text-xs text-slate-200 whitespace-nowrap">
+        <td className="py-1 pr-2 text-xs whitespace-nowrap" style={{ color: S.text.primary }}>
           <span style={{ paddingLeft: `${depth * 12}px` }} className="inline-flex items-center gap-1">
             {hasChildren ? (
               expanded
-                ? <ChevronDown size={10} className="text-slate-400 flex-shrink-0" />
-                : <ChevronRight size={10} className="text-slate-400 flex-shrink-0" />
+                ? <ChevronDown size={10} style={{ color: S.text.secondary }} className="flex-shrink-0" />
+                : <ChevronRight size={10} style={{ color: S.text.secondary }} className="flex-shrink-0" />
             ) : (
               <span className="inline-block w-[10px]" />
             )}
             {node.protocol}
           </span>
         </td>
-        <td className="py-1 px-2 text-xs text-slate-300 text-right font-mono">
+        <td className="py-1 px-2 text-xs text-right" style={{ fontFamily: S.font.mono, color: S.text.secondary }}>
           {node.packets?.toLocaleString() ?? '--'}
         </td>
-        <td className="py-1 px-2 text-xs text-slate-300 text-right font-mono">
+        <td className="py-1 px-2 text-xs text-right" style={{ fontFamily: S.font.mono, color: S.text.secondary }}>
           {formatBytes(node.bytes)}
         </td>
         <td className="py-1 pl-2 text-xs text-right">
-          <span className="text-slate-400">{node.percentage != null ? `${node.percentage.toFixed(1)}%` : '--'}</span>
+          <span style={{ color: S.text.tertiary }}>{node.percentage != null ? `${node.percentage.toFixed(1)}%` : '--'}</span>
         </td>
       </tr>
       {expanded && hasChildren && node.children.map((child, i) => (
@@ -58,18 +62,18 @@ const HierarchyNode = ({ node, depth = 0 }) => {
 
 const HierarchyTab = ({ data }) => {
   if (!data || data.length === 0) {
-    return <p className="text-xs text-slate-500 text-center py-4">無協議階層資料</p>
+    return <p className="text-xs text-center py-4" style={{ color: S.text.tertiary }}>無協議階層資料</p>
   }
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left">
         <thead>
-          <tr className="border-b border-slate-700">
-            <th className="py-1.5 pr-2 text-xs font-medium text-slate-400">協議</th>
-            <th className="py-1.5 px-2 text-xs font-medium text-slate-400 text-right">封包數</th>
-            <th className="py-1.5 px-2 text-xs font-medium text-slate-400 text-right">位元組</th>
-            <th className="py-1.5 pl-2 text-xs font-medium text-slate-400 text-right">佔比</th>
+          <tr style={{ borderBottom: `1px solid ${S.border}` }}>
+            <th className="py-1.5 pr-2 text-xs font-medium" style={{ color: S.text.secondary }}>協議</th>
+            <th className="py-1.5 px-2 text-xs font-medium text-right" style={{ color: S.text.secondary }}>封包數</th>
+            <th className="py-1.5 px-2 text-xs font-medium text-right" style={{ color: S.text.secondary }}>位元組</th>
+            <th className="py-1.5 pl-2 text-xs font-medium text-right" style={{ color: S.text.secondary }}>佔比</th>
           </tr>
         </thead>
         <tbody>
@@ -116,9 +120,10 @@ const SortHeader = ({ label, colKey, sortKey, sortDir, onSort, align = 'left' })
   const isActive = sortKey === colKey
   return (
     <th
-      className={`py-1.5 px-2 text-xs font-medium cursor-pointer select-none transition-colors hover:text-slate-200 ${
-        isActive ? 'text-cyan-400' : 'text-slate-400'
-      } ${align === 'right' ? 'text-right' : 'text-left'}`}
+      className={`py-1.5 px-2 text-xs font-medium cursor-pointer select-none transition-colors ${align === 'right' ? 'text-right' : 'text-left'}`}
+      style={{ color: isActive ? S.accent : S.text.secondary }}
+      onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = S.text.primary }}
+      onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.color = S.text.secondary }}
       onClick={() => onSort(colKey)}
     >
       <span className="inline-flex items-center gap-0.5">
@@ -144,16 +149,16 @@ const EndpointsTab = ({ data, geoInfo }) => {
   const { sorted, sortKey, sortDir, handleSort } = useSortableData(data, 'packets_sent')
 
   if (!data || data.length === 0) {
-    return <p className="text-xs text-slate-500 text-center py-4">無端點資料</p>
+    return <p className="text-xs text-center py-4" style={{ color: S.text.tertiary }}>無端點資料</p>
   }
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left">
         <thead>
-          <tr className="border-b border-slate-700">
+          <tr style={{ borderBottom: `1px solid ${S.border}` }}>
             <SortHeader label="IP 位址" colKey="ip" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-            <th className="py-1 px-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wide">國家</th>
+            <th className="py-1 px-2 text-[10px] font-semibold uppercase tracking-wide" style={{ color: S.text.secondary }}>國家</th>
             <SortHeader label="傳送" colKey="packets_sent" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
             <SortHeader label="接收" colKey="packets_recv" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
             <SortHeader label="傳送量" colKey="bytes_sent" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
@@ -164,13 +169,19 @@ const EndpointsTab = ({ data, geoInfo }) => {
           {sorted.map((ep, i) => {
             const geo = geoInfo?.[ep.ip]
             return (
-              <tr key={ep.ip || i} className="hover:bg-slate-700/40 transition-colors">
-                <td className="py-1 px-2 text-xs text-slate-200 font-mono whitespace-nowrap">{ep.ip}</td>
-                <td className="py-1 px-2 text-[10px] text-slate-400 whitespace-nowrap">{geo?.label || '—'}</td>
-                <td className="py-1 px-2 text-xs text-slate-300 text-right font-mono">{ep.packets_sent?.toLocaleString() ?? '--'}</td>
-                <td className="py-1 px-2 text-xs text-slate-300 text-right font-mono">{ep.packets_recv?.toLocaleString() ?? '--'}</td>
-                <td className="py-1 px-2 text-xs text-slate-400 text-right font-mono">{formatBytes(ep.bytes_sent)}</td>
-                <td className="py-1 px-2 text-xs text-slate-400 text-right font-mono">{formatBytes(ep.bytes_recv)}</td>
+              <tr
+                key={ep.ip || i}
+                className="transition-colors"
+                style={{ background: 'transparent' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = S.surfaceHover }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+              >
+                <td className="py-1 px-2 text-xs whitespace-nowrap" style={{ fontFamily: S.font.mono, color: S.text.primary }}>{ep.ip}</td>
+                <td className="py-1 px-2 text-[10px] whitespace-nowrap" style={{ color: S.text.secondary }}>{geo?.label || '—'}</td>
+                <td className="py-1 px-2 text-xs text-right" style={{ fontFamily: S.font.mono, color: S.text.secondary }}>{ep.packets_sent?.toLocaleString() ?? '--'}</td>
+                <td className="py-1 px-2 text-xs text-right" style={{ fontFamily: S.font.mono, color: S.text.secondary }}>{ep.packets_recv?.toLocaleString() ?? '--'}</td>
+                <td className="py-1 px-2 text-xs text-right" style={{ fontFamily: S.font.mono, color: S.text.tertiary }}>{formatBytes(ep.bytes_sent)}</td>
+                <td className="py-1 px-2 text-xs text-right" style={{ fontFamily: S.font.mono, color: S.text.tertiary }}>{formatBytes(ep.bytes_recv)}</td>
               </tr>
             )
           })}
@@ -186,14 +197,14 @@ const ConversationsTab = ({ data }) => {
   const { sorted, sortKey, sortDir, handleSort } = useSortableData(data, 'packets')
 
   if (!data || data.length === 0) {
-    return <p className="text-xs text-slate-500 text-center py-4">無會話資料</p>
+    return <p className="text-xs text-center py-4" style={{ color: S.text.tertiary }}>無會話資料</p>
   }
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left">
         <thead>
-          <tr className="border-b border-slate-700">
+          <tr style={{ borderBottom: `1px solid ${S.border}` }}>
             <SortHeader label="來源" colKey="src_ip" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
             <SortHeader label="目的" colKey="dst_ip" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
             <SortHeader label="封包數" colKey="packets" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
@@ -202,11 +213,17 @@ const ConversationsTab = ({ data }) => {
         </thead>
         <tbody>
           {sorted.map((conv, i) => (
-            <tr key={`${conv.src_ip}-${conv.dst_ip}-${i}`} className="hover:bg-slate-700/40 transition-colors">
-              <td className="py-1 px-2 text-xs text-slate-200 font-mono whitespace-nowrap">{conv.src_ip}</td>
-              <td className="py-1 px-2 text-xs text-slate-200 font-mono whitespace-nowrap">{conv.dst_ip}</td>
-              <td className="py-1 px-2 text-xs text-slate-300 text-right font-mono">{conv.packets?.toLocaleString() ?? '--'}</td>
-              <td className="py-1 px-2 text-xs text-slate-400 text-right font-mono">{formatBytes(conv.bytes)}</td>
+            <tr
+              key={`${conv.src_ip}-${conv.dst_ip}-${i}`}
+              className="transition-colors"
+              style={{ background: 'transparent' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = S.surfaceHover }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+            >
+              <td className="py-1 px-2 text-xs whitespace-nowrap" style={{ fontFamily: S.font.mono, color: S.text.primary }}>{conv.src_ip}</td>
+              <td className="py-1 px-2 text-xs whitespace-nowrap" style={{ fontFamily: S.font.mono, color: S.text.primary }}>{conv.dst_ip}</td>
+              <td className="py-1 px-2 text-xs text-right" style={{ fontFamily: S.font.mono, color: S.text.secondary }}>{conv.packets?.toLocaleString() ?? '--'}</td>
+              <td className="py-1 px-2 text-xs text-right" style={{ fontFamily: S.font.mono, color: S.text.tertiary }}>{formatBytes(conv.bytes)}</td>
             </tr>
           ))}
         </tbody>
@@ -259,19 +276,19 @@ const ProtocolStatsPanel = ({ visible }) => {
   if (!visible) return null
 
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
+    <div className="rounded-[4px] overflow-hidden" style={{ background: S.bgRaised, border: `1px solid ${S.border}` }}>
       {/* Header with total packets */}
-      <div className="px-3 py-2 border-b border-slate-700 flex items-center justify-between">
-        <span className="text-xs font-medium text-slate-300">協議統計</span>
+      <div className="px-3 py-2 flex items-center justify-between" style={{ borderBottom: `1px solid ${S.border}` }}>
+        <span className="text-xs font-medium" style={{ color: S.text.secondary }}>協議統計</span>
         {data?.totalPackets != null && (
-          <span className="text-xs text-slate-500 font-mono">
+          <span className="text-xs" style={{ fontFamily: S.font.mono, color: S.text.tertiary }}>
             {data.totalPackets.toLocaleString()} 封包
           </span>
         )}
       </div>
 
       {/* Tab bar */}
-      <div className="flex border-b border-slate-700">
+      <div className="flex" style={{ borderBottom: `1px solid ${S.border}` }}>
         {TABS.map(tab => {
           const Icon = tab.icon
           const isActive = activeTab === tab.key
@@ -280,11 +297,14 @@ const ProtocolStatsPanel = ({ visible }) => {
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className={`flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium transition-colors ${
+              className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium transition-colors"
+              style={
                 isActive
-                  ? 'text-cyan-400 border-b-2 border-cyan-400 bg-slate-900/50'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/40'
-              }`}
+                  ? { color: S.accent, borderBottom: `2px solid ${S.accent}`, background: S.bg }
+                  : { color: S.text.secondary }
+              }
+              onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = S.text.primary }}
+              onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.color = S.text.secondary }}
             >
               <Icon size={12} />
               {tab.label}
@@ -297,20 +317,20 @@ const ProtocolStatsPanel = ({ visible }) => {
       <div className="p-2 max-h-80 overflow-y-auto">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-6">
-            <Loader2 size={20} className="text-slate-400 animate-spin" />
-            <p className="text-xs text-slate-500 mt-2">正在載入統計資料...</p>
+            <Loader2 size={20} className="animate-spin" style={{ color: S.text.secondary }} />
+            <p className="text-xs mt-2" style={{ color: S.text.tertiary }}>正在載入統計資料...</p>
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-6">
-            <AlertTriangle size={20} className="text-yellow-500" />
-            <p className="text-xs text-slate-400 mt-2">無法取得統計資料</p>
-            <p className="text-xs text-slate-500 mt-0.5">請確認後端已啟動並已上傳 PCAP 檔案</p>
+            <AlertTriangle size={20} style={{ color: '#f59e0b' }} />
+            <p className="text-xs mt-2" style={{ color: S.text.secondary }}>無法取得統計資料</p>
+            <p className="text-xs mt-0.5" style={{ color: S.text.tertiary }}>請確認後端已啟動並已上傳 PCAP 檔案</p>
           </div>
         ) : !data ? (
           <div className="flex flex-col items-center justify-center py-6">
-            <Layers size={20} className="text-slate-500" />
-            <p className="text-xs text-slate-400 mt-2">尚無統計資料</p>
-            <p className="text-xs text-slate-500 mt-0.5">請先上傳 PCAP 檔案進行分析</p>
+            <Layers size={20} style={{ color: S.text.tertiary }} />
+            <p className="text-xs mt-2" style={{ color: S.text.secondary }}>尚無統計資料</p>
+            <p className="text-xs mt-0.5" style={{ color: S.text.tertiary }}>請先上傳 PCAP 檔案進行分析</p>
           </div>
         ) : (
           <>

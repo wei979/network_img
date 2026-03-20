@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { X, Database, Clock, AlertTriangle, ChevronDown, ChevronUp, Loader, Network, BarChart3 } from 'lucide-react'
+import { S } from '../lib/swiss-tokens'
 import AttackTimelineChart from './AttackTimelineChart'
 import PacketInspector from './PacketInspector'
 
@@ -19,18 +20,16 @@ import PacketInspector from './PacketInspector'
 export default function BatchPacketViewer({
   aggregatedConnection,
   onClose,
-  playbackProgress = 0, // 播放進度 (0-1)
-  onStatisticsLoaded = null, // 統計資料載入完成回調
-  isAttackTraffic = true, // 是否為攻擊流量 (connectionCount > 50)
-  activeParticleIndices = new Set(), // 當前動畫中顯示的粒子索引
-  selectedPacketIndex = null, // 使用者點選的封包索引
-  onPacketSelect = null, // 封包點選回調
-  preloadedPackets = null // 預載入的封包資料（來自 MindMap 的 connectionPackets）
+  playbackProgress = 0,
+  onStatisticsLoaded = null,
+  isAttackTraffic = true,
+  activeParticleIndices = new Set(),
+  selectedPacketIndex = null,
+  onPacketSelect = null,
+  preloadedPackets = null
 }) {
-  // 智能預設標籤：攻擊流量預設顯示時間軸，正常流量預設顯示封包列表
-  const [activeTab, setActiveTab] = useState(isAttackTraffic ? 'timeline' : 'packets') // 'timeline' | 'packets'
+  const [activeTab, setActiveTab] = useState(isAttackTraffic ? 'timeline' : 'packets')
 
-  // 當流量類型變化時，自動切換到對應的預設標籤
   useEffect(() => {
     setActiveTab(isAttackTraffic ? 'timeline' : 'packets')
   }, [isAttackTraffic])
@@ -41,13 +40,12 @@ export default function BatchPacketViewer({
   const [error, setError] = useState(null)
   const [expandedConnections, setExpandedConnections] = useState(new Set())
 
-  const [inspectedPacket, setInspectedPacket] = useState(null) // deep detail for PacketInspector
+  const [inspectedPacket, setInspectedPacket] = useState(null)
   const [inspectLoading, setInspectLoading] = useState(false)
 
   const scrollContainerRef = useRef(null)
-  const packetRefsMap = useRef(new Map()) // 存儲封包元素的 ref
+  const packetRefsMap = useRef(new Map())
 
-  // Fetch deep packet detail when a packet is selected
   const fetchPacketDetail = useCallback(async (connectionId, packetIndex) => {
     setInspectLoading(true)
     try {
@@ -69,18 +67,15 @@ export default function BatchPacketViewer({
     }
   }, [])
 
-  // When selectedPacketIndex changes, fetch the deep detail
   useEffect(() => {
     if (selectedPacketIndex === null) {
       setInspectedPacket(null)
       return
     }
-    // Determine connection_id for this packet
     let connId = null
     if (preloadedPackets?.connectionId) {
       connId = preloadedPackets.connectionId
     } else {
-      // Find from batchData
       for (const [cid, cdata] of Object.entries(batchData)) {
         if (cdata.packets?.some(p => p.index === selectedPacketIndex)) {
           connId = cid
@@ -93,11 +88,9 @@ export default function BatchPacketViewer({
     }
   }, [selectedPacketIndex, batchData, preloadedPackets, fetchPacketDetail])
 
-  // 當選中的封包索引變化時，自動滾動到該封包並展開其所屬連線
   useEffect(() => {
     if (selectedPacketIndex === null) return
 
-    // 預載入模式：直接滾動
     if (preloadedPackets?.packets?.length > 0) {
       setActiveTab('packets')
       setTimeout(() => {
@@ -109,7 +102,6 @@ export default function BatchPacketViewer({
       return
     }
 
-    // 原始模式：查找封包所屬的連線
     let targetConnId = null
     for (const [connId, connData] of Object.entries(batchData)) {
       if (connData.packets?.some(p => p.index === selectedPacketIndex)) {
@@ -118,12 +110,10 @@ export default function BatchPacketViewer({
       }
     }
 
-    // 展開連線並切換到封包列表標籤
     if (targetConnId) {
       setActiveTab('packets')
       setExpandedConnections(prev => new Set([...prev, targetConnId]))
 
-      // 延遲一下確保 DOM 更新後再滾動
       setTimeout(() => {
         const packetEl = packetRefsMap.current.get(selectedPacketIndex)
         if (packetEl) {
@@ -133,17 +123,14 @@ export default function BatchPacketViewer({
     }
   }, [selectedPacketIndex, batchData, preloadedPackets])
 
-  // 追蹤活躍粒子，自動滾動到第一個活躍封包（預載入模式下）
   const lastActiveIndicesRef = useRef(new Set())
   useEffect(() => {
     if (!preloadedPackets?.packets?.length || activeTab !== 'packets') return
 
-    // 找出新增的活躍索引
     const newActiveIndices = [...activeParticleIndices].filter(
       idx => !lastActiveIndicesRef.current.has(idx)
     )
 
-    // 如果有新的活躍粒子，滾動到第一個
     if (newActiveIndices.length > 0 && selectedPacketIndex === null) {
       const firstNewActive = Math.min(...newActiveIndices)
       const packetEl = packetRefsMap.current.get(firstNewActive)
@@ -155,7 +142,6 @@ export default function BatchPacketViewer({
     lastActiveIndicesRef.current = new Set(activeParticleIndices)
   }, [activeParticleIndices, preloadedPackets, activeTab, selectedPacketIndex])
 
-  // 配置
   const BATCH_SIZE = 10
   const PACKETS_PER_CONNECTION = 20
   const MAX_TOTAL_CONNECTIONS = 100
@@ -164,7 +150,6 @@ export default function BatchPacketViewer({
   const totalConnections = Math.min(connectionIds.length, MAX_TOTAL_CONNECTIONS)
   const hasMore = loadedCount < totalConnections
 
-  // 載入一批連線的封包資訊
   const loadBatch = async () => {
     if (loading || !hasMore) return
 
@@ -174,8 +159,6 @@ export default function BatchPacketViewer({
     const start = loadedCount
     const end = Math.min(start + BATCH_SIZE, totalConnections)
     const batchIds = connectionIds.slice(start, end)
-
-    console.log(`[BatchPacketViewer] Loading batch ${start}-${end} of ${totalConnections}`)
 
     try {
       const response = await fetch('/api/packets/batch', {
@@ -193,8 +176,6 @@ export default function BatchPacketViewer({
       }
 
       const data = await response.json()
-      console.log(`[BatchPacketViewer] Loaded ${Object.keys(data.results).length} connections`)
-
       setBatchData(prev => ({ ...prev, ...data.results }))
       setLoadedCount(end)
     } catch (err) {
@@ -205,14 +186,12 @@ export default function BatchPacketViewer({
     }
   }
 
-  // 初始載入第一批
   useEffect(() => {
     if (connectionIds.length > 0 && loadedCount === 0) {
       loadBatch()
     }
   }, [connectionIds])
 
-  // 切換連線展開/收起
   const toggleConnection = (connId) => {
     setExpandedConnections(prev => {
       const next = new Set(prev)
@@ -225,7 +204,6 @@ export default function BatchPacketViewer({
     })
   }
 
-  // 解析 connection ID
   const parseConnectionId = (id) => {
     const parts = id.split('-')
     if (parts.length >= 5) {
@@ -240,10 +218,8 @@ export default function BatchPacketViewer({
     return null
   }
 
-  // 格式化 payload 為 hex dump
   const formatPayloadPreview = (preview, ascii) => {
     if (!preview) return []
-
     const bytes = preview.match(/.{1,2}/g) || []
     const lines = []
     for (let i = 0; i < Math.min(bytes.length, 32); i += 16) {
@@ -255,7 +231,24 @@ export default function BatchPacketViewer({
     return lines
   }
 
-  // 渲染單一連線卡片
+  // Helper: get highlight style for packet card
+  const getHighlightStyle = (isSelected, isActive) => {
+    if (isSelected) return { background: `${S.accent}25`, border: `1px solid ${S.accent}` }
+    if (isActive) return { background: `${S.accent}12`, border: `1px solid ${S.accent}60` }
+    return { background: S.surface, border: `1px solid ${S.border}` }
+  }
+
+  // Helper: get flag badge style
+  const getFlagBadgeStyle = (flags) => {
+    if (flags.includes('URG') || flags.includes('PSH')) {
+      return { background: `${S.protocol.ICMP}20`, color: S.protocol.ICMP, border: `1px solid ${S.protocol.ICMP}40` }
+    }
+    if (flags.includes('SYN')) {
+      return { background: `${S.protocol.HTTP}20`, color: S.protocol.HTTP, border: `1px solid ${S.protocol.HTTP}40` }
+    }
+    return { background: S.surfaceHover, color: S.text.primary, border: 'none' }
+  }
+
   const renderConnectionCard = (connId, index) => {
     const connData = batchData[connId]
     const isExpanded = expandedConnections.has(connId)
@@ -263,10 +256,10 @@ export default function BatchPacketViewer({
 
     if (!connData) {
       return (
-        <div key={connId} className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-          <div className="flex items-center gap-2 text-slate-400">
+        <div key={connId} style={{ background: S.surface, borderRadius: S.radius.sm, padding: 16, border: `1px solid ${S.border}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: S.text.secondary }}>
             <Loader className="w-4 h-4 animate-spin" />
-            <span className="text-sm">載入中...</span>
+            <span style={{ fontSize: '0.875rem' }}>載入中...</span>
           </div>
         </div>
       )
@@ -274,61 +267,62 @@ export default function BatchPacketViewer({
 
     if (connData.error) {
       return (
-        <div key={connId} className="bg-red-900/20 rounded-lg p-4 border border-red-500/30">
-          <div className="flex items-center gap-2 text-red-400">
+        <div key={connId} style={{ background: `${S.protocol.ICMP}10`, borderRadius: S.radius.sm, padding: 16, border: `1px solid ${S.protocol.ICMP}30` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: S.protocol.ICMP }}>
             <AlertTriangle className="w-4 h-4" />
-            <span className="text-sm">{connData.error}</span>
+            <span style={{ fontSize: '0.875rem' }}>{connData.error}</span>
           </div>
         </div>
       )
     }
 
     return (
-      <div key={connId} className="bg-slate-800/70 rounded-lg border border-slate-700 overflow-hidden">
+      <div key={connId} style={{ background: S.surface, borderRadius: S.radius.sm, border: `1px solid ${S.border}`, overflow: 'hidden' }}>
         {/* 連線標題 */}
         <button
           onClick={() => toggleConnection(connId)}
-          className="w-full p-4 flex items-center justify-between hover:bg-slate-700/50 transition-colors"
+          style={{
+            width: '100%', padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            background: 'transparent', border: 'none', cursor: 'pointer', color: S.text.primary,
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = S.surfaceHover}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
         >
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center">
-              <span className="text-xs font-bold text-cyan-400">{index + 1}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: '50%',
+              background: `${S.accent}20`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: S.accent }}>{index + 1}</span>
             </div>
-            <div className="text-left">
-              <div className="text-sm font-semibold text-slate-200">
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '0.875rem', fontWeight: 600, color: S.text.primary }}>
                 {connInfo?.protocol || 'UNKNOWN'}
               </div>
-              <div className="text-xs text-slate-400 font-mono mt-0.5">
+              <div style={{ fontSize: '0.75rem', color: S.text.secondary, fontFamily: S.font.mono, marginTop: 2 }}>
                 {connInfo?.srcIp}:{connInfo?.srcPort} → {connInfo?.dstIp}:{connInfo?.dstPort}
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="text-xs text-slate-400">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ fontSize: '0.75rem', color: S.text.secondary }}>
               {connData.returned_packets} / {connData.total_packets} 封包
             </div>
             {isExpanded ? (
-              <ChevronUp className="w-4 h-4 text-slate-400" />
+              <ChevronUp className="w-4 h-4" style={{ color: S.text.secondary }} />
             ) : (
-              <ChevronDown className="w-4 h-4 text-slate-400" />
+              <ChevronDown className="w-4 h-4" style={{ color: S.text.secondary }} />
             )}
           </div>
         </button>
 
         {/* 封包列表（展開時顯示）*/}
         {isExpanded && connData.packets && (
-          <div className="border-t border-slate-700 p-4 space-y-3 max-h-96 overflow-y-auto bg-slate-900/50">
+          <div style={{ borderTop: `1px solid ${S.border}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 384, overflowY: 'auto', background: S.bgRaised }}>
             {connData.packets.map((packet, pIndex) => {
               const isActive = activeParticleIndices.has(packet.index)
               const isSelected = selectedPacketIndex === packet.index
-
-              // 動態計算高亮樣式
-              let highlightClass = 'bg-slate-800/70 border-slate-700'
-              if (isSelected) {
-                highlightClass = 'bg-amber-900/40 border-amber-400 packet-selected-glow'
-              } else if (isActive) {
-                highlightClass = 'bg-cyan-900/30 border-cyan-400/50 packet-active-glow'
-              }
+              const hl = getHighlightStyle(isSelected, isActive)
 
               return (
               <div
@@ -337,25 +331,24 @@ export default function BatchPacketViewer({
                   if (el) packetRefsMap.current.set(packet.index, el)
                 }}
                 data-packet-index={packet.index}
-                className={`rounded-lg p-3 border cursor-pointer transition-all duration-300 ${highlightClass}`}
+                style={{ borderRadius: S.radius.sm, padding: 12, cursor: 'pointer', ...hl }}
                 onClick={() => onPacketSelect?.(packet.index)}
               >
-                {/* 封包標題 */}
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-semibold ${isSelected ? 'text-amber-300' : isActive ? 'text-cyan-300' : 'text-slate-300'}`}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: isSelected ? S.accent : isActive ? S.accent : S.text.primary }}>
                       封包 #{packet.index}
                     </span>
                     {packet.errorType && (
-                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/30">
-                        <AlertTriangle className="w-3 h-3 text-red-400" />
-                        <span className="text-[10px] font-semibold text-red-400">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: S.radius.sm, background: `${S.protocol.ICMP}20`, border: `1px solid ${S.protocol.ICMP}40` }}>
+                        <AlertTriangle className="w-3 h-3" style={{ color: S.protocol.ICMP }} />
+                        <span style={{ fontSize: '0.625rem', fontWeight: 600, color: S.protocol.ICMP }}>
                           {packet.errorType}
                         </span>
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: S.text.secondary }}>
                     <Clock className="w-3 h-3" />
                     {packet.relativeTime || '0.000s'}
                   </div>
@@ -363,16 +356,16 @@ export default function BatchPacketViewer({
 
                 {/* TCP Headers */}
                 {packet.headers?.tcp && (
-                  <div className="mb-2">
-                    <div className="text-xs font-semibold text-slate-400 mb-1">TCP</div>
-                    <div className="bg-slate-900/50 rounded px-2 py-1.5 text-xs font-mono space-y-0.5">
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Flags:</span>
-                        <span className="text-emerald-400">{packet.headers.tcp.flags}</span>
+                  <div style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: S.text.secondary, marginBottom: 4 }}>TCP</div>
+                    <div style={{ background: S.bgRaised, borderRadius: S.radius.sm, padding: '6px 8px', fontSize: '0.75rem', fontFamily: S.font.mono }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: S.text.tertiary }}>Flags:</span>
+                        <span style={{ color: S.protocol.HTTP }}>{packet.headers.tcp.flags}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Seq:</span>
-                        <span className="text-slate-300">{packet.headers.tcp.seq}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: S.text.tertiary }}>Seq:</span>
+                        <span style={{ color: S.text.primary }}>{packet.headers.tcp.seq}</span>
                       </div>
                     </div>
                   </div>
@@ -380,12 +373,12 @@ export default function BatchPacketViewer({
 
                 {/* UDP Headers */}
                 {packet.headers?.udp && (
-                  <div className="mb-2">
-                    <div className="text-xs font-semibold text-slate-400 mb-1">UDP</div>
-                    <div className="bg-slate-900/50 rounded px-2 py-1.5 text-xs font-mono">
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Length:</span>
-                        <span className="text-slate-300">{packet.headers.udp.length}</span>
+                  <div style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: S.text.secondary, marginBottom: 4 }}>UDP</div>
+                    <div style={{ background: S.bgRaised, borderRadius: S.radius.sm, padding: '6px 8px', fontSize: '0.75rem', fontFamily: S.font.mono }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: S.text.tertiary }}>Length:</span>
+                        <span style={{ color: S.text.primary }}>{packet.headers.udp.length}</span>
                       </div>
                     </div>
                   </div>
@@ -394,14 +387,14 @@ export default function BatchPacketViewer({
                 {/* Payload */}
                 {packet.payload?.preview && (
                   <div>
-                    <div className="text-xs font-semibold text-slate-400 mb-1">
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: S.text.secondary, marginBottom: 4 }}>
                       Payload ({packet.payload.length} bytes)
                     </div>
-                    <div className="bg-slate-900/70 rounded px-2 py-1.5 font-mono text-[10px] leading-relaxed max-h-24 overflow-y-auto">
+                    <div style={{ background: S.bg, borderRadius: S.radius.sm, padding: '6px 8px', fontFamily: S.font.mono, fontSize: '0.625rem', lineHeight: 1.6, maxHeight: 96, overflowY: 'auto' }}>
                       {formatPayloadPreview(packet.payload.preview, packet.payload.ascii).map((line, i) => (
-                        <div key={i} className="flex gap-3">
-                          <span className="text-cyan-400">{line.hex}</span>
-                          <span className="text-slate-500">{line.ascii}</span>
+                        <div key={i} style={{ display: 'flex', gap: 12 }}>
+                          <span style={{ color: S.accent }}>{line.hex}</span>
+                          <span style={{ color: S.text.tertiary }}>{line.ascii}</span>
                         </div>
                       ))}
                     </div>
@@ -412,7 +405,7 @@ export default function BatchPacketViewer({
             })}
 
             {connData.total_packets > connData.returned_packets && (
-              <div className="text-xs text-slate-500 italic text-center py-2">
+              <div style={{ fontSize: '0.75rem', color: S.text.tertiary, fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>
                 還有 {connData.total_packets - connData.returned_packets} 個封包未顯示
               </div>
             )}
@@ -423,19 +416,24 @@ export default function BatchPacketViewer({
   }
 
   return (
-    <div className="fixed top-0 right-0 h-full w-[700px] bg-slate-900/95 backdrop-blur-xl border-l border-slate-700 shadow-2xl z-50 flex flex-col">
+    <div style={{
+      position: 'fixed', top: 0, right: 0, height: '100%', width: 700,
+      background: S.bg, borderLeft: `1px solid ${S.border}`,
+      zIndex: 50, display: 'flex', flexDirection: 'column',
+      fontFamily: S.font.sans,
+    }}>
       {/* 標題列 */}
-      <div className="flex items-center justify-between p-6 border-b border-slate-700">
-        <div className="flex items-center gap-3">
-          <Database className="w-5 h-5 text-cyan-400" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 24, borderBottom: `1px solid ${S.border}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Database className="w-5 h-5" style={{ color: S.accent }} />
           <div>
-            <h2 className="text-lg font-semibold text-slate-200">批量封包檢視器</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: S.text.primary, margin: 0 }}>批量封包檢視器</h2>
+            <p style={{ fontSize: '0.75rem', color: S.text.secondary, marginTop: 2 }}>
               {preloadedPackets?.packets?.length > 0 ? (
                 <>
-                  <span className="text-cyan-400">{preloadedPackets.packets.length}</span> 封包（動畫同步模式）
+                  <span style={{ color: S.accent }}>{preloadedPackets.packets.length}</span> 封包（動畫同步模式）
                   {activeParticleIndices.size > 0 && (
-                    <span className="text-emerald-400 ml-2">
+                    <span style={{ color: S.protocol.HTTP, marginLeft: 8 }}>
                       • {activeParticleIndices.size} 個活躍
                     </span>
                   )}
@@ -444,7 +442,7 @@ export default function BatchPacketViewer({
                 <>
                   已載入 {loadedCount} / {totalConnections} 條連線
                   {totalConnections < connectionIds.length && (
-                    <span className="text-orange-400 ml-2">
+                    <span style={{ color: S.accent, marginLeft: 8 }}>
                       （已限制最多 {MAX_TOTAL_CONNECTIONS} 條）
                     </span>
                   )}
@@ -456,64 +454,68 @@ export default function BatchPacketViewer({
         <button
           aria-label="Close packet viewer"
           onClick={onClose}
-          className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+          style={{ padding: 8, background: 'transparent', border: 'none', borderRadius: S.radius.sm, cursor: 'pointer', color: S.text.secondary }}
         >
-          <X className="w-5 h-5 text-slate-400" />
+          <X className="w-5 h-5" />
         </button>
       </div>
 
       {/* 聚合連線資訊 */}
-      <div className="p-4 border-b border-slate-700 bg-slate-800/50">
-        <div className="flex items-center gap-2 mb-2">
-          <Network className="w-4 h-4 text-emerald-400" />
-          <span className="text-sm font-semibold text-slate-300">聚合連線資訊</span>
+      <div style={{ padding: 16, borderBottom: `1px solid ${S.border}`, background: S.surface }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <Network className="w-4 h-4" style={{ color: S.protocol.HTTP }} />
+          <span style={{ fontSize: '0.875rem', fontWeight: 600, color: S.text.primary }}>聚合連線資訊</span>
         </div>
-        <div className="grid grid-cols-2 gap-2 text-xs">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: '0.75rem' }}>
           <div>
-            <span className="text-slate-500">來源 IP</span>
-            <div className="text-slate-200 font-mono">{aggregatedConnection?.src}</div>
+            <span style={{ color: S.text.tertiary }}>來源 IP</span>
+            <div style={{ color: S.text.primary, fontFamily: S.font.mono }}>{aggregatedConnection?.src}</div>
           </div>
           <div>
-            <span className="text-slate-500">目的 IP</span>
-            <div className="text-slate-200 font-mono">{aggregatedConnection?.dst}</div>
+            <span style={{ color: S.text.tertiary }}>目的 IP</span>
+            <div style={{ color: S.text.primary, fontFamily: S.font.mono }}>{aggregatedConnection?.dst}</div>
           </div>
           <div>
-            <span className="text-slate-500">連線數量</span>
-            <div className="text-cyan-400 font-mono">{aggregatedConnection?.connectionCount} 條</div>
+            <span style={{ color: S.text.tertiary }}>連線數量</span>
+            <div style={{ color: S.accent, fontFamily: S.font.mono }}>{aggregatedConnection?.connectionCount} 條</div>
           </div>
           <div>
-            <span className="text-slate-500">協議類型</span>
-            <div className="text-slate-200 font-mono">
+            <span style={{ color: S.text.tertiary }}>協議類型</span>
+            <div style={{ color: S.text.primary, fontFamily: S.font.mono }}>
               {aggregatedConnection?.protocols?.join(', ') || 'N/A'}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Tab 切換 */}
-      <div className="flex border-b border-slate-700">
+      {/* Tab 切換 — underline style */}
+      <div style={{ display: 'flex', borderBottom: `1px solid ${S.border}` }}>
         <button
           onClick={() => setActiveTab('timeline')}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
-            activeTab === 'timeline'
-              ? 'text-cyan-400 border-b-2 border-cyan-400 bg-slate-800/50'
-              : 'text-slate-400 hover:text-slate-300 hover:bg-slate-800/30'
-          }`}
+          style={{
+            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '12px 16px', fontSize: '0.875rem', fontWeight: 500,
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            borderBottom: activeTab === 'timeline' ? `2px solid ${S.accent}` : '2px solid transparent',
+            color: activeTab === 'timeline' ? S.accent : S.text.secondary,
+          }}
         >
           <BarChart3 className="w-4 h-4" />
           攻擊時間軸
         </button>
         <button
           onClick={() => setActiveTab('packets')}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
-            activeTab === 'packets'
-              ? 'text-cyan-400 border-b-2 border-cyan-400 bg-slate-800/50'
-              : 'text-slate-400 hover:text-slate-300 hover:bg-slate-800/30'
-          }`}
+          style={{
+            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '12px 16px', fontSize: '0.875rem', fontWeight: 500,
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            borderBottom: activeTab === 'packets' ? `2px solid ${S.accent}` : '2px solid transparent',
+            color: activeTab === 'packets' ? S.accent : S.text.secondary,
+          }}
         >
           <Database className="w-4 h-4" />
           封包列表
-          <span className="text-xs text-slate-500">
+          <span style={{ fontSize: '0.75rem', color: S.text.tertiary }}>
             {preloadedPackets?.packets?.length > 0
               ? `(${preloadedPackets.packets.length})`
               : `(${loadedCount}/${totalConnections})`
@@ -523,24 +525,23 @@ export default function BatchPacketViewer({
       </div>
 
       {/* Tab 內容 */}
-      <div className="flex-1 overflow-hidden">
+      <div style={{ flex: 1, overflow: 'hidden' }}>
         {/* 攻擊時間軸 Tab */}
         {activeTab === 'timeline' && (
-          <div className="h-full overflow-y-auto p-4">
+          <div style={{ height: '100%', overflowY: 'auto', padding: 16 }}>
             <AttackTimelineChart
               aggregatedConnection={aggregatedConnection}
               playbackProgress={playbackProgress}
               onStatisticsLoaded={onStatisticsLoaded}
               onTimePointClick={(point) => {
-                console.log('[BatchPacketViewer] Time point clicked:', point)
                 setActiveTab('packets')
               }}
             />
 
             {/* 說明 */}
-            <div className="mt-4 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-              <h4 className="text-sm font-semibold text-slate-300 mb-2">視覺化說明</h4>
-              <ul className="text-xs text-slate-400 space-y-1">
+            <div style={{ marginTop: 16, padding: 16, background: S.surface, borderRadius: S.radius.sm, border: `1px solid ${S.border}` }}>
+              <h4 style={{ fontSize: '0.875rem', fontWeight: 600, color: S.text.primary, marginBottom: 8 }}>視覺化說明</h4>
+              <ul style={{ fontSize: '0.75rem', color: S.text.secondary, listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <li>• 紅色區域代表封包密度，越高表示攻擊越激烈</li>
                 <li>• SYN 比例越高，越可能是 SYN Flood 攻擊</li>
                 <li>• 點擊時間軸上的時間點可以查看該時段的封包詳情</li>
@@ -552,28 +553,21 @@ export default function BatchPacketViewer({
 
         {/* 封包列表 Tab */}
         {activeTab === 'packets' && (
-          <div ref={scrollContainerRef} className="h-full overflow-y-auto p-4 space-y-3">
-            {/* 預載入封包模式：顯示扁平列表（與動畫同步） */}
+          <div ref={scrollContainerRef} style={{ height: '100%', overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* 預載入封包模式 */}
             {preloadedPackets?.packets?.length > 0 ? (
               <>
-                <div className="mb-3 p-3 bg-cyan-900/20 rounded-lg border border-cyan-500/30">
-                  <div className="flex items-center gap-2 text-cyan-400 text-sm">
+                <div style={{ marginBottom: 12, padding: 12, background: `${S.accent}12`, borderRadius: S.radius.sm, border: `1px solid ${S.accent}30` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: S.accent, fontSize: '0.875rem' }}>
                     <Database className="w-4 h-4" />
-                    <span className="font-medium">動畫封包列表</span>
-                    <span className="text-xs text-slate-400">（{preloadedPackets.packets.length} 封包，與動畫同步）</span>
+                    <span style={{ fontWeight: 500 }}>動畫封包列表</span>
+                    <span style={{ fontSize: '0.75rem', color: S.text.secondary }}>（{preloadedPackets.packets.length} 封包，與動畫同步）</span>
                   </div>
                 </div>
                 {preloadedPackets.packets.map((packet) => {
                   const isActive = activeParticleIndices.has(packet.index)
                   const isSelected = selectedPacketIndex === packet.index
-
-                  // 動態計算高亮樣式
-                  let highlightClass = 'bg-slate-800/70 border-slate-700'
-                  if (isSelected) {
-                    highlightClass = 'bg-amber-900/40 border-amber-400 ring-2 ring-amber-400/50'
-                  } else if (isActive) {
-                    highlightClass = 'bg-cyan-900/30 border-cyan-400/50 ring-1 ring-cyan-400/30'
-                  }
+                  const hl = getHighlightStyle(isSelected, isActive)
 
                   return (
                     <div
@@ -582,73 +576,70 @@ export default function BatchPacketViewer({
                         if (el) packetRefsMap.current.set(packet.index, el)
                       }}
                       data-packet-index={packet.index}
-                      className={`rounded-lg p-3 border cursor-pointer transition-all duration-300 ${highlightClass}`}
+                      style={{ borderRadius: S.radius.sm, padding: 12, cursor: 'pointer', ...hl }}
                       onClick={() => onPacketSelect?.(packet.index)}
                     >
-                      {/* 封包標題 */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs font-semibold ${isSelected ? 'text-amber-300' : isActive ? 'text-cyan-300' : 'text-slate-300'}`}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: isSelected ? S.accent : isActive ? S.accent : S.text.primary }}>
                             封包 #{packet.index}
                           </span>
                           {/* TCP Flags 標籤 */}
                           {packet.headers?.tcp?.flags && (
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
-                              packet.headers.tcp.flags.includes('URG') || packet.headers.tcp.flags.includes('PSH')
-                                ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                : packet.headers.tcp.flags.includes('SYN')
-                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                : 'bg-slate-600/50 text-slate-300'
-                            }`}>
+                            <span style={{
+                              fontSize: '0.625rem', padding: '2px 6px', borderRadius: S.radius.sm,
+                              fontFamily: S.font.mono,
+                              ...getFlagBadgeStyle(packet.headers.tcp.flags),
+                            }}>
                               {packet.headers.tcp.flags}
                             </span>
                           )}
                           {packet.errorType && (
-                            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/30">
-                              <AlertTriangle className="w-3 h-3 text-red-400" />
-                              <span className="text-[10px] font-semibold text-red-400">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: S.radius.sm, background: `${S.protocol.ICMP}20`, border: `1px solid ${S.protocol.ICMP}40` }}>
+                              <AlertTriangle className="w-3 h-3" style={{ color: S.protocol.ICMP }} />
+                              <span style={{ fontSize: '0.625rem', fontWeight: 600, color: S.protocol.ICMP }}>
                                 {packet.errorType}
                               </span>
                             </div>
                           )}
                           {/* 活躍指示器 */}
                           {isActive && (
-                            <span className="flex items-center gap-1 text-[10px] text-cyan-400">
-                              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.625rem', color: S.accent }}>
+                              <span style={{ width: 6, height: 6, borderRadius: '50%', background: S.accent }} className="animate-pulse" />
                               動畫中
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: S.text.secondary }}>
                           <Clock className="w-3 h-3" />
                           {packet.relativeTime || '0.000s'}
                         </div>
                       </div>
 
                       {/* 簡化的封包資訊 */}
-                      <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: '0.75rem' }}>
                         <div>
-                          <span className="text-slate-500">來源</span>
-                          <div className="text-slate-300 font-mono truncate">
+                          <span style={{ color: S.text.tertiary }}>來源</span>
+                          <div style={{ color: S.text.primary, fontFamily: S.font.mono, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {packet.fiveTuple?.srcIp}:{packet.fiveTuple?.srcPort}
                           </div>
                         </div>
                         <div>
-                          <span className="text-slate-500">目的</span>
-                          <div className="text-slate-300 font-mono truncate">
+                          <span style={{ color: S.text.tertiary }}>目的</span>
+                          <div style={{ color: S.text.primary, fontFamily: S.font.mono, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {packet.fiveTuple?.dstIp}:{packet.fiveTuple?.dstPort}
                           </div>
                         </div>
                         {packet.length && (
                           <div>
-                            <span className="text-slate-500">長度</span>
-                            <div className="text-slate-300 font-mono">{packet.length} bytes</div>
+                            <span style={{ color: S.text.tertiary }}>長度</span>
+                            <div style={{ color: S.text.primary, fontFamily: S.font.mono }}>{packet.length} bytes</div>
                           </div>
                         )}
                         {packet.headers?.tcp?.seq && (
                           <div>
-                            <span className="text-slate-500">Seq</span>
-                            <div className="text-slate-300 font-mono">{packet.headers.tcp.seq}</div>
+                            <span style={{ color: S.text.tertiary }}>Seq</span>
+                            <div style={{ color: S.text.primary, fontFamily: S.font.mono }}>{packet.headers.tcp.seq}</div>
                           </div>
                         )}
                       </div>
@@ -657,17 +648,22 @@ export default function BatchPacketViewer({
                 })}
               </>
             ) : (
-              /* 原始模式：按連線分組顯示 */
               connectionIds.slice(0, loadedCount).map((connId, index) => renderConnectionCard(connId, index))
             )}
 
-            {/* 載入更多按鈕 - 預載入模式下隱藏 */}
+            {/* 載入更多按鈕 */}
             {!preloadedPackets?.packets?.length && hasMore && (
-              <div className="flex justify-center pt-4">
+              <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 16 }}>
                 <button
                   onClick={loadBatch}
                   disabled={loading}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '8px 16px', borderRadius: S.radius.sm,
+                    background: `${S.accent}20`, border: `1px solid ${S.accent}40`,
+                    color: S.accent, cursor: loading ? 'not-allowed' : 'pointer',
+                    opacity: loading ? 0.5 : 1,
+                  }}
                 >
                   {loading ? (
                     <>
@@ -684,30 +680,30 @@ export default function BatchPacketViewer({
               </div>
             )}
 
-            {/* 錯誤訊息 - 預載入模式下隱藏 */}
+            {/* 錯誤訊息 */}
             {!preloadedPackets?.packets?.length && error && (
-              <div className="bg-red-900/20 rounded-lg p-4 border border-red-500/30">
-                <div className="flex items-center gap-2 text-red-400">
+              <div style={{ background: `${S.protocol.ICMP}10`, borderRadius: S.radius.sm, padding: 16, border: `1px solid ${S.protocol.ICMP}30` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: S.protocol.ICMP }}>
                   <AlertTriangle className="w-4 h-4" />
-                  <span className="text-sm">載入失敗：{error}</span>
+                  <span style={{ fontSize: '0.875rem' }}>載入失敗：{error}</span>
                 </div>
               </div>
             )}
 
-            {/* 全部載入完成 - 預載入模式下隱藏 */}
+            {/* 全部載入完成 */}
             {!preloadedPackets?.packets?.length && !hasMore && loadedCount > 0 && (
-              <div className="text-center py-4 text-slate-400 text-sm">
+              <div style={{ textAlign: 'center', padding: '16px 0', color: S.text.secondary, fontSize: '0.875rem' }}>
                 已載入全部 {loadedCount} 條連線
               </div>
             )}
 
-            {/* Packet Inspector - 封包深度檢視 */}
+            {/* Packet Inspector */}
             {selectedPacketIndex !== null && (
-              <div className="mt-4 border-t border-slate-700 pt-4">
+              <div style={{ marginTop: 16, borderTop: `1px solid ${S.border}`, paddingTop: 16 }}>
                 {inspectLoading ? (
-                  <div className="flex items-center justify-center gap-2 py-8 text-slate-400">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '32px 0', color: S.text.secondary }}>
                     <Loader className="w-4 h-4 animate-spin" />
-                    <span className="text-sm">載入封包詳情...</span>
+                    <span style={{ fontSize: '0.875rem' }}>載入封包詳情...</span>
                   </div>
                 ) : inspectedPacket ? (
                   <PacketInspector

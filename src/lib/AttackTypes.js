@@ -3,16 +3,18 @@
  *
  * 這個模組提供可擴展的攻擊類型配置，讓前端能夠動態渲染不同類型的攻擊。
  * 添加新的攻擊類型只需在 ATTACK_TYPES 中增加條目即可。
+ *
+ * Swiss Editorial Dark tokens: colors stored as hex strings for inline styles.
  */
 
 /**
  * 攻擊類型配置
  * @typedef {Object} AttackTypeConfig
- * @property {Object} colors - Tailwind CSS 顏色類別
- * @property {string} colors.bg - 背景色類別 (e.g., 'bg-red-500/20')
- * @property {string} colors.text - 文字色類別 (e.g., 'text-red-400')
- * @property {string} colors.border - 邊框色類別 (e.g., 'border-red-500/30')
- * @property {string} iconColor - 圖標顏色類別
+ * @property {Object} colors - Hex color values for inline styles
+ * @property {string} colors.bg - Background hex color
+ * @property {string} colors.text - Text hex color
+ * @property {string} colors.border - Border hex color
+ * @property {string} iconColor - Icon hex color
  * @property {string} description - 攻擊類型中文描述
  * @property {string} threatLevel - 威脅等級 ('high' | 'medium' | 'low')
  * @property {number} priority - 優先級 (數字越小優先級越高)
@@ -21,11 +23,11 @@
 export const ATTACK_TYPES = {
   'URG-PSH-FIN Attack': {
     colors: {
-      bg: 'bg-fuchsia-500/20',
-      text: 'text-fuchsia-400',
-      border: 'border-fuchsia-500/30'
+      bg: '#a855f720',
+      text: '#c084fc',
+      border: '#a855f740'
     },
-    iconColor: 'text-fuchsia-400',
+    iconColor: '#c084fc',
     description: '異常旗標組合攻擊 - 同時設置 URG、PSH、FIN 旗標',
     threatLevel: 'high',
     priority: 1
@@ -33,11 +35,11 @@ export const ATTACK_TYPES = {
 
   'SYN Flood': {
     colors: {
-      bg: 'bg-red-500/20',
-      text: 'text-red-400',
-      border: 'border-red-500/30'
+      bg: '#e05a3320',
+      text: '#e05a33',
+      border: '#e05a3340'
     },
-    iconColor: 'text-red-400',
+    iconColor: '#e05a33',
     description: 'SYN 洪水攻擊 - 大量未完成的 TCP 連線嘗試',
     threatLevel: 'high',
     priority: 2
@@ -45,11 +47,11 @@ export const ATTACK_TYPES = {
 
   'PSH Flood': {
     colors: {
-      bg: 'bg-pink-500/20',
-      text: 'text-pink-400',
-      border: 'border-pink-500/30'
+      bg: '#ec489920',
+      text: '#f472b6',
+      border: '#ec489940'
     },
-    iconColor: 'text-pink-400',
+    iconColor: '#f472b6',
     description: 'PSH 洪水攻擊 - 強制接收端立即處理大量資料',
     threatLevel: 'high',
     priority: 3
@@ -57,11 +59,11 @@ export const ATTACK_TYPES = {
 
   'FIN Flood': {
     colors: {
-      bg: 'bg-red-500/20',
-      text: 'text-red-400',
-      border: 'border-red-500/30'
+      bg: '#e05a3320',
+      text: '#e05a33',
+      border: '#e05a3340'
     },
-    iconColor: 'text-red-400',
+    iconColor: '#e05a33',
     description: 'FIN 洪水攻擊 - 發送大量 FIN 封包關閉連線',
     threatLevel: 'high',
     priority: 4
@@ -69,11 +71,11 @@ export const ATTACK_TYPES = {
 
   'RST Attack': {
     colors: {
-      bg: 'bg-amber-500/20',
-      text: 'text-amber-400',
-      border: 'border-amber-500/30'
+      bg: '#f59e0b20',
+      text: '#fbbf24',
+      border: '#f59e0b40'
     },
-    iconColor: 'text-amber-400',
+    iconColor: '#fbbf24',
     description: 'RST 重置攻擊 - 強制中斷現有連線',
     threatLevel: 'medium',
     priority: 5
@@ -81,11 +83,11 @@ export const ATTACK_TYPES = {
 
   'ACK Flood': {
     colors: {
-      bg: 'bg-orange-500/20',
-      text: 'text-orange-400',
-      border: 'border-orange-500/30'
+      bg: '#f9731620',
+      text: '#fb923c',
+      border: '#f9731640'
     },
-    iconColor: 'text-orange-400',
+    iconColor: '#fb923c',
     description: 'ACK 洪水攻擊 - 發送大量 ACK 封包消耗資源',
     threatLevel: 'high',
     priority: 6
@@ -93,11 +95,11 @@ export const ATTACK_TYPES = {
 
   'DNS Amplification': {
     colors: {
-      bg: 'bg-purple-500/20',
-      text: 'text-purple-400',
-      border: 'border-purple-500/30'
+      bg: '#8b5cf620',
+      text: '#8b5cf6',
+      border: '#8b5cf640'
     },
-    iconColor: 'text-purple-400',
+    iconColor: '#8b5cf6',
     description: 'DNS 放大攻擊 — 利用開放 DNS 伺服器反射並放大流量',
     threatLevel: 'high',
     priority: 3.5
@@ -105,11 +107,11 @@ export const ATTACK_TYPES = {
 
   'Slowloris': {
     colors: {
-      bg: 'bg-amber-500/20',
-      text: 'text-amber-300',
-      border: 'border-amber-500/30'
+      bg: '#f59e0b20',
+      text: '#fbbf24',
+      border: '#f59e0b40'
     },
-    iconColor: 'text-amber-300',
+    iconColor: '#fbbf24',
     description: 'Slowloris 慢速攻擊 — 維持大量不完整 HTTP 連線耗盡伺服器資源',
     threatLevel: 'high',
     priority: 4.5
@@ -117,11 +119,11 @@ export const ATTACK_TYPES = {
 
   'ARP Spoofing': {
     colors: {
-      bg: 'bg-rose-500/20',
-      text: 'text-rose-400',
-      border: 'border-rose-500/30'
+      bg: '#ef444420',
+      text: '#ef4444',
+      border: '#ef444440'
     },
-    iconColor: 'text-rose-400',
+    iconColor: '#ef4444',
     description: 'ARP 欺騙攻擊 — 偽造 ARP 回應以攔截網路流量',
     threatLevel: 'high',
     priority: 5.5
@@ -129,11 +131,11 @@ export const ATTACK_TYPES = {
 
   'Volumetric Flood': {
     colors: {
-      bg: 'bg-orange-500/20',
-      text: 'text-orange-400',
-      border: 'border-orange-500/30'
+      bg: '#f9731620',
+      text: '#fb923c',
+      border: '#f9731640'
     },
-    iconColor: 'text-orange-400',
+    iconColor: '#fb923c',
     description: '容量型洪泛攻擊 — 單一來源大量封包消耗頻寬',
     threatLevel: 'high',
     priority: 6.5
@@ -141,11 +143,11 @@ export const ATTACK_TYPES = {
 
   'High Volume Attack': {
     colors: {
-      bg: 'bg-orange-500/20',
-      text: 'text-orange-400',
-      border: 'border-orange-500/30'
+      bg: '#f9731620',
+      text: '#fb923c',
+      border: '#f9731640'
     },
-    iconColor: 'text-orange-400',
+    iconColor: '#fb923c',
     description: '高流量攻擊 - 異常大量的網路流量',
     threatLevel: 'medium',
     priority: 7
@@ -153,11 +155,11 @@ export const ATTACK_TYPES = {
 
   'Suspicious Traffic': {
     colors: {
-      bg: 'bg-yellow-500/20',
-      text: 'text-yellow-400',
-      border: 'border-yellow-500/30'
+      bg: '#eab30820',
+      text: '#fbbf24',
+      border: '#eab30840'
     },
-    iconColor: 'text-yellow-400',
+    iconColor: '#fbbf24',
     description: '可疑流量 - 異常但不確定為攻擊的流量模式',
     threatLevel: 'medium',
     priority: 8
@@ -165,11 +167,11 @@ export const ATTACK_TYPES = {
 
   'Normal Traffic': {
     colors: {
-      bg: 'bg-green-500/20',
-      text: 'text-green-400',
-      border: 'border-green-500/30'
+      bg: '#10b98120',
+      text: '#10b981',
+      border: '#10b98140'
     },
-    iconColor: 'text-emerald-400',
+    iconColor: '#10b981',
     description: '正常流量',
     threatLevel: 'low',
     priority: 9
@@ -186,19 +188,34 @@ export function getAttackTypeConfig(attackType) {
 }
 
 /**
- * 獲取攻擊類型的 CSS 類別字串
+ * 獲取攻擊類型的內聯樣式物件
  * @param {string} attackType - 攻擊類型名稱
- * @returns {string} 合併的 CSS 類別字串
+ * @returns {Object} { background, color, borderColor }
  */
-export function getAttackTypeClassName(attackType) {
+export function getAttackTypeStyle(attackType) {
   const config = getAttackTypeConfig(attackType)
-  return `${config.colors.bg} ${config.colors.text} ${config.colors.border}`
+  return {
+    background: config.colors.bg,
+    color: config.colors.text,
+    borderColor: config.colors.border,
+  }
 }
 
 /**
- * 獲取攻擊類型的圖標顏色
+ * 獲取攻擊類型的 CSS 類別字串 (legacy — returns empty string)
+ * Use getAttackTypeStyle() for inline styles instead.
  * @param {string} attackType - 攻擊類型名稱
- * @returns {string} 圖標顏色類別
+ * @returns {string} empty string (callers should use getAttackTypeStyle)
+ */
+export function getAttackTypeClassName(attackType) {
+  // Return empty string; callers now use getAttackTypeStyle for inline styles
+  return ''
+}
+
+/**
+ * 獲取攻擊類型的圖標顏色（hex 字串）
+ * @param {string} attackType - 攻擊類型名稱
+ * @returns {string} hex color string
  */
 export function getAttackTypeIconColor(attackType) {
   const config = getAttackTypeConfig(attackType)

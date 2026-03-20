@@ -457,7 +457,7 @@ const protocolColor = (protocol, protocolType) => {
   }
   
   // 回退到基本協議顏色
-  return PROTOCOL_COLORS[protocol?.toLowerCase()] || '#94a3b8'
+  return PROTOCOL_COLORS[protocol?.toLowerCase()] || '#706b61'
 }
 
 export default function MindMap({ isLearningMode = false }) {
@@ -1776,7 +1776,7 @@ export default function MindMap({ isLearningMode = false }) {
   }, [needsFitToView, nodesComputed, fitToView])
 
   return (
-    <div className="bg-slate-950 text-slate-100 flex min-h-screen">
+    <div style={{ background: '#141311', color: '#e8e5df' }} className="flex min-h-screen">
       {/* ========== 學習模式：課程側邊欄 ========== */}
       {showLearningUI && showCourseSidebar && (
         <CourseSidebar
@@ -1816,9 +1816,9 @@ export default function MindMap({ isLearningMode = false }) {
         fileInputRef={fileInputRef}
       />
 
-      <main className="px-6 pb-8">
-        <div ref={gridRef} className="mt-6 grid gap-1" style={{ gridTemplateColumns: `1fr 6px ${sidebarWidth}px` }}>
-          <section className="glass-card rounded-2xl p-6">
+      <main style={{ padding: '0 16px 16px' }}>
+        <div ref={gridRef} className="grid gap-1" style={{ gridTemplateColumns: `1fr 6px ${sidebarWidth}px`, marginTop: 8 }}>
+          <section style={{ background: '#1b1a17', border: '1px solid #2e2d2a', borderRadius: 4, padding: 16 }}>
             {loading ? (
               <div className="flex h-[calc(100vh-260px)] min-h-[400px] items-center justify-center">
                 <Loader2 className="h-10 w-10 animate-spin text-slate-500" />
@@ -1868,24 +1868,24 @@ export default function MindMap({ isLearningMode = false }) {
                     <svg
                       viewBox="0 0 100 100"
                       preserveAspectRatio="xMidYMid meet"
-                      className="mindmap-svg-container w-full h-[calc(100vh-260px)] min-h-[400px] rounded-2xl"
-                      style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}
+                      className="mindmap-svg-container w-full h-[calc(100vh-260px)] min-h-[400px]"
+                      style={{ background: '#141311' }}
                     >
                       <defs>
                         <filter id="animNodeGlow" filterUnits="userSpaceOnUse">
-                          <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur" />
+                          <feGaussianBlur in="SourceGraphic" stdDeviation="0.3" result="blur" />
                           <feMerge>
                             <feMergeNode in="blur" />
                             <feMergeNode in="SourceGraphic" />
                           </feMerge>
                         </filter>
                         <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                          <stop offset="0%" stopColor={isAttack ? '#ef4444' : '#38bdf8'} />
-                          <stop offset="50%" stopColor={isAttack ? '#f97316' : '#22d3ee'} />
-                          <stop offset="100%" stopColor={isAttack ? '#ef4444' : '#38bdf8'} />
+                          <stop offset="0%" stopColor={isAttack ? '#ef4444' : '#e05a33'} />
+                          <stop offset="50%" stopColor={isAttack ? '#f97316' : '#b8452a'} />
+                          <stop offset="100%" stopColor={isAttack ? '#ef4444' : '#e05a33'} />
                         </linearGradient>
                         <pattern id="animGrid" width="10" height="10" patternUnits="userSpaceOnUse">
-                          <circle cx="5" cy="5" r="0.3" fill="#334155" opacity="0.5" />
+                          <circle cx="5" cy="5" r="0.3" fill="#2e2d2a" opacity="0.4" />
                         </pattern>
                       </defs>
 
@@ -1893,10 +1893,10 @@ export default function MindMap({ isLearningMode = false }) {
                       <rect width="100" height="100" fill="url(#animGrid)" />
 
                       {/* 標題 */}
-                      <text x="50" y="8" textAnchor="middle" className="text-[3px] fill-slate-400 font-medium">
+                      <text x="50" y="8" textAnchor="middle" fill="#a09b91" fontSize="3" fontFamily="'DM Sans', sans-serif" fontWeight="500">
                         封包傳輸動畫
                       </text>
-                      <text x="50" y="13" textAnchor="middle" className="text-[2.2px] fill-cyan-400 font-mono">
+                      <text x="50" y="13" textAnchor="middle" fill="#e05a33" fontSize="2.2" fontFamily="'IBM Plex Mono', monospace">
                         {protocol} {isAttack && `⚠ ${connectionCount} 連線`}
                       </text>
 
@@ -1922,18 +1922,18 @@ export default function MindMap({ isLearningMode = false }) {
 
                       {/* 左側節點（來源/攻擊者/端點 A） */}
                       <g transform={`translate(${srcX}, ${srcY})`}>
-                        <circle r="5" fill="#1e293b" stroke={isFloodAttack ? '#f97316' : '#38bdf8'} strokeWidth="0.4" filter="url(#animNodeGlow)" />
-                        <circle r="3.5" fill="#0f172a" stroke={isFloodAttack ? '#fb923c' : '#22d3ee'} strokeWidth="0.3" />
-                        <text y="0.8" textAnchor="middle" className={`text-[2px] font-bold ${isFloodAttack ? 'fill-orange-300' : 'fill-cyan-300'}`}>{leftNodeLabel}</text>
-                        <text y="10" textAnchor="middle" className="text-[1.8px] fill-slate-300 font-mono">{srcLabel}</text>
+                        <circle r="5" fill="#1b1a17" stroke={isFloodAttack ? '#f97316' : '#e05a33'} strokeWidth="0.4" filter="url(#animNodeGlow)" />
+                        <circle r="3.5" fill="#1b1a17" stroke={isFloodAttack ? '#fb923c' : '#b8452a'} strokeWidth="0.3" />
+                        <text y="0.8" textAnchor="middle" fill={isFloodAttack ? '#f97316' : '#e8e5df'} fontSize="2" fontFamily="'DM Sans', sans-serif" fontWeight="700">{leftNodeLabel}</text>
+                        <text y="10" textAnchor="middle" fill="#a09b91" fontSize="1.8" fontFamily="'IBM Plex Mono', monospace">{srcLabel}</text>
                       </g>
 
                       {/* 右側節點（目標/端點 B） */}
                       <g transform={`translate(${dstX}, ${dstY})`}>
-                        <circle r="5" fill="#1e293b" stroke={isAttack || isFloodAttack ? '#ef4444' : '#10b981'} strokeWidth="0.4" filter="url(#animNodeGlow)" />
-                        <circle r="3.5" fill="#0f172a" stroke={isAttack || isFloodAttack ? '#f87171' : '#34d399'} strokeWidth="0.3" />
-                        <text y="0.8" textAnchor="middle" className={`text-[2px] font-bold ${isAttack || isFloodAttack ? 'fill-red-300' : 'fill-emerald-300'}`}>{rightNodeLabel}</text>
-                        <text y="10" textAnchor="middle" className="text-[1.8px] fill-slate-300 font-mono">{dstLabel}</text>
+                        <circle r="5" fill="#1b1a17" stroke={isAttack || isFloodAttack ? '#ef4444' : '#10b981'} strokeWidth="0.4" filter="url(#animNodeGlow)" />
+                        <circle r="3.5" fill="#1b1a17" stroke={isAttack || isFloodAttack ? '#f87171' : '#34d399'} strokeWidth="0.3" />
+                        <text y="0.8" textAnchor="middle" fill={isAttack || isFloodAttack ? '#f87171' : '#e8e5df'} fontSize="2" fontFamily="'DM Sans', sans-serif" fontWeight="700">{rightNodeLabel}</text>
+                        <text y="10" textAnchor="middle" fill="#a09b91" fontSize="1.8" fontFamily="'IBM Plex Mono', monospace">{dstLabel}</text>
                       </g>
 
                       {/* 封包粒子動畫 - 包含生命週期效果 */}
@@ -1948,8 +1948,8 @@ export default function MindMap({ isLearningMode = false }) {
                           // 根據階段決定光暈強度
                           const glowOpacity = 0.3 + (particle.glowIntensity || 0) * 0.5
                           // 階段指示顏色
-                          const phaseColor = particle.phase === 'spawn' ? '#22d3ee' :
-                                           particle.phase === 'arrive' ? '#fbbf24' : particle.color
+                          const phaseColor = particle.phase === 'spawn' ? '#e05a33' :
+                                           particle.phase === 'arrive' ? '#a09b91' : particle.color
 
                           return (
                             <g
@@ -1966,7 +1966,7 @@ export default function MindMap({ isLearningMode = false }) {
                                   cy={point.y}
                                   r={displaySize * 1.5}
                                   fill="none"
-                                  stroke="#22d3ee"
+                                  stroke="#e05a33"
                                   strokeWidth="0.15"
                                   opacity={0.6 * (1 - (particle.phaseProgress || 0))}
                                 />
@@ -1980,7 +1980,7 @@ export default function MindMap({ isLearningMode = false }) {
                                     cy={point.y}
                                     r={displaySize * (2 - (particle.phaseProgress || 0))}
                                     fill="none"
-                                    stroke="#fbbf24"
+                                    stroke="#a09b91"
                                     strokeWidth="0.1"
                                     opacity={0.4 * (particle.phaseProgress || 0)}
                                     strokeDasharray="0.5 0.5"
@@ -1993,7 +1993,7 @@ export default function MindMap({ isLearningMode = false }) {
                                       y1={point.y + Math.sin((angle + (particle.phaseProgress || 0) * 180) * Math.PI / 180) * displaySize * 1.5}
                                       x2={point.x}
                                       y2={point.y}
-                                      stroke="#fbbf24"
+                                      stroke="#a09b91"
                                       strokeWidth="0.08"
                                       opacity={0.3 * (particle.phaseProgress || 0)}
                                     />
@@ -2033,17 +2033,17 @@ export default function MindMap({ isLearningMode = false }) {
                                     width="10"
                                     height="3"
                                     rx="0.5"
-                                    fill="#1e293b"
+                                    fill="#1b1a17"
                                     fillOpacity="0.95"
-                                    stroke={particle.phase === 'spawn' ? '#22d3ee' :
-                                           particle.phase === 'arrive' ? '#fbbf24' : particle.color}
+                                    stroke={particle.phase === 'spawn' ? '#e05a33' :
+                                           particle.phase === 'arrive' ? '#a09b91' : particle.color}
                                     strokeWidth="0.15"
                                   />
                                   <text
                                     x={point.x}
                                     y={point.y - displaySize - 1.8}
                                     textAnchor="middle"
-                                    className="text-[1.6px] fill-white font-mono font-bold"
+                                    fill="#e8e5df" fontSize="1.6" fontFamily="'IBM Plex Mono', monospace" fontWeight="700"
                                     style={{ pointerEvents: 'none' }}
                                   >
                                     {particle.tcpFlags}
@@ -2056,7 +2056,7 @@ export default function MindMap({ isLearningMode = false }) {
                                 x={point.x}
                                 y={point.y + displaySize + 2.5}
                                 textAnchor="middle"
-                                className="text-[1.4px] fill-slate-300 font-mono font-semibold"
+                                fill="#a09b91" fontSize="1.4" fontFamily="'IBM Plex Mono', monospace" fontWeight="600"
                                 style={{ pointerEvents: 'none', opacity: displayOpacity }}
                               >
                                 #{particle.index}
@@ -2068,7 +2068,7 @@ export default function MindMap({ isLearningMode = false }) {
                                   x={point.x}
                                   y={point.y - displaySize - (particle.tcpFlags ? 5.5 : 1)}
                                   textAnchor="middle"
-                                  className={`text-[1.3px] font-bold ${particle.phase === 'spawn' ? 'fill-cyan-300' : 'fill-amber-300'}`}
+                                  fill={particle.phase === 'spawn' ? '#e05a33' : '#a09b91'} fontSize="1.3" fontFamily="'DM Sans', sans-serif" fontWeight="700"
                                   style={{ pointerEvents: 'none' }}
                                 >
                                   {particle.phase === 'spawn' ? '發送' : '收到'}
@@ -2093,47 +2093,47 @@ export default function MindMap({ isLearningMode = false }) {
 
                       {/* 統計資訊面板 */}
                       <g transform="translate(5, 75)">
-                        <rect x="0" y="0" width="25" height="18" rx="1" fill="#1e293b" fillOpacity="0.9" stroke="#334155" strokeWidth="0.2" />
-                        <text x="12.5" y="4" textAnchor="middle" className="text-[1.8px] fill-slate-400">統計資訊</text>
-                        <text x="2" y="8" className="text-[1.5px] fill-slate-500">連線數:</text>
-                        <text x="23" y="8" textAnchor="end" className="text-[1.5px] fill-cyan-400 font-mono">{connectionCount}</text>
-                        <text x="2" y="11.5" className="text-[1.5px] fill-slate-500">封包數:</text>
-                        <text x="23" y="11.5" textAnchor="end" className="text-[1.5px] fill-cyan-400 font-mono">{connectionPackets?.total_packets || connectionPackets?.packets?.length || '—'}</text>
-                        <text x="2" y="15" className="text-[1.5px] fill-slate-500">類型:</text>
-                        <text x="23" y="15" textAnchor="end" className={`text-[1.5px] font-mono ${isAttack ? 'fill-red-400' : 'fill-emerald-400'}`}>{isAttack ? '攻擊流量' : '正常流量'}</text>
+                        <rect x="0" y="0" width="25" height="18" rx="1" fill="#1b1a17" fillOpacity="0.9" stroke="#2e2d2a" strokeWidth="0.2" />
+                        <text x="12.5" y="4" textAnchor="middle" fill="#a09b91" fontSize="1.8" fontFamily="'DM Sans', sans-serif">統計資訊</text>
+                        <text x="2" y="8" fill="#706b61" fontSize="1.5" fontFamily="'DM Sans', sans-serif">連線數:</text>
+                        <text x="23" y="8" textAnchor="end" fill="#e05a33" fontSize="1.5" fontFamily="'IBM Plex Mono', monospace">{connectionCount}</text>
+                        <text x="2" y="11.5" fill="#706b61" fontSize="1.5" fontFamily="'DM Sans', sans-serif">封包數:</text>
+                        <text x="23" y="11.5" textAnchor="end" fill="#e05a33" fontSize="1.5" fontFamily="'IBM Plex Mono', monospace">{connectionPackets?.total_packets || connectionPackets?.packets?.length || '—'}</text>
+                        <text x="2" y="15" fill="#706b61" fontSize="1.5" fontFamily="'DM Sans', sans-serif">類型:</text>
+                        <text x="23" y="15" textAnchor="end" fill={isAttack ? '#ef4444' : '#34d399'} fontSize="1.5" fontFamily="'IBM Plex Mono', monospace">{isAttack ? '攻擊流量' : '正常流量'}</text>
                       </g>
 
                       {/* 圖例 - 含生命週期階段 */}
                       <g transform="translate(65, 70)">
-                        <rect x="0" y="0" width="32" height="28" rx="1" fill="#1e293b" fillOpacity="0.9" stroke="#334155" strokeWidth="0.2" />
-                        <text x="16" y="4" textAnchor="middle" className="text-[1.8px] fill-slate-400">圖例</text>
+                        <rect x="0" y="0" width="32" height="28" rx="1" fill="#1b1a17" fillOpacity="0.9" stroke="#2e2d2a" strokeWidth="0.2" />
+                        <text x="16" y="4" textAnchor="middle" fill="#a09b91" fontSize="1.8" fontFamily="'DM Sans', sans-serif">圖例</text>
 
                         {/* 封包類型 */}
-                        <circle cx="4" cy="8" r="1" fill="#38bdf8" />
-                        <text x="7" y="8.5" className="text-[1.2px] fill-slate-400">正常封包</text>
+                        <circle cx="4" cy="8" r="1" fill="#e05a33" />
+                        <text x="7" y="8.5" fill="#a09b91" fontSize="1.2" fontFamily="'DM Sans', sans-serif">正常封包</text>
                         <circle cx="4" cy="11.5" r="1" fill="#ef4444" />
-                        <text x="7" y="12" className="text-[1.2px] fill-slate-400">異常/攻擊</text>
+                        <text x="7" y="12" fill="#a09b91" fontSize="1.2" fontFamily="'DM Sans', sans-serif">異常/攻擊</text>
                         <circle cx="4" cy="15" r="1" fill="#22c55e" />
-                        <text x="7" y="15.5" className="text-[1.2px] fill-slate-400">SYN 連線</text>
+                        <text x="7" y="15.5" fill="#a09b91" fontSize="1.2" fontFamily="'DM Sans', sans-serif">SYN 連線</text>
 
                         {/* 生命週期階段 */}
-                        <text x="2" y="19" className="text-[1.2px] fill-slate-500">生命週期:</text>
-                        <circle cx="4" cy="22" r="0.8" fill="#22d3ee" />
-                        <circle cx="4" cy="22" r="1.3" fill="none" stroke="#22d3ee" strokeWidth="0.1" />
-                        <text x="7" y="22.5" className="text-[1.1px] fill-cyan-300">發送</text>
-                        <circle cx="16" cy="22" r="0.8" fill="#fbbf24" />
-                        <circle cx="16" cy="22" r="1.3" fill="none" stroke="#fbbf24" strokeWidth="0.1" strokeDasharray="0.3 0.3" />
-                        <text x="19" y="22.5" className="text-[1.1px] fill-amber-300">收到</text>
+                        <text x="2" y="19" fill="#706b61" fontSize="1.2" fontFamily="'DM Sans', sans-serif">生命週期:</text>
+                        <circle cx="4" cy="22" r="0.8" fill="#e05a33" />
+                        <circle cx="4" cy="22" r="1.3" fill="none" stroke="#e05a33" strokeWidth="0.1" />
+                        <text x="7" y="22.5" fill="#e05a33" fontSize="1.1" fontFamily="'DM Sans', sans-serif">發送</text>
+                        <circle cx="16" cy="22" r="0.8" fill="#a09b91" />
+                        <circle cx="16" cy="22" r="1.3" fill="none" stroke="#a09b91" strokeWidth="0.1" strokeDasharray="0.3 0.3" />
+                        <text x="19" y="22.5" fill="#a09b91" fontSize="1.1" fontFamily="'DM Sans', sans-serif">收到</text>
 
                         {/* 已選取 */}
-                        <circle cx="4" cy="26" r="1" fill="#ffd700" stroke="#ffd700" strokeWidth="0.3" />
-                        <text x="7" y="26.5" className="text-[1.2px] fill-slate-400">已選取</text>
+                        <circle cx="4" cy="26" r="1" fill="#e05a33" stroke="#e05a33" strokeWidth="0.3" />
+                        <text x="7" y="26.5" fill="#a09b91" fontSize="1.2" fontFamily="'DM Sans', sans-serif">已選取</text>
                       </g>
                     </svg>
 
                     {/* 返回遠景模式的提示 */}
-                    <div className="absolute top-4 right-4 bg-slate-800/90 backdrop-blur-sm border border-slate-600/50 rounded-lg px-3 py-2 shadow-lg">
-                      <div className="text-xs text-slate-400">
+                    <div className="absolute top-4 right-4 rounded px-3 py-2" style={{ background: '#1b1a17ee', border: '1px solid #3d3c38', borderRadius: 4 }}>
+                      <div className="text-xs" style={{ color: '#a09b91' }}>
                         點擊右側面板「關閉」按鈕返回遠景
                       </div>
                     </div>
@@ -2146,16 +2146,16 @@ export default function MindMap({ isLearningMode = false }) {
                 {/* 遠景模式：地圖式控制 UI：縮放顯示與控制按鈕 */}
                 <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-2">
                   {/* 縮放顯示 */}
-                  <div className="bg-slate-800/90 backdrop-blur-sm border border-slate-600/50 rounded-lg px-3 py-2 shadow-lg">
-                    <div className="flex items-center gap-2 text-xs text-slate-300">
-                      <span className="font-mono font-semibold text-cyan-300">
+                  <div className="rounded px-3 py-2" style={{ background: '#1b1a17ee', border: '1px solid #3d3c38', borderRadius: 4 }}>
+                    <div className="flex items-center gap-2 text-xs" style={{ color: '#a09b91' }}>
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, color: '#e05a33' }}>
                         {Math.round(viewTransform.scale * 100)}%
                       </span>
                     </div>
                   </div>
 
                   {/* 縮放控制按鈕 */}
-                  <div className="bg-slate-800/90 backdrop-blur-sm border border-slate-600/50 rounded-lg shadow-lg overflow-hidden">
+                  <div className="overflow-hidden" style={{ background: '#1b1a17ee', border: '1px solid #3d3c38', borderRadius: 4 }}>
                     <button
                       onClick={() => {
                         setViewTransform(prev => ({
@@ -2163,7 +2163,7 @@ export default function MindMap({ isLearningMode = false }) {
                           scale: clamp(prev.scale * 1.2, 0.2, 5)
                         }))
                       }}
-                      className="w-full px-3 py-2 text-slate-300 hover:bg-slate-700/50 transition-colors border-b border-slate-600/30"
+                      className="w-full px-3 py-2 transition-colors" style={{ color: '#e8e5df', borderBottom: '1px solid #2e2d2a' }}
                       title="放大 (Zoom In)"
                     >
                       <span className="text-lg font-bold">+</span>
@@ -2175,7 +2175,7 @@ export default function MindMap({ isLearningMode = false }) {
                           scale: clamp(prev.scale / 1.2, 0.2, 5)
                         }))
                       }}
-                      className="w-full px-3 py-2 text-slate-300 hover:bg-slate-700/50 transition-colors"
+                      className="w-full px-3 py-2 transition-colors" style={{ color: '#e8e5df' }}
                       title="縮小 (Zoom Out)"
                     >
                       <span className="text-lg font-bold">−</span>
@@ -2185,24 +2185,24 @@ export default function MindMap({ isLearningMode = false }) {
                   {/* Reset View 按鈕 */}
                   <button
                     onClick={resetView}
-                    className="bg-slate-800/90 backdrop-blur-sm border border-slate-600/50 rounded-lg px-3 py-2 shadow-lg hover:bg-slate-700/70 transition-colors"
+                    className="rounded px-3 py-2 transition-colors" style={{ background: '#1b1a17ee', border: '1px solid #3d3c38', borderRadius: 4 }}
                     title="重置視圖 (Reset View)"
                   >
-                    <RefreshCcw className="w-4 h-4 text-slate-300" />
+                    <RefreshCcw className="w-4 h-4" style={{ color: '#a09b91' }} />
                   </button>
                 </div>
 
                 <svg
                   ref={svgRef}
                   viewBox={`0 0 ${canvasSize} ${canvasSize}`}
-                  className="w-full h-[calc(100vh-260px)] min-h-[400px] text-slate-400"
+                  className="w-full h-[calc(100vh-260px)] min-h-[400px]"
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
-                  style={{ touchAction: 'none' }}
+                  style={{ background: '#141311', touchAction: 'none' }}
                 >
                   <defs>
                     <filter id="nodeGlow" filterUnits="userSpaceOnUse">
-                      <feGaussianBlur in="SourceGraphic" stdDeviation="1" result="blur" />
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="0.3" result="blur" />
                       <feMerge>
                         <feMergeNode in="blur" />
                         <feMergeNode in="SourceGraphic" />
@@ -2210,8 +2210,8 @@ export default function MindMap({ isLearningMode = false }) {
                     </filter>
                     {/* 攻擊警告光暈濾鏡 */}
                     <filter id="attackWarningGlow" filterUnits="userSpaceOnUse" x="-100%" y="-100%" width="300%" height="300%">
-                      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur1" />
-                      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur2" />
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="1" result="blur1" />
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur2" />
                       <feColorMatrix in="blur1" type="matrix" values="1 0 0 0 0.8  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="redBlur1" />
                       <feColorMatrix in="blur2" type="matrix" values="1 0 0 0 0.9  0 0 0 0 0.2  0 0 0 0 0  0 0 0 0.5 0" result="redBlur2" />
                       <feMerge>
@@ -2222,7 +2222,7 @@ export default function MindMap({ isLearningMode = false }) {
                     </filter>
                     {/* 中等強度警告光暈 */}
                     <filter id="attackWarningGlowMedium" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="0.8" result="blur" />
                       <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.6  0 0 0 0 0.3  0 0 0 0 0  0 0 0 0.8 0" result="orangeBlur" />
                       <feMerge>
                         <feMergeNode in="orangeBlur" />
@@ -2231,8 +2231,8 @@ export default function MindMap({ isLearningMode = false }) {
                     </filter>
                     {/* 搜尋高亮螢光 - 節點 */}
                     <filter id="searchHighlightGlow" filterUnits="userSpaceOnUse" x="-100%" y="-100%" width="300%" height="300%">
-                      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur1" />
-                      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur2" />
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="0.8" result="blur1" />
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur2" />
                       <feColorMatrix in="blur1" type="matrix" values="0 0 0 0 0  0 1 0 0 0.8  0 0 1 0 1  0 0 0 1 0" result="cyanBlur1" />
                       <feColorMatrix in="blur2" type="matrix" values="0 0 0 0 0  0 1 0 0 0.6  0 0 1 0 0.8  0 0 0 0.5 0" result="cyanBlur2" />
                       <feMerge>
@@ -2243,14 +2243,21 @@ export default function MindMap({ isLearningMode = false }) {
                     </filter>
                     {/* 搜尋高亮螢光 - 連線 */}
                     <filter id="searchConnectionGlow" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur" />
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="0.5" result="blur" />
                       <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0  0 1 0 0 0.6  0 0 1 0 0.8  0 0 0 0.8 0" result="cyanBlur" />
                       <feMerge>
                         <feMergeNode in="cyanBlur" />
                         <feMergeNode in="SourceGraphic" />
                       </feMerge>
                     </filter>
+                    {/* Swiss dot-grid background pattern */}
+                    <pattern id="dotGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+                      <circle cx="10" cy="10" r="0.4" fill="#2e2d2a" opacity="0.35" />
+                    </pattern>
                   </defs>
+
+                  {/* Dot-grid background */}
+                  <rect width="100%" height="100%" fill="url(#dotGrid)" />
 
                   <g transform={`translate(${viewTransform.tx} ${viewTransform.ty}) scale(${viewTransform.scale})`}>
 
@@ -2511,7 +2518,7 @@ export default function MindMap({ isLearningMode = false }) {
                             x={midpoint.x}
                             y={midpoint.y - 2}
                             textAnchor="middle"
-                            className="text-[1.8px] fill-white/70"
+                            fill="#e8e5df" fillOpacity="0.7" fontSize="1.8" fontFamily="'DM Sans', sans-serif"
                             style={{ pointerEvents: 'none' }}
                           >
                             {(protocolType || protocol).toUpperCase()}{isAggregated && connection.connectionCount > 1 ? ` (${connection.connectionCount})` : ''}
@@ -2600,7 +2607,7 @@ export default function MindMap({ isLearningMode = false }) {
                                     x={particleX}
                                     y={particleY - particle.size * 0.8}
                                     textAnchor="middle"
-                                    className="text-[1.2px] fill-white font-mono"
+                                    fill="#e8e5df" fontSize="1.2" fontFamily="'IBM Plex Mono', monospace"
                                     style={{ pointerEvents: 'none' }}
                                     opacity={0.9}
                                   >
@@ -2637,7 +2644,7 @@ export default function MindMap({ isLearningMode = false }) {
                     // 根據是否為中心節點使用不同的視覺樣式
                     const outerRadius = node.isCenter ? CENTRAL_NODE_OUTER_RADIUS : NODE_OUTER_RADIUS
                     const innerRadius = node.isCenter ? CENTRAL_NODE_INNER_RADIUS : NODE_INNER_RADIUS
-                    const outerFill = node.isCenter ? "#020617" : "#0f172a"
+                    const outerFill = "#1b1a17"
                     const strokeWidth = node.isCenter ? 0.55 : 0.45
 
                     // 字體大小：SVG user units（跟隨 viewBox 與 zoom 縮放，非 CSS px）
@@ -2661,15 +2668,16 @@ export default function MindMap({ isLearningMode = false }) {
 
                     return (
                       <g key={node.id} className="mindmap-node" opacity={nodeOpacity} onMouseDown={(e) => { e.stopPropagation(); draggingNodeIdRef.current = node.id; setDraggingNodeId(node.id) }} style={{ cursor: node.isCenter ? 'default' : 'grab' }}>
-                        <circle cx={node.x} cy={node.y} r={outerRadius} fill={outerFill} stroke="#1f2937" strokeWidth={strokeWidth} />
-                        <circle cx={node.x} cy={node.y} r={innerRadius} fill="#1f2937" stroke="#38bdf8" strokeWidth={strokeWidth} filter={nodeGlowFilter} />
+                        <circle cx={node.x} cy={node.y} r={outerRadius} fill={outerFill} stroke="#2e2d2a" strokeWidth={strokeWidth} />
+                        <circle cx={node.x} cy={node.y} r={innerRadius} fill="#222120" stroke={node.isCenter ? '#e05a33' : '#3d3c38'} strokeWidth={strokeWidth} filter={nodeGlowFilter} />
                         <text
                           x={node.x}
                           y={ipLabelY}
                           textAnchor="middle"
                           fontSize={ipFontSize}
                           fontWeight={node.isCenter ? "700" : "600"}
-                          fill={node.isCenter ? "#a5f3fc" : "#f1f5f9"}
+                          fill="#e8e5df"
+                          fontFamily="'IBM Plex Mono', monospace"
                           style={{ pointerEvents: 'none' }}
                         >
                           {truncateIpLabel(node.label)}
@@ -2681,7 +2689,8 @@ export default function MindMap({ isLearningMode = false }) {
                             textAnchor="middle"
                             fontSize={subFontSize}
                             fontWeight="600"
-                            fill="#fbbf24"
+                            fill="#a09b91"
+                            fontFamily="'DM Sans', sans-serif"
                             style={{ pointerEvents: 'none' }}
                           >
                             網路中心
@@ -2693,7 +2702,8 @@ export default function MindMap({ isLearningMode = false }) {
                             y={protocolY}
                             textAnchor="middle"
                             fontSize={subFontSize}
-                            fill="#67e8f9"
+                            fill="#706b61"
+                            fontFamily="'DM Sans', sans-serif"
                             style={{ textTransform: 'uppercase', pointerEvents: 'none' }}
                           >
                             {node.protocols.join(' · ')}
@@ -2706,7 +2716,8 @@ export default function MindMap({ isLearningMode = false }) {
                             y={protocolY + subFontSize * 1.3}
                             textAnchor="middle"
                             fontSize={subFontSize * 0.85}
-                            fill="#94a3b8"
+                            fill="#706b61"
+                            fontFamily="'IBM Plex Mono', monospace"
                             style={{ pointerEvents: 'none' }}
                           >
                             {geoInfo[node.label].country_code || (geoInfo[node.label].type === 'private' ? 'LAN' : geoInfo[node.label].label)}
@@ -2731,16 +2742,21 @@ export default function MindMap({ isLearningMode = false }) {
 
                   return (
                     <div
-                      className="absolute pointer-events-none z-50 bg-slate-800/95 text-slate-100 text-xs px-3 py-2 rounded-lg border border-slate-600 shadow-xl backdrop-blur-sm"
+                      className="absolute pointer-events-none z-50 text-xs px-3 py-2"
                       style={{
+                        background: '#1b1a17ee',
+                        color: '#e8e5df',
+                        border: '1px solid #3d3c38',
+                        borderRadius: 4,
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
                         left: `${tooltipPosition.x + 12}px`,
                         top: `${tooltipPosition.y - 12}px`,
                         transform: 'translate(-50%, -100%)'
                       }}
                     >
-                      <div className="font-semibold text-cyan-300">{(protocolType || protocol).toUpperCase()}</div>
-                      <div className="text-slate-300 text-[11px] mt-1">階段: {stageLabel}</div>
-                      <div className="text-slate-400 text-[10px] mt-0.5">進度: {progress}%</div>
+                      <div style={{ fontWeight: 600, color: '#e05a33', fontFamily: "'DM Sans', sans-serif" }}>{(protocolType || protocol).toUpperCase()}</div>
+                      <div style={{ color: '#e8e5df', fontSize: 11, marginTop: 4 }}>階段: {stageLabel}</div>
+                      <div style={{ color: '#a09b91', fontSize: 10, marginTop: 2 }}>進度: {progress}%</div>
                     </div>
                   )
                 })()}
@@ -2776,18 +2792,17 @@ export default function MindMap({ isLearningMode = false }) {
               document.addEventListener('mouseup', handleMouseUp)
             }}
           >
-            <div className="w-1 h-10 rounded-full bg-slate-600 group-hover:bg-cyan-400/60 group-active:bg-cyan-400 transition-colors" />
+            <div style={{ width: 3, height: 32, borderRadius: 2, background: '#3d3c38', transition: 'background 0.15s' }} />
           </div>
 
-          <aside className="glass-card rounded-2xl p-5 flex flex-col" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-            {/* Header */}
-            <div className="flex items-center gap-2.5 text-sm font-semibold text-slate-100 mb-3">
-              <div className="p-1.5 rounded-lg bg-cyan-500/20">
-                <Activity className="w-4 h-4 text-cyan-400" />
-              </div>
-              <span className="text-gradient-primary">節點總覽</span>
-              <span className="ml-auto text-xs text-slate-500 font-mono">
-                {nodesComputed.length} 節點
+          <aside style={{ background: '#1b1a17', border: '1px solid #2e2d2a', borderRadius: 4, padding: '12px 12px 12px 16px', display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 140px)' }}>
+            {/* BigNumber header */}
+            <div style={{ padding: '8px 4px 12px', display: 'flex', alignItems: 'baseline', gap: 8 }}>
+              <span style={{ fontSize: 42, fontFamily: "'Instrument Serif', serif", fontWeight: 700, color: '#e8e5df', lineHeight: 1 }}>
+                {nodesComputed.length}
+              </span>
+              <span style={{ fontSize: 13, color: '#706b61', fontFamily: "'DM Sans', sans-serif" }}>
+                節點
               </span>
             </div>
 
@@ -2795,72 +2810,43 @@ export default function MindMap({ isLearningMode = false }) {
             <ProtocolFilter filters={protocolFilters} onFilterChange={setProtocolFilters} compact />
 
             {/* 分頁切換 */}
-            <div role="tablist" aria-label="側欄分頁" className="flex border-b border-slate-700 mb-3">
-              <button
-                type="button"
-                role="tab"
-                id="tab-nodes"
-                aria-selected={sidebarTab === 'nodes'}
-                aria-controls="panel-nodes"
-                onClick={() => setSidebarTab('nodes')}
-                className={sidebarTab === 'nodes'
-                  ? 'flex-1 py-2 text-sm font-semibold text-cyan-300 border-b-2 border-cyan-400'
-                  : 'flex-1 py-2 text-sm text-slate-400 hover:text-slate-200 transition-colors'}
-              >
-                節點
-              </button>
-              <button
-                type="button"
-                role="tab"
-                id="tab-health"
-                aria-selected={sidebarTab === 'health'}
-                aria-controls="panel-health"
-                onClick={() => setSidebarTab('health')}
-                className={sidebarTab === 'health'
-                  ? 'flex-1 py-2 text-sm font-semibold text-cyan-300 border-b-2 border-cyan-400'
-                  : 'flex-1 py-2 text-sm text-slate-400 hover:text-slate-200 transition-colors'}
-              >
-                健康
-              </button>
-              <button
-                type="button"
-                role="tab"
-                id="tab-stats"
-                aria-selected={sidebarTab === 'stats'}
-                aria-controls="panel-stats"
-                onClick={() => setSidebarTab('stats')}
-                className={sidebarTab === 'stats'
-                  ? 'flex-1 py-2 text-sm font-semibold text-cyan-300 border-b-2 border-cyan-400'
-                  : 'flex-1 py-2 text-sm text-slate-400 hover:text-slate-200 transition-colors'}
-              >
-                統計
-              </button>
-              <button
-                type="button"
-                role="tab"
-                id="tab-security"
-                aria-selected={sidebarTab === 'security'}
-                aria-controls="panel-security"
-                onClick={() => setSidebarTab('security')}
-                className={sidebarTab === 'security'
-                  ? 'flex-1 py-2 text-sm font-semibold text-cyan-300 border-b-2 border-cyan-400'
-                  : 'flex-1 py-2 text-sm text-slate-400 hover:text-slate-200 transition-colors'}
-              >
-                安全
-              </button>
-              <button
-                type="button"
-                role="tab"
-                id="tab-tls"
-                aria-selected={sidebarTab === 'tls'}
-                aria-controls="panel-tls"
-                onClick={() => setSidebarTab('tls')}
-                className={sidebarTab === 'tls'
-                  ? 'flex-1 py-2 text-sm font-semibold text-cyan-300 border-b-2 border-cyan-400'
-                  : 'flex-1 py-2 text-sm text-slate-400 hover:text-slate-200 transition-colors'}
-              >
-                TLS
-              </button>
+            {/* Swiss underline tabs */}
+            <div role="tablist" aria-label="側欄分頁" style={{ display: 'flex', borderBottom: '1px solid #2e2d2a', marginBottom: 8 }}>
+              {[
+                { key: 'nodes', label: '節點' },
+                { key: 'health', label: '健康' },
+                { key: 'stats', label: '統計' },
+                { key: 'security', label: '安全' },
+                { key: 'tls', label: 'TLS' },
+              ].map(tab => {
+                const isActive = sidebarTab === tab.key
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    role="tab"
+                    id={`tab-${tab.key}`}
+                    aria-selected={isActive}
+                    aria-controls={`panel-${tab.key}`}
+                    onClick={() => setSidebarTab(tab.key)}
+                    style={{
+                      flex: 1,
+                      padding: '9px 0',
+                      fontSize: 11,
+                      fontWeight: isActive ? 600 : 400,
+                      color: isActive ? '#e8e5df' : '#706b61',
+                      background: 'transparent',
+                      border: 'none',
+                      borderBottom: `2px solid ${isActive ? '#e05a33' : 'transparent'}`,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s',
+                      fontFamily: "'DM Sans', sans-serif",
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                )
+              })}
             </div>
 
             {/* ======= 節點分頁 ======= */}

@@ -1,6 +1,7 @@
 import React from 'react'
 import { X } from 'lucide-react'
 import { PROTOCOL_COLORS } from '../lib/ProtocolStates'
+import { S } from '../lib/swiss-tokens'
 import { truncateIpLabel, getDepthLabel } from '../lib/nodeDashboard.js'
 
 export default function NodesTab({
@@ -21,14 +22,21 @@ export default function NodesTab({
           aria-label="搜尋 IP 位址"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-colors"
+          className="w-full rounded-[3px] px-4 py-2.5 text-sm focus:outline-none transition-colors"
+          style={{
+            background: S.surface,
+            border: `1px solid ${S.border}`,
+            color: S.text.primary,
+            fontFamily: S.font.sans,
+          }}
         />
         {searchQuery && (
           <button
             type="button"
             aria-label="清除搜尋"
             onClick={() => setSearchQuery('')}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 transition-colors"
+            style={{ color: S.text.tertiary }}
           >
             <X className="w-4 h-4" />
           </button>
@@ -37,9 +45,9 @@ export default function NodesTab({
 
       {/* Match count */}
       {searchMatchedNodeIds !== null && (
-        <div className="text-xs text-slate-400 mb-3 px-1">
-          找到 <span className="text-cyan-400 font-semibold">{searchMatchedNodeIds.size}</span> 節點，
-          <span className="text-cyan-400 font-semibold">{searchMatchedConnectionIds?.size || 0}</span> 條連線
+        <div className="text-xs mb-3 px-1" style={{ color: S.text.secondary }}>
+          找到 <span className="font-semibold" style={{ color: S.accent }}>{searchMatchedNodeIds.size}</span> 節點，
+          <span className="font-semibold" style={{ color: S.accent }}>{searchMatchedConnectionIds?.size || 0}</span> 條連線
         </div>
       )}
 
@@ -65,11 +73,30 @@ export default function NodesTab({
                 role="button"
                 tabIndex={0}
                 aria-label={`選取節點 ${node.id}`}
-                className={`rounded-xl p-3 transition-all duration-300 cursor-pointer ${
+                className="rounded-[4px] p-3 transition-all duration-300 cursor-pointer"
+                style={
                   isHighlighted
-                    ? 'bg-cyan-500/15 border border-cyan-500/50 shadow-lg shadow-cyan-500/10'
-                    : 'bg-slate-800/40 border border-slate-700/50 hover:bg-slate-700/40 hover:border-slate-600'
-                }`}
+                    ? {
+                        background: `${S.accent}15`,
+                        border: `1px solid ${S.accent}50`,
+                      }
+                    : {
+                        background: S.surface,
+                        border: `1px solid ${S.border}`,
+                      }
+                }
+                onMouseEnter={(e) => {
+                  if (!isHighlighted) {
+                    e.currentTarget.style.background = S.surfaceHover
+                    e.currentTarget.style.borderColor = S.borderStrong
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isHighlighted) {
+                    e.currentTarget.style.background = S.surface
+                    e.currentTarget.style.borderColor = S.border
+                  }
+                }}
                 onClick={() => setSearchQuery(node.id)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -79,23 +106,34 @@ export default function NodesTab({
                 }}
               >
                 <div className="flex items-center justify-between">
-                  <span className={`font-mono text-sm truncate max-w-[160px] ${isHighlighted ? 'text-cyan-200 font-semibold' : 'text-slate-200'}`} title={node.label}>
+                  <span
+                    className="text-sm truncate max-w-[160px]"
+                    style={{
+                      fontFamily: S.font.mono,
+                      color: isHighlighted ? S.accent : S.text.primary,
+                      fontWeight: isHighlighted ? 600 : 400,
+                    }}
+                    title={node.label}
+                  >
                     {truncateIpLabel(node.label)}
                   </span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ml-1 ${
-                    node.isCenter
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                      : node.depth === 1
-                        ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                        : 'bg-slate-600/30 text-slate-400 border border-slate-600/40'
-                  }`}>
+                  <span
+                    className="text-[10px] px-2 py-0.5 rounded-[3px] font-medium shrink-0 ml-1"
+                    style={
+                      node.isCenter
+                        ? { background: '#f59e0b20', color: '#f59e0b', border: '1px solid #f59e0b30' }
+                        : node.depth === 1
+                          ? { background: '#3b82f620', color: '#3b82f6', border: '1px solid #3b82f630' }
+                          : { background: S.surface, color: S.text.secondary, border: `1px solid ${S.border}` }
+                    }
+                  >
                     {depthLabel}
                   </span>
                 </div>
 
                 {/* Geo label */}
                 {geoInfo[node.label] && (
-                  <div className="text-[10px] text-slate-400 mt-0.5">
+                  <div className="text-[10px] mt-0.5" style={{ color: S.text.secondary }}>
                     {geoInfo[node.label].type === 'private' ? '🏠' : geoInfo[node.label].type === 'loopback' ? '🔄' : '🌐'}{' '}
                     {geoInfo[node.label].label}
                   </div>
@@ -105,8 +143,9 @@ export default function NodesTab({
                   {node.protocols.map(proto => (
                     <span
                       key={proto}
-                      className="text-[10px] px-1.5 py-0.5 rounded-md font-mono uppercase"
+                      className="text-[10px] px-1.5 py-0.5 rounded-[3px] uppercase"
                       style={{
+                        fontFamily: S.font.mono,
                         backgroundColor: `${PROTOCOL_COLORS[proto.toLowerCase()] || '#64748b'}20`,
                         color: PROTOCOL_COLORS[proto.toLowerCase()] || '#94a3b8',
                         border: `1px solid ${PROTOCOL_COLORS[proto.toLowerCase()] || '#64748b'}40`
@@ -117,9 +156,9 @@ export default function NodesTab({
                   ))}
                 </div>
 
-                <div className="flex items-center justify-between mt-2 text-xs text-slate-500">
+                <div className="flex items-center justify-between mt-2 text-xs" style={{ color: S.text.tertiary }}>
                   <span>連線數</span>
-                  <span className="font-mono text-slate-300">{node.connectionCount}</span>
+                  <span style={{ fontFamily: S.font.mono, color: S.text.secondary }}>{node.connectionCount}</span>
                 </div>
               </div>
             )

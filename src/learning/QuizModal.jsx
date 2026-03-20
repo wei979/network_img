@@ -22,6 +22,7 @@ import {
   ChevronUp
 } from 'lucide-react'
 import { LearningStorage } from './LearningStorage'
+import { S } from '../lib/swiss-tokens'
 
 /**
  * 單一問題組件
@@ -39,11 +40,18 @@ function QuestionCard({
     <div className="space-y-5">
       {/* 問題標題 */}
       <div className="flex items-start gap-4">
-        <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/25 to-pink-500/15 border border-purple-500/30 flex items-center justify-center">
-          <span className="text-purple-400 font-bold">{questionNumber}</span>
+        <div
+          className="flex-shrink-0 w-10 h-10 flex items-center justify-center"
+          style={{
+            borderRadius: S.radius.md,
+            background: `${S.protocol.DNS}18`,
+            border: `1px solid ${S.protocol.DNS}30`,
+          }}
+        >
+          <span className="font-bold" style={{ color: S.protocol.DNS }}>{questionNumber}</span>
         </div>
         <div className="flex-1 pt-1.5">
-          <p className="text-white text-lg font-semibold leading-relaxed">
+          <p className="text-lg font-semibold leading-relaxed" style={{ color: S.text.primary }}>
             {question.question}
           </p>
         </div>
@@ -55,18 +63,28 @@ function QuestionCard({
           const isSelected = selectedAnswer === index
           const isCorrectAnswer = question.correctAnswer === index
 
-          let optionStyle = 'border-white/10 bg-white/[0.02] hover:border-purple-500/40 hover:bg-purple-500/10'
+          let bg = S.surface
+          let borderColor = S.border
+          let textColor = S.text.secondary
 
           if (showResult) {
             if (isCorrectAnswer) {
-              optionStyle = 'border-emerald-500/50 bg-gradient-to-r from-emerald-500/15 to-green-500/10'
+              bg = `${S.protocol.HTTP}12`
+              borderColor = `${S.protocol.HTTP}50`
+              textColor = S.protocol.HTTP
             } else if (isSelected && !isCorrectAnswer) {
-              optionStyle = 'border-red-500/50 bg-gradient-to-r from-red-500/15 to-orange-500/10'
+              bg = `${S.protocol.ICMP}12`
+              borderColor = `${S.protocol.ICMP}50`
+              textColor = S.protocol.ICMP
             } else {
-              optionStyle = 'border-slate-700/50 opacity-40'
+              bg = S.surface
+              borderColor = `${S.border}80`
+              textColor = S.text.faint
             }
           } else if (isSelected) {
-            optionStyle = 'border-purple-500/50 bg-gradient-to-r from-purple-500/15 to-pink-500/10'
+            bg = `${S.protocol.DNS}12`
+            borderColor = `${S.protocol.DNS}50`
+            textColor = S.protocol.DNS
           }
 
           return (
@@ -74,34 +92,40 @@ function QuestionCard({
               key={index}
               onClick={() => !showResult && onSelectAnswer(index)}
               disabled={showResult}
-              className={`
-                w-full p-4 rounded-xl border transition-all duration-300
-                flex items-center gap-4 text-left
-                ${optionStyle}
-                ${showResult ? 'cursor-default' : 'cursor-pointer hover-lift'}
-              `}
+              className="w-full p-4 transition-all duration-300 flex items-center gap-4 text-left"
+              style={{
+                borderRadius: S.radius.md,
+                background: bg,
+                border: `1px solid ${borderColor}`,
+                cursor: showResult ? 'default' : 'pointer',
+              }}
             >
-              <div className={`
-                w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all
-                ${isSelected && !showResult ? 'border-purple-400 bg-purple-500/20' : 'border-slate-500'}
-                ${showResult && isCorrectAnswer ? 'border-emerald-400 bg-emerald-500' : ''}
-                ${showResult && isSelected && !isCorrectAnswer ? 'border-red-400 bg-red-500' : ''}
-              `}>
+              <div
+                className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
+                style={{
+                  border: `2px solid ${
+                    showResult && isCorrectAnswer ? S.protocol.HTTP
+                    : showResult && isSelected && !isCorrectAnswer ? S.protocol.ICMP
+                    : isSelected ? S.protocol.DNS
+                    : S.text.tertiary
+                  }`,
+                  background:
+                    showResult && isCorrectAnswer ? S.protocol.HTTP
+                    : showResult && isSelected && !isCorrectAnswer ? S.protocol.ICMP
+                    : 'transparent',
+                }}
+              >
                 {showResult && isCorrectAnswer && (
-                  <CheckCircle2 className="w-4 h-4 text-white" />
+                  <CheckCircle2 className="w-4 h-4" style={{ color: '#fff' }} />
                 )}
                 {showResult && isSelected && !isCorrectAnswer && (
-                  <XCircle className="w-4 h-4 text-white" />
+                  <XCircle className="w-4 h-4" style={{ color: '#fff' }} />
                 )}
                 {!showResult && isSelected && (
-                  <div className="w-2.5 h-2.5 rounded-full bg-purple-400" />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: S.protocol.DNS }} />
                 )}
               </div>
-              <span className={`text-sm font-medium
-                ${showResult && isCorrectAnswer ? 'text-emerald-300' : ''}
-                ${showResult && isSelected && !isCorrectAnswer ? 'text-red-300' : ''}
-                ${!showResult ? 'text-slate-200' : ''}
-              `}>
+              <span className="text-sm font-medium" style={{ color: textColor }}>
                 {option}
               </span>
             </button>
@@ -111,16 +135,17 @@ function QuestionCard({
 
       {/* 解釋（答題後顯示）*/}
       {showResult && question.explanation && (
-        <div className={`
-          ml-14 p-4 rounded-xl border
-          ${isCorrect
-            ? 'bg-gradient-to-r from-emerald-500/10 to-green-500/5 border-emerald-500/30'
-            : 'bg-gradient-to-r from-amber-500/10 to-orange-500/5 border-amber-500/30'
-          }
-        `}>
+        <div
+          className="ml-14 p-4"
+          style={{
+            borderRadius: S.radius.md,
+            background: isCorrect ? `${S.protocol.HTTP}0c` : `${S.accent}0c`,
+            border: `1px solid ${isCorrect ? `${S.protocol.HTTP}30` : `${S.accent}30`}`,
+          }}
+        >
           <div className="flex items-start gap-3">
-            <BookOpen className={`w-5 h-5 mt-0.5 flex-shrink-0 ${isCorrect ? 'text-emerald-400' : 'text-amber-400'}`} />
-            <p className={`text-sm leading-relaxed ${isCorrect ? 'text-emerald-200' : 'text-amber-200'}`}>
+            <BookOpen className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: isCorrect ? S.protocol.HTTP : S.accent }} />
+            <p className="text-sm leading-relaxed" style={{ color: isCorrect ? S.protocol.HTTP : S.accent }}>
               {question.explanation}
             </p>
           </div>
@@ -141,27 +166,25 @@ function ResultPage({ score, totalQuestions, passingScore, onRetry, onClose, wro
   return (
     <div className="flex flex-col items-center py-6 space-y-5">
       {/* 結果圖示 */}
-      <div className={`
-        w-20 h-20 rounded-full flex items-center justify-center
-        ${passed
-          ? 'bg-gradient-to-br from-emerald-500 to-cyan-500'
-          : 'bg-gradient-to-br from-amber-500 to-orange-500'
-        }
-        shadow-lg ${passed ? 'shadow-emerald-500/30' : 'shadow-amber-500/30'}
-      `}>
+      <div
+        className="w-20 h-20 rounded-full flex items-center justify-center"
+        style={{
+          background: passed ? S.protocol.HTTP : S.accent,
+        }}
+      >
         {passed ? (
-          <Trophy className="w-10 h-10 text-white" />
+          <Trophy className="w-10 h-10" style={{ color: '#fff' }} />
         ) : (
-          <Target className="w-10 h-10 text-white" />
+          <Target className="w-10 h-10" style={{ color: '#fff' }} />
         )}
       </div>
 
       {/* 結果文字 */}
       <div className="text-center space-y-1">
-        <h3 className={`text-xl font-bold ${passed ? 'text-emerald-400' : 'text-amber-400'}`}>
-          {passed ? '恭喜通過！🎉' : '再接再厲！💪'}
+        <h3 className="text-xl font-bold" style={{ color: passed ? S.protocol.HTTP : S.accent }}>
+          {passed ? '恭喜通過！' : '再接再厲！'}
         </h3>
-        <p className="text-slate-400 text-sm">
+        <p className="text-sm" style={{ color: S.text.secondary }}>
           {passed
             ? '你已經掌握了這個章節的知識'
             : `需要 ${passingScore}% 才能通過測驗`
@@ -172,19 +195,19 @@ function ResultPage({ score, totalQuestions, passingScore, onRetry, onClose, wro
       {/* 分數顯示 - 緊湊版 */}
       <div className="flex items-center gap-6">
         <div className="text-center">
-          <div className="text-3xl font-bold text-white">{score}</div>
-          <div className="text-xs text-slate-500">正確題數</div>
+          <div className="text-3xl font-bold" style={{ color: S.text.primary, fontFamily: S.font.serif }}>{score}</div>
+          <div className="text-xs" style={{ color: S.text.tertiary }}>正確題數</div>
         </div>
-        <div className="text-3xl text-slate-600">/</div>
+        <div className="text-3xl" style={{ color: S.text.faint }}>/</div>
         <div className="text-center">
-          <div className="text-3xl font-bold text-slate-400">{totalQuestions}</div>
-          <div className="text-xs text-slate-500">總題數</div>
+          <div className="text-3xl font-bold" style={{ color: S.text.secondary, fontFamily: S.font.serif }}>{totalQuestions}</div>
+          <div className="text-xs" style={{ color: S.text.tertiary }}>總題數</div>
         </div>
-        <div className="pl-4 border-l border-slate-700">
-          <div className={`text-3xl font-bold ${passed ? 'text-emerald-400' : 'text-amber-400'}`}>
+        <div className="pl-4" style={{ borderLeft: `1px solid ${S.border}` }}>
+          <div className="text-3xl font-bold" style={{ color: passed ? S.protocol.HTTP : S.accent, fontFamily: S.font.serif }}>
             {percentage}%
           </div>
-          <div className="text-xs text-slate-500">得分率</div>
+          <div className="text-xs" style={{ color: S.text.tertiary }}>得分率</div>
         </div>
       </div>
 
@@ -194,51 +217,65 @@ function ResultPage({ score, totalQuestions, passingScore, onRetry, onClose, wro
           {/* 錯題標題 - 可收合 */}
           <button
             onClick={() => setShowWrongAnswers(prev => !prev)}
-            className="w-full flex items-center justify-between p-3 rounded-t-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-colors"
+            className="w-full flex items-center justify-between p-3 transition-colors"
+            style={{
+              borderRadius: `${S.radius.md}px ${S.radius.md}px ${showWrongAnswers ? 0 : S.radius.md}px ${showWrongAnswers ? 0 : S.radius.md}px`,
+              background: `${S.protocol.ICMP}10`,
+              border: `1px solid ${S.protocol.ICMP}30`,
+            }}
           >
             <div className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-red-400" />
-              <span className="text-red-300 font-medium">
+              <AlertCircle className="w-5 h-5" style={{ color: S.protocol.ICMP }} />
+              <span className="font-medium" style={{ color: S.protocol.ICMP }}>
                 錯誤題目 ({wrongAnswerList.length} 題)
               </span>
             </div>
             {showWrongAnswers ? (
-              <ChevronUp className="w-5 h-5 text-red-400" />
+              <ChevronUp className="w-5 h-5" style={{ color: S.protocol.ICMP }} />
             ) : (
-              <ChevronDown className="w-5 h-5 text-red-400" />
+              <ChevronDown className="w-5 h-5" style={{ color: S.protocol.ICMP }} />
             )}
           </button>
 
           {/* 錯題列表 */}
           {showWrongAnswers && (
-            <div className="border border-t-0 border-red-500/30 rounded-b-xl bg-slate-800/50 max-h-60 overflow-y-auto">
+            <div
+              className="max-h-60 overflow-y-auto"
+              style={{
+                border: `1px solid ${S.protocol.ICMP}30`,
+                borderTop: 'none',
+                borderRadius: `0 0 ${S.radius.md}px ${S.radius.md}px`,
+                background: S.surface,
+              }}
+            >
               {wrongAnswerList.map((wrong, idx) => (
                 <div
                   key={wrong.questionId}
-                  className={`p-4 ${idx > 0 ? 'border-t border-slate-700' : ''}`}
+                  className="p-4"
+                  style={{ borderTop: idx > 0 ? `1px solid ${S.border}` : 'none' }}
                 >
                   {/* 題目 */}
-                  <p className="text-white text-sm font-medium mb-3">
-                    <span className="text-slate-500 mr-2">Q{idx + 1}.</span>
+                  <p className="text-sm font-medium mb-3" style={{ color: S.text.primary }}>
+                    <span className="mr-2" style={{ color: S.text.tertiary }}>Q{idx + 1}.</span>
                     {wrong.question}
                   </p>
 
                   {/* 答案對比 */}
                   <div className="space-y-2 text-sm">
                     <div className="flex items-start gap-2">
-                      <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                      <XCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: S.protocol.ICMP }} />
                       <div>
-                        <span className="text-slate-500">你的答案：</span>
-                        <span className="text-red-300 ml-1">
+                        <span style={{ color: S.text.tertiary }}>你的答案：</span>
+                        <span className="ml-1" style={{ color: S.protocol.ICMP }}>
                           {wrong.options[wrong.userAnswer] || '未作答'}
                         </span>
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: S.protocol.HTTP }} />
                       <div>
-                        <span className="text-slate-500">正確答案：</span>
-                        <span className="text-emerald-300 ml-1">
+                        <span style={{ color: S.text.tertiary }}>正確答案：</span>
+                        <span className="ml-1" style={{ color: S.protocol.HTTP }}>
                           {wrong.options[wrong.correctAnswer]}
                         </span>
                       </div>
@@ -247,10 +284,17 @@ function ResultPage({ score, totalQuestions, passingScore, onRetry, onClose, wro
 
                   {/* 解釋 */}
                   {wrong.explanation && (
-                    <div className="mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <div
+                      className="mt-3 p-3"
+                      style={{
+                        borderRadius: S.radius.sm,
+                        background: `${S.accent}0c`,
+                        border: `1px solid ${S.accent}20`,
+                      }}
+                    >
                       <div className="flex items-start gap-2">
-                        <BookOpen className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                        <p className="text-amber-200 text-xs leading-relaxed">
+                        <BookOpen className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: S.accent }} />
+                        <p className="text-xs leading-relaxed" style={{ color: S.accent }}>
                           {wrong.explanation}
                         </p>
                       </div>
@@ -268,7 +312,12 @@ function ResultPage({ score, totalQuestions, passingScore, onRetry, onClose, wro
         {!passed && (
           <button
             onClick={onRetry}
-            className="px-5 py-2.5 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-700 transition-colors flex items-center gap-2 text-sm"
+            className="px-5 py-2.5 flex items-center gap-2 text-sm transition-colors"
+            style={{
+              borderRadius: S.radius.md,
+              border: `1px solid ${S.border}`,
+              color: S.text.secondary,
+            }}
           >
             <RotateCcw className="w-4 h-4" />
             重新測驗
@@ -276,13 +325,13 @@ function ResultPage({ score, totalQuestions, passingScore, onRetry, onClose, wro
         )}
         <button
           onClick={onClose}
-          className={`
-            px-5 py-2.5 rounded-xl font-semibold transition-all flex items-center gap-2 text-sm
-            ${passed
-              ? 'bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white shadow-lg shadow-emerald-500/25'
-              : 'bg-slate-700 hover:bg-slate-600 text-white'
-            }
-          `}
+          className="px-5 py-2.5 font-semibold transition-all flex items-center gap-2 text-sm"
+          style={{
+            borderRadius: S.radius.md,
+            background: passed ? S.protocol.HTTP : S.surface,
+            color: passed ? '#fff' : S.text.primary,
+            border: passed ? 'none' : `1px solid ${S.border}`,
+          }}
         >
           {passed ? (
             <>
@@ -398,39 +447,59 @@ export default function QuizModal({
     <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4">
       {/* 背景遮罩 */}
       <div
-        className="absolute inset-0 bg-black/85 backdrop-blur-md"
+        className="absolute inset-0 bg-black/85"
         onClick={onClose}
       />
 
       {/* 彈窗內容 */}
-      <div className="relative w-full max-w-3xl max-h-[90vh] glass-card rounded-2xl border border-purple-500/30 shadow-2xl shadow-purple-500/10 overflow-hidden flex flex-col animate-fade-in-scale">
+      <div
+        className="relative w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col animate-fade-in-scale"
+        style={{
+          background: S.bgRaised,
+          borderRadius: S.radius.lg,
+          border: `1px solid ${S.accent}30`,
+        }}
+      >
         {/* 標題列 */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-white/5">
+        <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: `1px solid ${S.border}` }}>
           <div className="flex items-center gap-4">
-            <div className="p-2.5 bg-gradient-to-br from-purple-500/25 to-pink-500/15 rounded-xl border border-purple-500/30">
-              <Target className="w-6 h-6 text-purple-400" />
+            <div
+              className="p-2.5"
+              style={{
+                borderRadius: S.radius.md,
+                background: `${S.protocol.DNS}18`,
+                border: `1px solid ${S.protocol.DNS}30`,
+              }}
+            >
+              <Target className="w-6 h-6" style={{ color: S.protocol.DNS }} />
             </div>
             <div>
-              <span className="text-xs text-purple-400 font-semibold uppercase tracking-wider">課程測驗</span>
-              <h2 className="text-xl font-bold text-white mt-0.5">{quiz.title}</h2>
+              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: S.protocol.DNS }}>課程測驗</span>
+              <h2 className="text-xl font-bold mt-0.5" style={{ color: S.text.primary }}>{quiz.title}</h2>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl hover:bg-white/10 transition-all"
+            className="p-2 transition-all"
+            style={{ borderRadius: S.radius.sm }}
+            onMouseEnter={e => e.currentTarget.style.background = S.surfaceHover}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
           >
-            <X className="w-5 h-5 text-slate-400 hover:text-white" />
+            <X className="w-5 h-5" style={{ color: S.text.tertiary }} />
           </button>
         </div>
 
         {/* 進度條 */}
         {!showResults && (
-          <div className="px-6 py-4 border-b border-white/5">
+          <div className="px-6 py-4" style={{ borderBottom: `1px solid ${S.border}` }}>
             <div className="flex items-center justify-between text-sm mb-3">
-              <span className="text-slate-300 font-medium">
-                問題 <span className="text-purple-400">{currentQuestionIndex + 1}</span> / {totalQuestions}
+              <span className="font-medium" style={{ color: S.text.secondary }}>
+                問題 <span style={{ color: S.protocol.DNS }}>{currentQuestionIndex + 1}</span> / {totalQuestions}
               </span>
-              <span className="text-slate-400 text-xs bg-white/5 px-3 py-1 rounded-full">
+              <span
+                className="text-xs px-3 py-1 rounded-full"
+                style={{ background: S.surface, color: S.text.tertiary }}
+              >
                 已答 {Object.keys(answers).length} 題
               </span>
             </div>
@@ -439,7 +508,7 @@ export default function QuizModal({
                 className="progress-bar-fill"
                 style={{
                   width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%`,
-                  background: 'linear-gradient(90deg, var(--color-primary-500) 0%, #a855f7 100%)'
+                  background: `linear-gradient(90deg, ${S.accent} 0%, ${S.protocol.DNS} 100%)`
                 }}
               />
             </div>
@@ -472,17 +541,19 @@ export default function QuizModal({
 
         {/* 底部操作列 */}
         {!showResults && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-white/5 bg-black/20">
+          <div
+            className="flex items-center justify-between px-6 py-4"
+            style={{ borderTop: `1px solid ${S.border}`, background: `${S.bg}40` }}
+          >
             <button
               onClick={handlePrev}
               disabled={currentQuestionIndex === 0}
-              className={`
-                px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm font-medium transition-all
-                ${currentQuestionIndex === 0
-                  ? 'text-slate-600 cursor-not-allowed'
-                  : 'text-slate-300 hover:text-white hover:bg-white/10'
-                }
-              `}
+              className="px-4 py-2.5 flex items-center gap-2 text-sm font-medium transition-all"
+              style={{
+                borderRadius: S.radius.md,
+                color: currentQuestionIndex === 0 ? S.text.faint : S.text.secondary,
+                cursor: currentQuestionIndex === 0 ? 'not-allowed' : 'pointer',
+              }}
             >
               <ChevronLeft className="w-4 h-4" />
               上一題
@@ -493,15 +564,25 @@ export default function QuizModal({
                 <button
                   key={index}
                   onClick={() => setCurrentQuestionIndex(index)}
-                  className={`
-                    w-8 h-8 rounded-lg text-xs font-semibold transition-all
-                    ${index === currentQuestionIndex
-                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30'
+                  className="w-8 h-8 text-xs font-semibold transition-all"
+                  style={{
+                    borderRadius: S.radius.sm,
+                    background: index === currentQuestionIndex
+                      ? S.protocol.DNS
                       : answers[quiz.questions[index].id] !== undefined
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'
-                    }
-                  `}
+                        ? `${S.protocol.HTTP}20`
+                        : S.surface,
+                    color: index === currentQuestionIndex
+                      ? '#fff'
+                      : answers[quiz.questions[index].id] !== undefined
+                        ? S.protocol.HTTP
+                        : S.text.tertiary,
+                    border: index === currentQuestionIndex
+                      ? 'none'
+                      : answers[quiz.questions[index].id] !== undefined
+                        ? `1px solid ${S.protocol.HTTP}30`
+                        : `1px solid ${S.border}`,
+                  }}
                 >
                   {index + 1}
                 </button>
@@ -512,13 +593,13 @@ export default function QuizModal({
               <button
                 onClick={handleSubmit}
                 disabled={!allAnswered}
-                className={`
-                  px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2 text-sm transition-all
-                  ${allAnswered
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-lg shadow-purple-500/30 hover-lift'
-                    : 'bg-slate-700/50 text-slate-500 cursor-not-allowed'
-                  }
-                `}
+                className="px-5 py-2.5 font-semibold flex items-center gap-2 text-sm transition-all"
+                style={{
+                  borderRadius: S.radius.md,
+                  background: allAnswered ? S.protocol.DNS : S.surface,
+                  color: allAnswered ? '#fff' : S.text.faint,
+                  cursor: allAnswered ? 'pointer' : 'not-allowed',
+                }}
               >
                 提交測驗
                 <CheckCircle2 className="w-4 h-4" />
@@ -526,7 +607,11 @@ export default function QuizModal({
             ) : (
               <button
                 onClick={handleNext}
-                className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 flex items-center gap-2 transition-all"
+                className="px-4 py-2.5 text-sm font-medium flex items-center gap-2 transition-all"
+                style={{
+                  borderRadius: S.radius.md,
+                  color: S.text.secondary,
+                }}
               >
                 下一題
                 <ChevronRight className="w-4 h-4" />

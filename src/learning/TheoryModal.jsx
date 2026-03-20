@@ -13,6 +13,7 @@
 
 import React, { lazy, Suspense } from 'react'
 import { X, BookOpen, Play, Loader2 } from 'lucide-react'
+import { S } from '../lib/swiss-tokens'
 
 // 動態載入 Demo 組件
 const demoComponents = {
@@ -64,8 +65,8 @@ const demoMeta = {
 function LoadingFallback() {
   return (
     <div className="flex flex-col items-center justify-center h-96 gap-4">
-      <Loader2 className="w-12 h-12 text-cyan-400 animate-spin" />
-      <p className="text-slate-400">載入動畫組件中...</p>
+      <Loader2 className="w-12 h-12 animate-spin" style={{ color: S.accent }} />
+      <p style={{ color: S.text.secondary }}>載入動畫組件中...</p>
     </div>
   )
 }
@@ -99,61 +100,97 @@ export default function TheoryModal({
     <div className="fixed inset-0 z-[9998] flex items-center justify-center">
       {/* 背景遮罩 */}
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/80"
         onClick={onClose}
       />
 
       {/* 彈窗內容 */}
-      <div className="relative w-[90vw] max-w-5xl max-h-[90vh] bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col">
+      <div
+        className="relative w-[90vw] max-w-5xl max-h-[90vh] overflow-hidden flex flex-col"
+        style={{
+          background: S.bgRaised,
+          borderRadius: S.radius.lg,
+          border: `1px solid ${S.border}`,
+        }}
+      >
         {/* 標題列 */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700 bg-slate-800/50">
+        <div
+          className="flex items-center justify-between px-6 py-4"
+          style={{
+            borderBottom: `1px solid ${S.border}`,
+            background: S.surface,
+          }}
+        >
           <div className="flex items-center gap-3">
             <span className="text-2xl">{meta.icon}</span>
             <div>
               <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-purple-400" />
-                <span className="text-xs text-purple-400 font-semibold">理論課</span>
+                <BookOpen className="w-4 h-4" style={{ color: S.protocol.DNS }} />
+                <span className="text-xs font-semibold" style={{ color: S.protocol.DNS }}>理論課</span>
               </div>
-              <h2 className="text-xl font-bold text-white">{meta.title}</h2>
+              <h2 className="text-xl font-bold" style={{ color: S.text.primary }}>{meta.title}</h2>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-slate-700 transition-colors"
+            className="p-2 transition-colors"
+            style={{ borderRadius: S.radius.sm }}
+            onMouseEnter={e => e.currentTarget.style.background = S.surfaceHover}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
           >
-            <X className="w-5 h-5 text-slate-400" />
+            <X className="w-5 h-5" style={{ color: S.text.tertiary }} />
           </button>
         </div>
 
         {/* 說明文字 */}
         {(stepTitle || stepContent) && (
-          <div className="px-6 py-3 bg-slate-800/30 border-b border-slate-700/50">
+          <div
+            className="px-6 py-3"
+            style={{
+              background: `${S.surface}80`,
+              borderBottom: `1px solid ${S.border}80`,
+            }}
+          >
             {stepTitle && (
-              <h3 className="text-sm font-semibold text-cyan-300 mb-1">{stepTitle}</h3>
+              <h3 className="text-sm font-semibold mb-1" style={{ color: S.accent }}>{stepTitle}</h3>
             )}
             {stepContent && (
-              <p className="text-sm text-slate-300">{stepContent}</p>
+              <p className="text-sm" style={{ color: S.text.secondary }}>{stepContent}</p>
             )}
           </div>
         )}
 
         {/* Demo 組件區域 */}
         <div className="flex-1 overflow-auto p-6">
-          <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-4">
+          <div
+            className="p-4"
+            style={{
+              background: S.surface,
+              borderRadius: S.radius.md,
+              border: `1px solid ${S.border}`,
+            }}
+          >
             <Suspense fallback={<LoadingFallback />}>
               <DemoComponent />
             </Suspense>
           </div>
 
           {/* 說明卡片 */}
-          <div className="mt-4 p-4 bg-gradient-to-r from-purple-900/30 to-cyan-900/30 rounded-xl border border-purple-500/30">
+          <div
+            className="mt-4 p-4"
+            style={{
+              borderRadius: S.radius.md,
+              background: `${S.protocol.DNS}0c`,
+              border: `1px solid ${S.protocol.DNS}30`,
+            }}
+          >
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-purple-500/20 rounded-lg">
-                <Play className="w-5 h-5 text-purple-300" />
+              <div className="p-2" style={{ background: `${S.protocol.DNS}20`, borderRadius: S.radius.sm }}>
+                <Play className="w-5 h-5" style={{ color: S.protocol.DNS }} />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-purple-300 mb-1">互動提示</h4>
-                <p className="text-sm text-slate-400">
+                <h4 className="text-sm font-semibold mb-1" style={{ color: S.protocol.DNS }}>互動提示</h4>
+                <p className="text-sm" style={{ color: S.text.secondary }}>
                   點擊「播放」按鈕觀看動畫演示。你可以使用進度條和速度控制來調整觀看節奏。
                   觀看完成後，點擊下方按鈕繼續學習。
                 </p>
@@ -163,12 +200,19 @@ export default function TheoryModal({
         </div>
 
         {/* 底部操作列 */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-700 bg-slate-800/50">
-          <p className="text-sm text-slate-400">{meta.description}</p>
+        <div
+          className="flex items-center justify-between px-6 py-4"
+          style={{
+            borderTop: `1px solid ${S.border}`,
+            background: S.surface,
+          }}
+        >
+          <p className="text-sm" style={{ color: S.text.secondary }}>{meta.description}</p>
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors"
+              className="px-4 py-2 text-sm transition-colors"
+              style={{ color: S.text.tertiary }}
             >
               稍後再看
             </button>
@@ -177,7 +221,12 @@ export default function TheoryModal({
                 onComplete?.()
                 onClose?.()
               }}
-              className="px-6 py-2 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white text-sm font-semibold rounded-lg transition-all shadow-lg shadow-cyan-500/25"
+              className="px-6 py-2 text-sm font-semibold transition-all"
+              style={{
+                borderRadius: S.radius.md,
+                background: S.accent,
+                color: '#fff',
+              }}
             >
               我知道了，繼續 →
             </button>

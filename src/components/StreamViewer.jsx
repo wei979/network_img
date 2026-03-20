@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { X, FileText, Binary, Download, Loader2, ArrowRight, ArrowLeft } from 'lucide-react'
+import { S } from '../lib/swiss-tokens'
 
 const BYTES_PER_ROW = 16
 
@@ -72,16 +73,21 @@ export default function StreamViewer({ connectionId, visible, onClose }) {
   ]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/95 backdrop-blur-sm">
-      <div className="relative w-full max-w-4xl mx-4 max-h-[90vh] flex flex-col bg-slate-900 border border-slate-700 rounded-lg shadow-2xl">
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${S.bg}f0` }}>
+      <div style={{
+        position: 'relative', width: '100%', maxWidth: '56rem', margin: '0 1rem',
+        maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+        background: S.bg, border: `1px solid ${S.border}`, borderRadius: S.radius.md,
+        fontFamily: S.font.sans,
+      }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderBottom: `1px solid ${S.border}` }}>
           <div>
-            <h2 className="text-lg font-semibold text-slate-200">TCP Stream Viewer</h2>
-            <p className="text-xs text-slate-400 font-mono mt-0.5">
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: S.text.primary, margin: 0 }}>TCP Stream Viewer</h2>
+            <p style={{ fontSize: '0.75rem', color: S.text.secondary, fontFamily: S.font.mono, marginTop: 2 }}>
               {connectionId || 'No connection selected'}
               {streamData && (
-                <span className="ml-3 text-slate-500">
+                <span style={{ marginLeft: 12, color: S.text.tertiary }}>
                   {streamData.totalSegments} segment{streamData.totalSegments !== 1 ? 's' : ''}
                 </span>
               )}
@@ -89,24 +95,28 @@ export default function StreamViewer({ connectionId, visible, onClose }) {
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+            style={{ padding: 8, background: 'transparent', border: 'none', borderRadius: S.radius.sm, cursor: 'pointer', color: S.text.secondary }}
             aria-label="close"
           >
-            <X className="w-5 h-5 text-slate-400" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Tab bar */}
-        <div className="flex items-center gap-1 px-6 pt-3 pb-0">
+        {/* Tab bar — underline style */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '12px 24px 0' }}>
           {tabs.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
               onClick={() => setActiveTab(key)}
-              className={`flex items-center gap-1.5 px-3 py-2 text-sm rounded-t-lg transition-colors ${
-                activeTab === key
-                  ? 'bg-slate-800 text-slate-200 border border-slate-700 border-b-slate-800'
-                  : 'text-slate-400 hover:text-slate-300 hover:bg-slate-800/50'
-              }`}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '8px 12px',
+                fontSize: '0.875rem',
+                background: 'transparent', border: 'none',
+                borderBottom: activeTab === key ? `2px solid ${S.accent}` : '2px solid transparent',
+                color: activeTab === key ? S.text.primary : S.text.secondary,
+                cursor: 'pointer',
+              }}
             >
               <Icon className="w-4 h-4" />
               {label}
@@ -115,7 +125,7 @@ export default function StreamViewer({ connectionId, visible, onClose }) {
         </div>
 
         {/* Content area */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 min-h-0" style={{ maxHeight: 'calc(90vh - 160px)' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px', minHeight: 0, maxHeight: 'calc(90vh - 160px)' }}>
           {loading && <LoadingState />}
           {error && <ErrorState message={error} />}
           {!loading && !error && !streamData && <EmptyState />}
@@ -150,27 +160,27 @@ export default function StreamViewer({ connectionId, visible, onClose }) {
 
 function LoadingState() {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-      <Loader2 className="w-8 h-8 animate-spin mb-3" />
-      <span className="text-sm">Loading stream data...</span>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 0', color: S.text.secondary }}>
+      <Loader2 className="w-8 h-8 animate-spin" style={{ marginBottom: 12 }} />
+      <span style={{ fontSize: '0.875rem' }}>Loading stream data...</span>
     </div>
   )
 }
 
 function ErrorState({ message }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16">
-      <div className="text-red-400 text-sm font-medium mb-1">Failed to load stream</div>
-      <div className="text-slate-500 text-xs font-mono">{message}</div>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 0' }}>
+      <div style={{ color: S.protocol.ICMP, fontSize: '0.875rem', fontWeight: 500, marginBottom: 4 }}>Failed to load stream</div>
+      <div style={{ color: S.text.tertiary, fontSize: '0.75rem', fontFamily: S.font.mono }}>{message}</div>
     </div>
   )
 }
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-slate-500">
-      <FileText className="w-8 h-8 mb-3" />
-      <span className="text-sm">No stream data available</span>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 0', color: S.text.tertiary }}>
+      <FileText className="w-8 h-8" style={{ marginBottom: 12 }} />
+      <span style={{ fontSize: '0.875rem' }}>No stream data available</span>
     </div>
   )
 }
@@ -180,34 +190,39 @@ function EmptyState() {
 function AsciiTab({ segments }) {
   if (!segments || segments.length === 0) {
     return (
-      <div className="text-sm text-slate-500 py-8 text-center">No segments in this stream</div>
+      <div style={{ fontSize: '0.875rem', color: S.text.tertiary, padding: '32px 0', textAlign: 'center' }}>No segments in this stream</div>
     )
   }
 
   return (
-    <div className="space-y-2">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {segments.map((seg, idx) => {
         const isClient = seg.direction === 'client'
+        const dirColor = isClient ? S.protocol.UDP : S.protocol.HTTP
         return (
-          <div key={idx} className="rounded border border-slate-700 bg-slate-950">
+          <div key={idx} style={{ borderRadius: S.radius.sm, border: `1px solid ${S.border}`, background: S.bg }}>
             {/* Segment header */}
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-800/60 border-b border-slate-700 text-xs">
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '6px 12px', background: S.surface,
+              borderBottom: `1px solid ${S.border}`, fontSize: '0.75rem',
+            }}>
               {isClient ? (
-                <ArrowRight className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                <ArrowRight className="w-3.5 h-3.5" style={{ color: dirColor, flexShrink: 0 }} />
               ) : (
-                <ArrowLeft className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
+                <ArrowLeft className="w-3.5 h-3.5" style={{ color: dirColor, flexShrink: 0 }} />
               )}
-              <span className={isClient ? 'text-blue-400 font-semibold' : 'text-green-400 font-semibold'}>
+              <span style={{ color: dirColor, fontWeight: 600 }}>
                 {isClient ? 'Client' : 'Server'}
               </span>
-              <span className="text-slate-500">
+              <span style={{ color: S.text.tertiary }}>
                 Packet #{seg.packetIndex}
               </span>
-              <span className="text-slate-500 ml-auto">
+              <span style={{ color: S.text.tertiary, marginLeft: 'auto' }}>
                 {seg.length} bytes
               </span>
               {seg.timestamp != null && (
-                <span className="text-slate-600 font-mono">
+                <span style={{ color: S.text.faint, fontFamily: S.font.mono }}>
                   {seg.timestamp.toFixed(3)}
                 </span>
               )}
@@ -215,9 +230,11 @@ function AsciiTab({ segments }) {
 
             {/* ASCII content */}
             <pre
-              className={`px-3 py-2 text-xs leading-relaxed font-mono whitespace-pre-wrap break-all overflow-x-auto ${
-                isClient ? 'text-blue-400' : 'text-green-400'
-              }`}
+              style={{
+                padding: '8px 12px', fontSize: '0.75rem', lineHeight: 1.6,
+                fontFamily: S.font.mono, whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+                overflowX: 'auto', color: dirColor, margin: 0,
+              }}
             >
               {seg.ascii || '(empty)'}
             </pre>
@@ -232,14 +249,14 @@ function AsciiTab({ segments }) {
 
 function HexTab({ clientData, serverData }) {
   return (
-    <div className="space-y-6">
-      <HexSection label="Client" data={clientData} colorClass="text-blue-400" />
-      <HexSection label="Server" data={serverData} colorClass="text-green-400" />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <HexSection label="Client" data={clientData} color={S.protocol.UDP} />
+      <HexSection label="Server" data={serverData} color={S.protocol.HTTP} />
     </div>
   )
 }
 
-function HexSection({ label, data, colorClass }) {
+function HexSection({ label, data, color }) {
   const rows = useMemo(() => {
     if (!data?.hex) return null
     const hex = data.hex
@@ -262,20 +279,24 @@ function HexSection({ label, data, colorClass }) {
   if (!rows || rows.length === 0) {
     return (
       <div>
-        <div className={`text-sm font-semibold mb-2 ${colorClass}`}>
+        <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: 8, color }}>
           {label} ({data?.length ?? 0} bytes)
         </div>
-        <div className="text-xs text-slate-500">No data</div>
+        <div style={{ fontSize: '0.75rem', color: S.text.tertiary }}>No data</div>
       </div>
     )
   }
 
   return (
     <div>
-      <div className={`text-sm font-semibold mb-2 ${colorClass}`}>
+      <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: 8, color }}>
         {label} ({data.length} bytes)
       </div>
-      <div className="bg-slate-950 border border-slate-700 rounded font-mono text-xs overflow-x-auto max-h-[300px] overflow-y-auto">
+      <div style={{
+        background: S.bg, border: `1px solid ${S.border}`, borderRadius: S.radius.sm,
+        fontFamily: S.font.mono, fontSize: '0.75rem',
+        overflowX: 'auto', maxHeight: 300, overflowY: 'auto',
+      }}>
         {rows.map((row) => {
           const offsetHex = row.offset.toString(16).padStart(8, '0')
           const asciiStr = row.bytes
@@ -285,33 +306,40 @@ function HexSection({ label, data, colorClass }) {
           return (
             <div
               key={row.offset}
-              className="flex items-center whitespace-nowrap px-2 py-px hover:bg-slate-800/50"
+              style={{
+                display: 'flex', alignItems: 'center', whiteSpace: 'nowrap',
+                padding: '1px 8px',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = S.surfaceHover}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
             >
               {/* Offset */}
-              <span className="text-slate-500 w-[72px] flex-shrink-0 select-none">
+              <span style={{ color: S.text.tertiary, width: 72, flexShrink: 0, userSelect: 'none' }}>
                 {offsetHex}
               </span>
 
               {/* Hex bytes */}
-              <span className="flex-shrink-0 mr-2">
+              <span style={{ flexShrink: 0, marginRight: 8 }}>
                 {row.bytes.map((b, i) => (
                   <span
                     key={b.index}
-                    className={`inline-block w-[22px] text-center ${colorClass}${i === 7 ? ' mr-1' : ''}`}
+                    style={{
+                      display: 'inline-block', width: 22, textAlign: 'center',
+                      color, marginRight: i === 7 ? 4 : 0,
+                    }}
                   >
                     {b.hex}
                   </span>
                 ))}
                 {row.bytes.length < BYTES_PER_ROW && (
                   <span
-                    className="inline-block"
-                    style={{ width: `${(BYTES_PER_ROW - row.bytes.length) * 22}px` }}
+                    style={{ display: 'inline-block', width: `${(BYTES_PER_ROW - row.bytes.length) * 22}px` }}
                   />
                 )}
               </span>
 
               {/* ASCII */}
-              <span className="text-slate-400 flex-shrink-0 border-l border-slate-700 pl-2">
+              <span style={{ color: S.text.secondary, flexShrink: 0, borderLeft: `1px solid ${S.border}`, paddingLeft: 8 }}>
                 {asciiStr}
               </span>
             </div>
@@ -328,21 +356,27 @@ function RawTab({ connectionId, clientData, serverData, onDownload }) {
   const baseName = connectionId ? connectionId.replace(/[^a-zA-Z0-9._-]/g, '_') : 'stream'
 
   return (
-    <div className="space-y-4 py-4">
-      <p className="text-sm text-slate-400 mb-4">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '16px 0' }}>
+      <p style={{ fontSize: '0.875rem', color: S.text.secondary, marginBottom: 16 }}>
         Download raw binary data for this stream.
       </p>
 
-      <div className="flex flex-col gap-3">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <button
           onClick={() => onDownload(clientData?.hex, `${baseName}_client.bin`)}
           disabled={!clientData?.hex}
-          className="flex items-center gap-3 px-4 py-3 rounded-lg border border-slate-700 bg-slate-800/60 hover:bg-slate-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '12px 16px', borderRadius: S.radius.sm,
+            border: `1px solid ${S.border}`, background: S.surface,
+            cursor: clientData?.hex ? 'pointer' : 'not-allowed',
+            opacity: clientData?.hex ? 1 : 0.3,
+          }}
         >
-          <Download className="w-5 h-5 text-blue-400" />
-          <div className="text-left">
-            <div className="text-sm text-slate-200">Client Data</div>
-            <div className="text-xs text-slate-500">
+          <Download className="w-5 h-5" style={{ color: S.protocol.UDP }} />
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: '0.875rem', color: S.text.primary }}>Client Data</div>
+            <div style={{ fontSize: '0.75rem', color: S.text.tertiary }}>
               {clientData?.length ?? 0} bytes
             </div>
           </div>
@@ -351,12 +385,18 @@ function RawTab({ connectionId, clientData, serverData, onDownload }) {
         <button
           onClick={() => onDownload(serverData?.hex, `${baseName}_server.bin`)}
           disabled={!serverData?.hex}
-          className="flex items-center gap-3 px-4 py-3 rounded-lg border border-slate-700 bg-slate-800/60 hover:bg-slate-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '12px 16px', borderRadius: S.radius.sm,
+            border: `1px solid ${S.border}`, background: S.surface,
+            cursor: serverData?.hex ? 'pointer' : 'not-allowed',
+            opacity: serverData?.hex ? 1 : 0.3,
+          }}
         >
-          <Download className="w-5 h-5 text-green-400" />
-          <div className="text-left">
-            <div className="text-sm text-slate-200">Server Data</div>
-            <div className="text-xs text-slate-500">
+          <Download className="w-5 h-5" style={{ color: S.protocol.HTTP }} />
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: '0.875rem', color: S.text.primary }}>Server Data</div>
+            <div style={{ fontSize: '0.75rem', color: S.text.tertiary }}>
               {serverData?.length ?? 0} bytes
             </div>
           </div>

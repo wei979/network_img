@@ -11,6 +11,7 @@ import React, { useState, useMemo } from 'react'
 import { ChevronDown, ChevronRight, Check, Lock, Clock, BookOpen, Trophy, FileQuestion, Star, AlertCircle } from 'lucide-react'
 import { courseList, getCourse } from './courses'
 import { LearningStorage } from './LearningStorage'
+import { S } from '../lib/swiss-tokens'
 
 /**
  * CourseSidebar 課程側邊欄組件
@@ -65,16 +66,30 @@ export default function CourseSidebar({
   if (!isVisible) return null
 
   return (
-    <div className="w-72 glass-card rounded-2xl m-3 h-[calc(100%-1.5rem)] overflow-y-auto custom-scrollbar">
+    <div
+      className="w-72 m-3 h-[calc(100%-1.5rem)] overflow-y-auto custom-scrollbar"
+      style={{
+        background: S.bgRaised,
+        borderRadius: S.radius.md,
+        border: `1px solid ${S.border}`,
+      }}
+    >
       {/* 標題區塊 */}
-      <div className="p-5 border-b border-white/5">
+      <div className="p-5" style={{ borderBottom: `1px solid ${S.border}` }}>
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 border border-cyan-500/30">
-            <BookOpen className="w-5 h-5 text-cyan-400" />
+          <div
+            className="p-2"
+            style={{
+              borderRadius: S.radius.md,
+              background: `${S.accent}18`,
+              border: `1px solid ${S.accent}30`,
+            }}
+          >
+            <BookOpen className="w-5 h-5" style={{ color: S.accent }} />
           </div>
           <div>
-            <h2 className="font-semibold text-white text-sm">課程目錄</h2>
-            <span className="text-xs text-slate-400">總進度 {LearningStorage.getOverallProgress()}%</span>
+            <h2 className="font-semibold text-sm" style={{ color: S.text.primary, fontFamily: S.font.sans }}>課程目錄</h2>
+            <span className="text-xs" style={{ color: S.text.secondary }}>總進度 {LearningStorage.getOverallProgress()}%</span>
           </div>
         </div>
         {/* 動畫進度條 */}
@@ -108,26 +123,41 @@ export default function CourseSidebar({
                   }
                 }}
                 disabled={!unlocked}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-300 group ${
-                  isCurrentLevel
-                    ? 'bg-gradient-to-r from-cyan-500/20 to-emerald-500/10 border border-cyan-500/40 shadow-lg shadow-cyan-500/10'
+                className="w-full flex items-center gap-3 p-3 transition-all duration-300 group"
+                style={{
+                  borderRadius: S.radius.md,
+                  background: isCurrentLevel
+                    ? `${S.accent}18`
                     : unlocked
-                      ? 'bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-white/10 hover-lift'
-                      : 'opacity-40 cursor-not-allowed bg-slate-800/30'
-                }`}
+                      ? S.surface
+                      : `${S.bg}80`,
+                  border: `1px solid ${
+                    isCurrentLevel
+                      ? `${S.accent}50`
+                      : unlocked
+                        ? S.border
+                        : 'transparent'
+                  }`,
+                  opacity: !unlocked ? 0.4 : 1,
+                  cursor: !unlocked ? 'not-allowed' : 'pointer',
+                }}
               >
                 {/* 展開/收合圖示 */}
-                <div className={`p-1.5 rounded-lg transition-all ${
-                  isCurrentLevel ? 'bg-cyan-500/20' : 'bg-white/5 group-hover:bg-white/10'
-                }`}>
+                <div
+                  className="p-1.5 transition-all"
+                  style={{
+                    borderRadius: S.radius.sm,
+                    background: isCurrentLevel ? `${S.accent}20` : `${S.text.faint}30`,
+                  }}
+                >
                   {unlocked ? (
                     isExpanded ? (
-                      <ChevronDown className="w-3.5 h-3.5 text-cyan-400" />
+                      <ChevronDown className="w-3.5 h-3.5" style={{ color: S.accent }} />
                     ) : (
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-400 transition-colors" />
+                      <ChevronRight className="w-3.5 h-3.5" style={{ color: S.text.secondary }} />
                     )
                   ) : (
-                    <Lock className="w-3.5 h-3.5 text-slate-500" />
+                    <Lock className="w-3.5 h-3.5" style={{ color: S.text.tertiary }} />
                   )}
                 </div>
 
@@ -136,28 +166,29 @@ export default function CourseSidebar({
 
                 {/* 關卡資訊 */}
                 <div className="flex-1 text-left min-w-0">
-                  <div className={`text-sm font-semibold tracking-wide ${
-                    isCurrentLevel ? 'text-cyan-300' : 'text-white'
-                  }`}>
+                  <div
+                    className="text-sm font-semibold tracking-wide"
+                    style={{ color: isCurrentLevel ? S.accent : S.text.primary }}
+                  >
                     Level {levelIndex + 1}
                   </div>
-                  <div className="text-[11px] text-slate-400 truncate">
+                  <div className="text-[11px] truncate" style={{ color: S.text.secondary }}>
                     {level.description.substring(0, 18)}...
                   </div>
                 </div>
 
                 {/* 完成狀態 */}
                 {unlocked && completion === 100 ? (
-                  <div className="p-1.5 rounded-lg bg-yellow-500/20">
-                    <Trophy className="w-4 h-4 text-yellow-400" />
+                  <div className="p-1.5" style={{ borderRadius: S.radius.sm, background: '#eab30820' }}>
+                    <Trophy className="w-4 h-4" style={{ color: '#eab308' }} />
                   </div>
                 ) : unlocked ? (
                   <div className="flex flex-col items-end">
-                    <span className="text-xs font-medium text-cyan-400">{completion}%</span>
-                    <div className="w-10 h-1 bg-slate-700 rounded-full mt-1 overflow-hidden">
+                    <span className="text-xs font-medium" style={{ color: S.accent }}>{completion}%</span>
+                    <div className="w-10 h-1 mt-1 overflow-hidden" style={{ background: S.border, borderRadius: 9999 }}>
                       <div
-                        className="h-full bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-full transition-all"
-                        style={{ width: `${completion}%` }}
+                        className="h-full transition-all"
+                        style={{ width: `${completion}%`, background: S.accent, borderRadius: 9999 }}
                       />
                     </div>
                   </div>
@@ -166,7 +197,7 @@ export default function CourseSidebar({
 
               {/* 課節列表（展開時顯示） */}
               {isExpanded && unlocked && course && (
-                <div className="ml-4 mt-2 space-y-1.5 pl-3 border-l-2 border-white/5">
+                <div className="ml-4 mt-2 space-y-1.5 pl-3" style={{ borderLeft: `2px solid ${S.border}` }}>
                   {course.lessons.map((lesson, lessonIndex) => {
                     const isCurrentLesson = isCurrentLevel && lessonIndex === currentLessonIndex
                     const completed = isLessonComplete(level.id, lesson.id)
@@ -182,26 +213,43 @@ export default function CourseSidebar({
                             setTimeout(() => onSelectLesson?.(lessonIndex), 100)
                           }
                         }}
-                        className={`w-full flex items-center gap-2.5 p-2.5 rounded-lg text-sm transition-all duration-200 group/lesson ${
-                          isCurrentLesson
-                            ? 'bg-cyan-500/15 border border-cyan-500/30 text-cyan-300'
+                        className="w-full flex items-center gap-2.5 p-2.5 text-sm transition-all duration-200"
+                        style={{
+                          borderRadius: S.radius.sm,
+                          background: isCurrentLesson
+                            ? `${S.accent}18`
                             : completed
-                              ? 'bg-emerald-500/5 text-slate-300 hover:bg-emerald-500/10'
-                              : 'text-slate-400 hover:bg-white/[0.03] hover:text-slate-200'
-                        }`}
+                              ? `${S.protocol.HTTP}08`
+                              : 'transparent',
+                          border: isCurrentLesson ? `1px solid ${S.accent}30` : '1px solid transparent',
+                          color: isCurrentLesson
+                            ? S.accent
+                            : completed
+                              ? S.text.secondary
+                              : S.text.tertiary,
+                        }}
                       >
                         {/* 完成狀態圖示 */}
                         {completed ? (
-                          <div className="w-5 h-5 rounded-full bg-emerald-500/25 flex items-center justify-center border border-emerald-500/40">
-                            <Check className="w-3 h-3 text-emerald-400" />
+                          <div
+                            className="w-5 h-5 rounded-full flex items-center justify-center"
+                            style={{ background: `${S.protocol.HTTP}20`, border: `1px solid ${S.protocol.HTTP}40` }}
+                          >
+                            <Check className="w-3 h-3" style={{ color: S.protocol.HTTP }} />
                           </div>
                         ) : isCurrentLesson ? (
-                          <div className="w-5 h-5 rounded-full bg-cyan-500/25 flex items-center justify-center border border-cyan-500/40">
-                            <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                          <div
+                            className="w-5 h-5 rounded-full flex items-center justify-center"
+                            style={{ background: `${S.accent}20`, border: `1px solid ${S.accent}40` }}
+                          >
+                            <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: S.accent }} />
                           </div>
                         ) : (
-                          <div className="w-5 h-5 rounded-full border border-slate-600/50 flex items-center justify-center bg-slate-800/50 group-hover/lesson:border-slate-500 transition-colors">
-                            <span className="text-[10px] text-slate-500 group-hover/lesson:text-slate-400">{lessonIndex + 1}</span>
+                          <div
+                            className="w-5 h-5 rounded-full flex items-center justify-center transition-colors"
+                            style={{ border: `1px solid ${S.border}`, background: `${S.surface}80` }}
+                          >
+                            <span className="text-[10px]" style={{ color: S.text.tertiary }}>{lessonIndex + 1}</span>
                           </div>
                         )}
 
@@ -211,7 +259,14 @@ export default function CourseSidebar({
                         </span>
 
                         {/* 步驟數標籤 */}
-                        <span className="text-[10px] text-slate-500 bg-slate-800/50 px-1.5 py-0.5 rounded">
+                        <span
+                          className="text-[10px] px-1.5 py-0.5"
+                          style={{
+                            color: S.text.tertiary,
+                            background: S.surface,
+                            borderRadius: S.radius.sm,
+                          }}
+                        >
                           {lesson.steps.length} 步
                         </span>
                       </button>
@@ -231,38 +286,45 @@ export default function CourseSidebar({
                     return (
                       <button
                         onClick={() => onStartQuiz?.(course.quiz, level.id)}
-                        className={`
-                          w-full flex items-center gap-2.5 p-2.5 mt-3 rounded-xl text-sm transition-all duration-300
-                          border
-                          ${quizPassed
-                            ? 'bg-gradient-to-r from-emerald-500/15 to-green-500/10 border-emerald-500/40 text-emerald-300 shadow-lg shadow-emerald-500/10'
-                            : 'bg-gradient-to-r from-purple-500/15 to-pink-500/10 border-purple-500/40 text-purple-300 hover:shadow-lg hover:shadow-purple-500/15 hover-lift'
-                          }
-                        `}
+                        className="w-full flex items-center gap-2.5 p-2.5 mt-3 text-sm transition-all duration-300"
+                        style={{
+                          borderRadius: S.radius.md,
+                          background: quizPassed ? `${S.protocol.HTTP}12` : `${S.protocol.DNS}12`,
+                          border: `1px solid ${quizPassed ? `${S.protocol.HTTP}40` : `${S.protocol.DNS}40`}`,
+                          color: quizPassed ? S.protocol.HTTP : S.protocol.DNS,
+                        }}
                       >
                         {/* 測驗圖示 */}
                         {quizPassed ? (
-                          <div className="w-6 h-6 rounded-lg bg-emerald-500/25 flex items-center justify-center border border-emerald-500/40">
-                            <Star className="w-3.5 h-3.5 text-emerald-400" />
+                          <div
+                            className="w-6 h-6 flex items-center justify-center"
+                            style={{ borderRadius: S.radius.sm, background: `${S.protocol.HTTP}20`, border: `1px solid ${S.protocol.HTTP}40` }}
+                          >
+                            <Star className="w-3.5 h-3.5" style={{ color: S.protocol.HTTP }} />
                           </div>
                         ) : (
-                          <div className="w-6 h-6 rounded-lg bg-purple-500/25 flex items-center justify-center border border-purple-500/40">
-                            <FileQuestion className="w-3.5 h-3.5 text-purple-400" />
+                          <div
+                            className="w-6 h-6 flex items-center justify-center"
+                            style={{ borderRadius: S.radius.sm, background: `${S.protocol.DNS}20`, border: `1px solid ${S.protocol.DNS}40` }}
+                          >
+                            <FileQuestion className="w-3.5 h-3.5" style={{ color: S.protocol.DNS }} />
                           </div>
                         )}
 
                         {/* 測驗標題 */}
                         <span className="flex-1 text-left font-medium">
-                          {quizPassed ? '✓ 已通過測驗' : '🎯 開始測驗'}
+                          {quizPassed ? '✓ 已通過測驗' : '開始測驗'}
                         </span>
 
                         {/* 分數 */}
                         {quizResult && (
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                            quizPassed
-                              ? 'bg-emerald-500/20 text-emerald-400'
-                              : 'bg-amber-500/20 text-amber-400'
-                          }`}>
+                          <span
+                            className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                            style={{
+                              background: quizPassed ? `${S.protocol.HTTP}20` : `${S.accent}20`,
+                              color: quizPassed ? S.protocol.HTTP : S.accent,
+                            }}
+                          >
                             {quizResult.percentage}%
                           </span>
                         )}
@@ -278,30 +340,42 @@ export default function CourseSidebar({
 
       {/* 錯題本入口 */}
       {wrongAnswerStats.total > 0 && (
-        <div className="px-4 py-4 border-t border-white/5">
+        <div className="px-4 py-4" style={{ borderTop: `1px solid ${S.border}` }}>
           <button
             onClick={onOpenWrongAnswers}
-            className="w-full flex items-center gap-3 p-4 rounded-xl transition-all duration-300
-              bg-gradient-to-br from-red-500/10 via-orange-500/5 to-amber-500/10
-              border border-red-500/20 hover:border-red-500/40
-              hover:shadow-lg hover:shadow-red-500/10 hover-lift group"
+            className="w-full flex items-center gap-3 p-4 transition-all duration-300 group"
+            style={{
+              borderRadius: S.radius.md,
+              background: `${S.protocol.ICMP}08`,
+              border: `1px solid ${S.protocol.ICMP}20`,
+            }}
           >
             <div className="relative">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-red-500/25 to-orange-500/15 flex items-center justify-center border border-red-500/30 group-hover:scale-105 transition-transform">
-                <AlertCircle className="w-5 h-5 text-red-400" />
+              <div
+                className="w-11 h-11 flex items-center justify-center group-hover:scale-105 transition-transform"
+                style={{
+                  borderRadius: S.radius.md,
+                  background: `${S.protocol.ICMP}18`,
+                  border: `1px solid ${S.protocol.ICMP}30`,
+                }}
+              >
+                <AlertCircle className="w-5 h-5" style={{ color: S.protocol.ICMP }} />
               </div>
               {/* 未掌握數量徽章 */}
               {wrongAnswerStats.unmastered > 0 && (
-                <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-lg shadow-red-500/40 animate-pulse">
-                  <span className="text-[10px] font-bold text-white">
+                <div
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center animate-pulse"
+                  style={{ background: S.protocol.ICMP }}
+                >
+                  <span className="text-[10px] font-bold" style={{ color: '#fff' }}>
                     {wrongAnswerStats.unmastered > 9 ? '9+' : wrongAnswerStats.unmastered}
                   </span>
                 </div>
               )}
             </div>
             <div className="flex-1 text-left">
-              <div className="text-sm font-semibold text-white">📝 錯題本</div>
-              <div className="text-xs text-slate-400 mt-0.5">
+              <div className="text-sm font-semibold" style={{ color: S.text.primary }}>錯題本</div>
+              <div className="text-xs mt-0.5" style={{ color: S.text.secondary }}>
                 {wrongAnswerStats.unmastered > 0
                   ? `${wrongAnswerStats.unmastered} 題待複習`
                   : '✓ 全部已掌握'
@@ -309,32 +383,46 @@ export default function CourseSidebar({
               </div>
             </div>
             <div className="text-right">
-              <div className="text-xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
+              <div className="text-xl font-bold" style={{ color: S.accent, fontFamily: S.font.serif }}>
                 {wrongAnswerStats.masteryRate}%
               </div>
-              <div className="text-[10px] text-slate-500">掌握率</div>
+              <div className="text-[10px]" style={{ color: S.text.tertiary }}>掌握率</div>
             </div>
           </button>
         </div>
       )}
 
       {/* 學習統計 */}
-      <div className="p-4 border-t border-white/5 mt-auto">
-        <div className="text-xs text-slate-400 mb-3 font-medium">📊 學習統計</div>
+      <div className="p-4 mt-auto" style={{ borderTop: `1px solid ${S.border}` }}>
+        <div className="text-xs mb-3 font-medium" style={{ color: S.text.secondary }}>學習統計</div>
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/5 rounded-xl p-3 border border-cyan-500/20">
-            <div className="text-[10px] text-cyan-400/70 uppercase tracking-wider">已完成</div>
-            <div className="text-2xl font-bold text-cyan-300 mt-1">
+          <div
+            className="p-3"
+            style={{
+              borderRadius: S.radius.md,
+              background: `${S.accent}10`,
+              border: `1px solid ${S.accent}20`,
+            }}
+          >
+            <div className="text-[10px] uppercase tracking-wider" style={{ color: `${S.accent}90` }}>已完成</div>
+            <div className="text-2xl font-bold mt-1" style={{ color: S.accent, fontFamily: S.font.serif }}>
               {progress.completedLessons.length}
             </div>
-            <div className="text-[10px] text-slate-500">課節</div>
+            <div className="text-[10px]" style={{ color: S.text.tertiary }}>課節</div>
           </div>
-          <div className="bg-gradient-to-br from-emerald-500/10 to-green-500/5 rounded-xl p-3 border border-emerald-500/20">
-            <div className="text-[10px] text-emerald-400/70 uppercase tracking-wider">學習時間</div>
-            <div className="text-2xl font-bold text-emerald-300 mt-1">
+          <div
+            className="p-3"
+            style={{
+              borderRadius: S.radius.md,
+              background: `${S.protocol.HTTP}10`,
+              border: `1px solid ${S.protocol.HTTP}20`,
+            }}
+          >
+            <div className="text-[10px] uppercase tracking-wider" style={{ color: `${S.protocol.HTTP}90` }}>學習時間</div>
+            <div className="text-2xl font-bold mt-1" style={{ color: S.protocol.HTTP, fontFamily: S.font.serif }}>
               {Math.round(progress.totalTimeSpent / 60000)}
             </div>
-            <div className="text-[10px] text-slate-500">分鐘</div>
+            <div className="text-[10px]" style={{ color: S.text.tertiary }}>分鐘</div>
           </div>
         </div>
       </div>

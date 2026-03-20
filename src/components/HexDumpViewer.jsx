@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react'
+import { S } from '../lib/swiss-tokens'
 
 /**
  * HexDumpViewer - Wireshark-style hex dump display
@@ -36,7 +37,18 @@ export default function HexDumpViewer({ rawHex, highlightByteRange, onByteHover 
   if (!rows) return null
 
   return (
-    <div className="bg-slate-950 border border-slate-700 rounded font-mono text-xs overflow-x-auto overflow-y-auto max-h-[300px]">
+    <div
+      style={{
+        background: S.bg,
+        border: `1px solid ${S.border}`,
+        borderRadius: S.radius.sm,
+        fontFamily: S.font.mono,
+        fontSize: '0.75rem',
+        overflowX: 'auto',
+        overflowY: 'auto',
+        maxHeight: '300px',
+      }}
+    >
       {rows.map((row) => {
         const offsetHex = row.offset.toString(16).padStart(8, '0')
 
@@ -49,15 +61,22 @@ export default function HexDumpViewer({ rawHex, highlightByteRange, onByteHover 
           <div
             key={row.offset}
             data-hex-row={row.offset}
-            className="flex items-center whitespace-nowrap px-2 py-px hover:bg-slate-800/50"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              whiteSpace: 'nowrap',
+              padding: '1px 8px',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = S.surfaceHover}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
           >
             {/* Offset column */}
-            <span className="text-slate-500 w-[72px] flex-shrink-0 select-none">
+            <span style={{ color: S.text.tertiary, width: 72, flexShrink: 0, userSelect: 'none' }}>
               {offsetHex}
             </span>
 
             {/* Hex bytes */}
-            <span className="flex-shrink-0 mr-2">
+            <span style={{ flexShrink: 0, marginRight: 8 }}>
               {row.bytes.map((b, i) => {
                 const isHighlighted = highlightByteRange &&
                   b.index >= highlightByteRange[0] &&
@@ -67,9 +86,15 @@ export default function HexDumpViewer({ rawHex, highlightByteRange, onByteHover 
                   <span
                     key={b.index}
                     data-byte-index={b.index}
-                    className={`inline-block w-[22px] text-center cursor-default ${
-                      isHighlighted ? 'highlight bg-cyan-800/70 text-cyan-200' : 'text-slate-300'
-                    }${i === 7 ? ' mr-1' : ''}`}
+                    style={{
+                      display: 'inline-block',
+                      width: 22,
+                      textAlign: 'center',
+                      cursor: 'default',
+                      background: isHighlighted ? `${S.accent}aa` : 'transparent',
+                      color: isHighlighted ? S.text.primary : S.text.primary,
+                      marginRight: i === 7 ? 4 : 0,
+                    }}
                     onMouseEnter={() => onByteHover && onByteHover(b.index)}
                     onMouseLeave={() => onByteHover && onByteHover(null)}
                   >
@@ -79,14 +104,19 @@ export default function HexDumpViewer({ rawHex, highlightByteRange, onByteHover 
               })}
               {/* Pad remaining spaces for partial rows */}
               {row.bytes.length < BYTES_PER_ROW && (
-                <span className="inline-block" style={{ width: `${(BYTES_PER_ROW - row.bytes.length) * 22}px` }} />
+                <span style={{ display: 'inline-block', width: (BYTES_PER_ROW - row.bytes.length) * 22 }} />
               )}
             </span>
 
             {/* ASCII column */}
             <span
               data-ascii-row={row.offset}
-              className="text-slate-400 flex-shrink-0 border-l border-slate-700 pl-2"
+              style={{
+                color: S.text.secondary,
+                flexShrink: 0,
+                borderLeft: `1px solid ${S.border}`,
+                paddingLeft: 8,
+              }}
             >
               {asciiStr}
             </span>

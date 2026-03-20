@@ -4,6 +4,7 @@ import {
   RefreshCcw, UploadCloud, Pause, Play, Eye, EyeOff,
   BookOpen, GraduationCap
 } from 'lucide-react'
+import { S } from '../lib/swiss-tokens'
 
 export default function HeaderToolbar({
   uploading, error, generatedAt, sourceFiles,
@@ -13,131 +14,181 @@ export default function HeaderToolbar({
   onFollowStream, onToggleCourseSidebar, onToggleTutorial,
   fileInputRef,
 }) {
+  const btnBase = {
+    display: 'inline-flex', alignItems: 'center', gap: 6,
+    borderRadius: S.radius.sm,
+    fontSize: 12, fontWeight: 500,
+    fontFamily: S.font.sans,
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+    border: 'none',
+  }
+
+  const btnGhost = {
+    ...btnBase,
+    padding: '6px 12px',
+    background: 'transparent',
+    color: S.text.secondary,
+    border: `1px solid ${S.border}`,
+  }
+
+  const btnAccent = {
+    ...btnBase,
+    padding: '6px 14px',
+    background: S.accent,
+    color: '#fff',
+    fontWeight: 600,
+  }
+
   return (
-    <header className="mindmap-header px-6 pt-6">
-      <div className="flex flex-col gap-5">
-        <div className="flex items-center justify-between">
+    <header style={{ padding: '16px 20px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* Title row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+            <h2 style={{
+              fontSize: 14, fontWeight: 600,
+              color: S.text.primary,
+              fontFamily: S.font.sans,
+              margin: 0, display: 'flex', alignItems: 'center', gap: 8,
+            }}>
               {showLearningUI && (
-                <span className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-600/30 text-emerald-300 rounded-lg text-sm">
-                  <GraduationCap className="w-4 h-4" />
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  padding: '2px 8px', borderRadius: S.radius.sm,
+                  background: S.protocol.HTTP + '14',
+                  color: S.protocol.HTTP,
+                  fontSize: 11, fontWeight: 600,
+                  fontFamily: S.font.mono,
+                }}>
+                  <GraduationCap size={13} />
                   學習模式
                 </span>
               )}
               協議時間軸分析
             </h2>
-            <p className="text-sm text-slate-400 mt-2 max-w-2xl">
+            <p style={{
+              fontSize: 11, color: S.text.tertiary,
+              marginTop: 4, maxWidth: 600,
+              fontFamily: S.font.sans,
+            }}>
               {showLearningUI
                 ? '跟隨教學引導，一步步學習網路協議分析技能。'
-                : '上傳 Wireshark 擷取檔，觀察心智圖沿著時間軸動畫呈現 TCP 交握、UDP 傳輸與其他協定事件。'
+                : '上傳 Wireshark 擷取檔，觀察拓撲圖動畫呈現協定事件。'
               }
             </p>
           </div>
 
           {showLearningUI && (
-            <div className="flex items-center gap-2">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <button
-                type="button"
-                onClick={onToggleCourseSidebar}
-                className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
-                  showCourseSidebar
-                    ? 'bg-emerald-600/30 text-emerald-300'
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                }`}
+                type="button" onClick={onToggleCourseSidebar}
+                style={{
+                  ...btnGhost,
+                  ...(showCourseSidebar ? { background: S.protocol.HTTP + '14', color: S.protocol.HTTP, borderColor: S.protocol.HTTP + '33' } : {}),
+                }}
               >
-                <BookOpen className="w-4 h-4" />
+                <BookOpen size={14} />
                 {showCourseSidebar ? '隱藏目錄' : '顯示目錄'}
               </button>
               <button
-                type="button"
-                onClick={onToggleTutorial}
-                className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
-                  showTutorialOverlay
-                    ? 'bg-cyan-600/30 text-cyan-300'
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                }`}
+                type="button" onClick={onToggleTutorial}
+                style={{
+                  ...btnGhost,
+                  ...(showTutorialOverlay ? { background: S.accent + '14', color: S.accent, borderColor: S.accent + '33' } : {}),
+                }}
               >
-                {showTutorialOverlay ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showTutorialOverlay ? <EyeOff size={14} /> : <Eye size={14} />}
                 {showTutorialOverlay ? '隱藏引導' : '顯示引導'}
               </button>
             </div>
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        {/* Action buttons */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="upload-button btn-primary inline-flex items-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+            style={{
+              ...btnAccent,
+              opacity: uploading ? 0.5 : 1,
+              cursor: uploading ? 'not-allowed' : 'pointer',
+            }}
           >
-            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
-            {uploading ? '正在上傳...' : '上傳 PCAP／PCAPNG'}
+            {uploading ? <Loader2 size={14} className="animate-spin" /> : <UploadCloud size={14} />}
+            {uploading ? '上傳中...' : '上傳 PCAP'}
           </button>
 
-          <button type="button" onClick={onReload} className="btn-ghost inline-flex items-center gap-2 text-sm hover-lift">
-            <RefreshCcw className="w-4 h-4" />
+          <button type="button" onClick={onReload} style={btnGhost}>
+            <RefreshCcw size={14} />
             Reload
           </button>
 
           <button
-            type="button"
-            onClick={onTogglePause}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-300 hover-lift ${
-              isPaused
-                ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/25'
-                : 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/25'
-            }`}
+            type="button" onClick={onTogglePause}
+            style={{
+              ...btnGhost,
+              background: isPaused ? S.protocol.HTTP + '14' : S.accent + '14',
+              color: isPaused ? S.protocol.HTTP : S.accent,
+              borderColor: isPaused ? S.protocol.HTTP + '33' : S.accent + '33',
+            }}
           >
-            {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+            {isPaused ? <Play size={14} /> : <Pause size={14} />}
             {isPaused ? '播放' : '暫停'}
           </button>
 
           {selectedConnectionId && (
-            <button
-              type="button"
-              onClick={onToggleFocus}
-              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-300 hover-lift ${
-                isFocusMode
-                  ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-500/25'
-                  : 'bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-lg shadow-purple-500/25'
-              }`}
-            >
-              {isFocusMode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            <button type="button" onClick={onToggleFocus} style={{
+              ...btnGhost,
+              background: isFocusMode ? S.accent + '14' : S.protocol.DNS + '14',
+              color: isFocusMode ? S.accent : S.protocol.DNS,
+              borderColor: isFocusMode ? S.accent + '33' : S.protocol.DNS + '33',
+            }}>
+              {isFocusMode ? <EyeOff size={14} /> : <Eye size={14} />}
               {isFocusMode ? '退出焦點' : '特定顯示'}
             </button>
           )}
 
           {selectedConnectionId && selectedConnectionId.startsWith('tcp') && (
-            <button
-              type="button"
-              onClick={onFollowStream}
-              className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25 transition-all duration-300 hover-lift"
-            >
-              <Activity className="w-4 h-4" />
+            <button type="button" onClick={onFollowStream} style={{
+              ...btnGhost,
+              background: S.protocol.HTTP + '14',
+              color: S.protocol.HTTP,
+              borderColor: S.protocol.HTTP + '33',
+            }}>
+              <Activity size={14} />
               Follow Stream
             </button>
           )}
 
           {generatedAt && (
-            <div className="text-xs text-slate-500 flex items-center gap-1">
-              <Clock className="w-4 h-4 text-slate-500" />
-              Generated {new Date(generatedAt).toLocaleString()}
+            <div style={{ fontSize: 10, color: S.text.faint, display: 'flex', alignItems: 'center', gap: 4, fontFamily: S.font.mono }}>
+              <Clock size={12} />
+              {new Date(generatedAt).toLocaleString()}
             </div>
           )}
 
           {sourceFiles.length > 0 && (
-            <div className="text-xs text-slate-500 flex items-center gap-1">
-              <CircleDot className="w-4 h-4 text-emerald-400" />
-              {sourceFiles.join('、')}
+            <div style={{ fontSize: 10, color: S.text.tertiary, display: 'flex', alignItems: 'center', gap: 4, fontFamily: S.font.mono }}>
+              <CircleDot size={12} style={{ color: S.protocol.HTTP }} />
+              {sourceFiles.join(', ')}
             </div>
           )}
         </div>
 
         {error && (
-          <div className="flex items-center gap-3 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-            <AlertTriangle className="w-4 h-4" />
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            borderRadius: S.radius.md,
+            border: `1px solid ${S.protocol.ICMP}33`,
+            background: S.protocol.ICMP + '0c',
+            padding: '8px 12px',
+            fontSize: 12, color: S.protocol.ICMP,
+            fontFamily: S.font.sans,
+          }}>
+            <AlertTriangle size={14} />
             {error}
           </div>
         )}
